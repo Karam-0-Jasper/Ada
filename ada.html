@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>For Adama</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0a0b;
+      --surface: #141010;
+      --rose: #c97a8a;
+      --rose-light: #e8aabb;
+      --rose-dim: #8a4d5c;
+      --cream: #f0e6dc;
+      --muted: #7a6a6f;
+      --text: #f0e6dc;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      overflow: hidden;
+    }
+
+    /* grain overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.35;
+    }
+
+    /* ambient glow */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(201,122,138,0.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      text-align: center;
+      z-index: 1;
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .page.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.97);
+    }
+
+    /* ── QUESTION PAGE ── */
+    #question-page .eyebrow {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--rose-dim);
+      margin-bottom: 2.5rem;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.3s forwards;
+    }
+
+    #question-page h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.2rem, 8vw, 4.5rem);
+      font-weight: 400;
+      line-height: 1.15;
+      color: var(--cream);
+      margin-bottom: 3.5rem;
+      opacity: 0;
+      animation: fadeUp 0.9s ease 0.5s forwards;
+    }
+
+    #question-page h1 span {
+      color: var(--rose-light);
+      font-style: italic;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 1.2rem;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.8s forwards;
+    }
+
+    .btn {
+      position: relative;
+      padding: 0.85rem 2.8rem;
+      border: none;
+      border-radius: 2px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      overflow: hidden;
+    }
+
+    .btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.07);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .btn:hover::after { opacity: 1; }
+    .btn:hover { transform: translateY(-2px); }
+    .btn:active { transform: translateY(0); }
+
+    .btn-yes {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid #2a1e22;
+    }
+
+    .btn-no {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid #2a1e22;
+    }
+
+    .btn:disabled {
+      opacity: 0.25;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* ── LETTER PAGE ── */
+    #letter-page {
+      overflow: hidden;
+    }
+
+    #letter-page .inner {
+      max-width: 620px;
+      width: 100%;
+      text-align: left;
+      overflow-y: auto;
+      max-height: 90vh;
+      padding: 0.5rem 0.5rem 0.5rem 0;
+      scrollbar-width: thin;
+      scrollbar-color: var(--rose-dim) transparent;
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.9s ease 0.1s, transform 0.9s ease 0.1s;
+    }
+
+    #letter-page.show .inner {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .letter-tag {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--rose-dim);
+      margin-bottom: 2rem;
+    }
+
+    .letter-body {
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(0.93rem, 2.2vw, 1.05rem);
+      font-weight: 300;
+      line-height: 1.85;
+      color: #d8cac8;
+    }
+
+    .letter-body p { margin-bottom: 1.3rem; }
+
+    .letter-sign {
+      margin-top: 2.2rem;
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 1.1rem;
+      color: var(--rose-light);
+    }
+
+    .letter-sign span {
+      display: block;
+      font-family: 'DM Sans', sans-serif;
+      font-style: normal;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 0.3rem;
+    }
+
+    /* ── NO PAGE ── */
+    #no-page h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.6rem, 5vw, 2.6rem);
+      font-weight: 400;
+      color: var(--cream);
+      margin-bottom: 1rem;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.2s forwards;
+    }
+
+    #no-page p {
+      font-size: 0.95rem;
+      color: var(--muted);
+      font-weight: 300;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.45s forwards;
+    }
+
+    /* divider */
+    .divider {
+      width: 36px;
+      height: 1px;
+      background: var(--rose-dim);
+      margin: 1.8rem 0;
+      opacity: 0.5;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- QUESTION -->
+  <div class="page" id="question-page">
+    <p class="eyebrow">A message for you</p>
+    <h1>Did you miss me,<br><span>Adama?</span></h1>
+    <div class="buttons">
+      <button class="btn btn-yes" id="yes-btn" onclick="handleYes()">Yes</button>
+      <button class="btn btn-no" id="no-btn" onclick="handleNo()">No</button>
+    </div>
+  </div>
+
+  <!-- LETTER -->
+  <div class="page hidden" id="letter-page">
+    <div class="inner">
+      <p class="letter-tag">For Adama Dukuly</p>
+      <div class="divider"></div>
+      <div class="letter-body">
+        <p>Hey. I wasn't even sure you were gonna click yes — that's exactly why I had to take the risk of putting this message here anyway.</p>
+        <p>It's been 4 days since I last texted you. You probably figured out why I pulled back, or maybe you already knew I was fed up. I'm not gonna say it's my fault — but I will say this: whatever you're going through, it's my responsibility to hold that down with you too. And I didn't. I needed to be patient, and I wasn't.</p>
+        <p>What messed with me the most is that I'm not used to this — being ignored by someone I love. So when it happened, it felt foreign and honestly stupid to me. Like, why am I just sitting here getting left on read? I knew one day you'd go through something like this. I told myself I'd hold it down while you were in it. But I didn't expect it to take this long, and I wasn't ready for that.</p>
+        <p>I think what really got to me was the "hm's," the laughs that felt automated, the sighs — like you were there but not really there. And somewhere in me I started wanting you to feel the same weight I was feeling. That was wrong. I know that now.</p>
+        <p>Apologies don't come easy to me — not because I don't care, but because I rarely find myself in the wrong. But you've earned every single one of mine. And right now, here's another one.</p>
+        <p>I'm sorry, Adama. I should've known better. I can't promise you perfect, but I can promise you I'll keep learning — for real.</p>
+      </div>
+      <div class="letter-sign">
+        Love, Karamba.
+        <span>Always.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- NO -->
+  <div class="page hidden" id="no-page">
+    <h2>That's okay.</h2>
+    <p>This page won't ask you again.<br>Take your time.</p>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'ada_no_clicked_v1';
+
+    window.onload = () => {
+      if (localStorage.getItem(STORAGE_KEY)) showNo(false);
+    };
+
+    function handleYes() {
+      showLetter(true);
+    }
+
+    function handleNo() {
+      if (localStorage.getItem(STORAGE_KEY)) return;
+      localStorage.setItem(STORAGE_KEY, 'true');
+      showNo(true);
+    }
+
+    function showLetter(animate) {
+      document.getElementById('question-page').classList.add('hidden');
+      const lp = document.getElementById('letter-page');
+      lp.classList.remove('hidden');
+      if (animate) setTimeout(() => lp.classList.add('show'), 50);
+      else lp.classList.add('show');
+    }
+
+    function showNo(animate) {
+      document.getElementById('question-page').classList.add('hidden');
+      const np = document.getElementById('no-page');
+      np.classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
