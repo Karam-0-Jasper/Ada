@@ -32,6 +32,13 @@ button{cursor:pointer;border:0;background:none;padding:0}
 .lab.home{background:rgba(20,90,50,.85);color:#c9ffd9}
 .lab.gig{background:var(--gold);color:#1b1206;font-size:13px;animation:bob 1s ease-in-out infinite}
 .hud{z-index:3}
+.modal.phone{width:min(400px,100%);border-radius:34px;background:linear-gradient(180deg,#1d1715,#120e0c);border:6px solid #2a2320;box-shadow:0 30px 60px rgba(0,0,0,.6)}
+.apps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 8px;padding:6px 2px 4px}
+.app{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11.5px;font-weight:800;text-align:center;line-height:1.1}
+.app span{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;font-size:28px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18),0 6px 14px rgba(0,0,0,.35);transition:transform .15s}
+.app:active span{transform:scale(.9)}
+.pback{align-self:flex-start;font-weight:800;font-size:14px;color:var(--gold);padding:2px 0}
+.pmap{width:100%;border-radius:14px;border:1px solid var(--line);cursor:crosshair}
 .arrow{display:inline-block;width:18px;height:18px;vertical-align:-4px;margin-right:4px;transition:transform .15s linear}
 
 .num{font-variant-numeric:tabular-nums}
@@ -205,7 +212,9 @@ button{cursor:pointer;border:0;background:none;padding:0}
     <p>You just reached Duala with <b style="color:var(--ink)">L$1,500</b> and big dreams. Hustle at Waterside, ride for Hot &amp; Fresh, go to school, buy a pen-pen, then a car, then your own house. Small small, you will reach.</p>
     <div id="introNew" style="display:flex;flex-direction:column;gap:14px">
       <div class="field"><label for="pname">Your name</label><input id="pname" maxlength="16" value="Tayo" placeholder="e.g. Tayo" autocomplete="off"></div>
-      <div class="field"><label>Shirt colour</label><div class="sw" id="swShirt"></div></div>
+      <div class="field"><label>I am a</label><div class="tabs" id="swGender"><button data-g="m" aria-selected="true">👨🏾 Man</button><button data-g="f" aria-selected="false">👩🏾 Woman</button></div></div>
+      <div class="field"><label>Hairstyle</label><div class="tabs" id="swHair" style="flex-wrap:wrap"></div></div>
+      <div class="field"><label id="topLabel">Shirt colour</label><div class="sw" id="swShirt"></div></div>
       <div class="field"><label>Skin tone</label><div class="sw" id="swSkin"></div></div>
       <button class="go" id="startBtn">Start my life</button>
     </div>
@@ -298,6 +307,7 @@ const VEHICLES = {
   moto:    {t:'Pen-pen motorbike', price:45000,  sp:2.1, fuel:.012, c:'#E5392C', kind:'moto', ic:'🏍️'},
   corolla: {t:'Used Toyota Corolla', price:150000, sp:2.5, fuel:.03, c:'#F2C230', kind:'car', ic:'🚕'},
   pickup:  {t:'Pickup truck', price:320000, sp:2.6, fuel:.045, c:'#3E6FD8', kind:'truck', ic:'🛻'},
+  keke:    {t:'Keke (tricycle)', price:90000, sp:1.8, fuel:.02, c:'#F2C230', kind:'keke', ic:'🛺'},
   cruiser: {t:'Land Cruiser', price:800000, sp:3.0, fuel:.06, c:'#1F2A30', kind:'suv', ic:'🚙'}
 };
 const HOMES = {
@@ -339,6 +349,19 @@ const LOCS = [
   {id:'cook2', n:'Sinkor Cookshop', ic:'🍛', x:1420, y:1412, type:'food', roof:'#d35400'},
   {id:'cook3', n:'Red Light Cookshop', ic:'🍛', x:3460, y:1262, type:'food', roof:'#d35400'},
   {id:'cook4', n:'Gardnersville Chop Bar', ic:'🍛', x:2700, y:760, type:'food', roof:'#d35400'},
+  {id:'clothes1', n:'Waterside Fashion House', ic:'👕', x:780, y:1288, type:'clothes', roof:'#c2185b'},
+  {id:'clothes2', n:'Sinkor Boutique', ic:'👗', x:1760, y:1384, type:'clothes', roof:'#ad1457'},
+  {id:'barber1', n:'Fresh Cut Barbershop', ic:'💈', x:1150, y:684, type:'barber', roof:'#1565c0'},
+  {id:'barber2', n:'Red Light Fade Kings', ic:'💈', x:3330, y:1312, type:'barber', roof:'#0d47a1'},
+  {id:'salon', n:'Queen Musu Beauty Salon', ic:'💇🏾‍♀️', x:2075, y:1404, type:'salon', roof:'#e91e63'},
+  {id:'bar1', n:'Pepperbird Lounge', ic:'🍻', x:1272, y:1525, type:'bar', roof:'#4a148c'},
+  {id:'bar2', n:'Lappa Bar & Grill', ic:'🍻', x:2800, y:1452, type:'bar', roof:'#6a1b9a'},
+  {id:'bar3', n:'Freeport Corner Bar', ic:'🍻', x:662, y:700, type:'bar', roof:'#311b92'},
+  {id:'rest1', n:"Mama Jartu's Palm Butter Spot", ic:'🍲', x:625, y:1505, type:'rest', roof:'#bf360c'},
+  {id:'rest2', n:'Ducor Seafood Grill', ic:'🐟', x:300, y:1312, type:'rest', roof:'#00838f'},
+  {id:'rest3', n:'Congo Town Chop House', ic:'🍛', x:2560, y:1410, type:'rest', roof:'#e65100'},
+  {id:'rest4', n:'Duala Jollof Corner', ic:'🍗', x:1700, y:600, type:'rest', roof:'#ef6c00'},
+  {id:'furniture', n:'Home & Things Furniture', ic:'🛋️', x:3600, y:1030, type:'furniture', roof:'#5d4037', big:1},
   {id:'beach', n:'ELWA Beach', ic:'🏖️', x:2960, y:1662, type:'beach', nob:1},
   {id:'t_duala', n:'Duala Taxi Park', ic:'🚕', x:1240, y:662, type:'taxi', nob:1},
   {id:'t_water', n:'Waterside Taxi Park', ic:'🚕', x:745, y:1172, type:'taxi', nob:1},
@@ -365,6 +388,9 @@ const GOALS = [
   {id:'degree', t:'Graduate from University of Liberia', ok:s => s.certs.includes('degree')},
   {id:'house', t:'Own a house', ok:s => s.owned.some(h => h !== 'auntie')},
   {id:'mamba', t:'Own the Mamba Point villa', ok:s => s.owned.includes('mamba')},
+  {id:'drip', t:'Buy a new outfit', ok:s => (s.wardrobe || []).length > 1},
+  {id:'furnish', t:'Put a TV in your home', ok:s => Object.values(s.furn || {}).some(f => f.includes('tv'))},
+  {id:'ourride', t:'Complete 5 OurRide trips as a driver', ok:s => (s.stats.ourride || 0) >= 5},
   {id:'million', t:'Reach L$1,000,000 net worth', ok:s => netWorth(s) >= 1e6}
 ];
 
@@ -500,12 +526,243 @@ const LAMPS = [];
 for (const r of ROADS) if (r.t === 'paved') for (let s = 0; s < r.len; s += 150){ const p = roadPoint(r, s); LAMPS.push({x:p.x, y:p.y, r:70}); }
 LOCS.forEach(l => LAMPS.push({x:l.x, y:l.y, r:l.nob ? 60 : 95}));
 
+/* =========================================================
+   LIFE: looks, clothes, hair, furniture, food, money, phone
+   ========================================================= */
+const HAIR = {
+  low:{t:'Low cut', p:300}, fade:{t:'Skin fade', p:500}, waves:{t:'360 waves', p:600}, afro:{t:'Afro', p:400}, dreads:{t:'Dreads', p:2500},
+  cornrows:{t:'Cornrows', p:1000}, bald:{t:'Clean bald', p:200}, braids:{t:'Box braids', p:3000}, puff:{t:'Afro puff', p:800},
+  bun:{t:'Neat bun', p:600}, weave:{t:'Long weave', p:5000}, headtie:{t:'Lappa head tie', p:500}, natural:{t:'Short natural', p:400}
+};
+const BARBER_STYLES = ['low','fade','waves','afro','dreads','cornrows','bald'];
+const SALON_STYLES = ['braids','cornrows','puff','bun','weave','headtie','natural','afro'];
+const HAIRC = ['#0e0e0e','#1a1410','#2b1d14','#3b2a1e','#5a3418','#7a2e22'];
+const TIES = ['#E67E22','#8E44AD','#C0392B','#16A085','#F1C40F','#2E86C1'];
+const OUTFITS = {
+  tshirt:  {t:'T-shirt & trousers', p:800,  g:'m', top:'#27AE60', bottom:'#1F3A5F'},
+  polo:    {t:'Polo shirt & jeans', p:1500, g:'m', top:'#2E86C1', bottom:'#24324a'},
+  jersey:  {t:'Lone Star football jersey', p:2500, g:'*', top:'#C8102E', bottom:'#F2F2F2', stripe:'#002868'},
+  print:   {t:'African print shirt', p:3000, g:'m', top:'print', bottom:'#2b2b2b'},
+  hoodie:  {t:'Hoodie & joggers', p:4000, g:'*', top:'#3a3a3a', bottom:'#55595c'},
+  suit:    {t:'Black suit & tie', p:12000, g:'m', top:'#15171a', bottom:'#15171a', tie:1},
+  lappa:   {t:'Lappa dress', p:2500, g:'f', top:'print', dress:1, long:1},
+  gown:    {t:'Purple Ankara gown', p:4500, g:'f', top:'#8E44AD', dress:1, long:1},
+  sundress:{t:'Yellow sundress', p:2200, g:'f', top:'#F4D03F', dress:1},
+  office:  {t:'Office skirt suit', p:9000, g:'f', top:'#1b2a49', dress:1},
+  blouse:  {t:'Blouse & jeans', p:2000, g:'f', top:'#F5B7B1', bottom:'#2E4053'},
+  redress: {t:'Red party dress', p:3500, g:'f', top:'#C0392B', dress:1}
+};
+const FURN = {
+  mattress:{t:'Foam mattress & bed frame', p:6000, sleep:10, ic:'🛏️'},
+  fan:     {t:'Standing fan', p:2500, sleep:3, ic:'🌀', small:1},
+  radio:   {t:'Radio', p:1500, ic:'📻', small:1},
+  plant:   {t:'Potted plant', p:800, ic:'🪴', small:1},
+  rug:     {t:'Woven rug', p:2500, ic:'🧶'},
+  sofa:    {t:'Living room sofa', p:9000, ic:'🛋️'},
+  chairs:  {t:'Two armchairs', p:6000, ic:'🪑'},
+  table:   {t:'Coffee table', p:3000, ic:'🪵'},
+  tv:      {t:'Flat-screen TV', p:14000, ic:'📺'},
+  fridge:  {t:'Fridge', p:16000, ic:'🧊'},
+  dining:  {t:'Dining table set', p:8000, ic:'🍽️'},
+  shelf:   {t:'Bookshelf', p:4000, ic:'📚'},
+  art:     {t:'Wall painting', p:2000, ic:'🖼️'},
+  generator:{t:'Generator', p:22000, ic:'⚡'},
+  ac:      {t:'Air conditioner', p:35000, sleep:7, ic:'❄️'}
+};
+const DISHES = {
+  palmbutter:{t:'Palm butter & rice', p:450, f:60}, jollof:{t:'Jollof rice & chicken', p:400, f:55}, fufu:{t:'Fufu & pepper soup', p:500, f:65},
+  cassava:{t:'Cassava leaf & rice', p:380, f:55}, greens:{t:'Potato greens & rice', p:350, f:50}, checkrice:{t:'Check rice & fried fish', p:420, f:55},
+  torborgee:{t:'Torborgee & rice', p:380, f:52}, fish:{t:'Grilled fish & plantain', p:700, f:70}, dumboy:{t:'Dumboy & okra soup', p:480, f:62},
+  kala:{t:'Kala (6 pcs)', p:120, f:15}, ricebread:{t:'Rice bread slice', p:150, f:18}, pepperchicken:{t:'Pepper chicken & fries', p:550, f:58}
+};
+const MENUS = {
+  rest1:['palmbutter','cassava','greens','torborgee','ricebread'],
+  rest2:['fish','jollof','checkrice','pepperchicken'],
+  rest3:['fufu','dumboy','jollof','kala'],
+  rest4:['jollof','pepperchicken','greens','ricebread']
+};
+const DRINKS = [
+  {t:'Cold beer', p:250, e:3, ic:'🍺'}, {t:'Palm wine', p:150, e:2, ic:'🥥'}, {t:'Malta', p:200, f:8, ic:'🥤'},
+  {t:'Ginger beer', p:120, f:4, e:3, ic:'🫚'}, {t:'Cold water', p:20, f:2, ic:'💧'}
+];
+
+/* ---------- money: cash + MoMo ---------- */
+const canPay = n => (S.money + (S.momo || 0)) >= n;
+function spend(n, preferMomo){
+  n = Math.round(n); if (n <= 0) return;
+  if (preferMomo && (S.momo || 0) >= n){ S.momo -= n; logTx(-n, 'Payment'); return; }
+  const cash = Math.min(S.money, n); S.money -= cash;
+  const rest = n - cash; if (rest > 0){ S.momo = Math.max(0, (S.momo || 0) - rest); logTx(-rest, 'Paid with MoMo'); }
+}
+function logTx(n, what){ S.tx = S.tx || []; S.tx.unshift({n, what, d:S.day, m:Math.floor(S.min)}); S.tx.length = Math.min(S.tx.length, 25); }
+function payMomo(n, what){ S.momo = (S.momo || 0) + n; S.stats.earned += n; logTx(n, what); }
+
+function defaultLook(g, top, skin){
+  return g === 'f' ? {g:'f', skin, hair:'braids', hc:'#1a1410', top: top || '#F4D03F', dress:1, long:0, outfit:'sundress'}
+                   : {g:'m', skin, hair:'low', hc:'#0e0e0e', top: top || '#27AE60', bottom:'#1F3A5F', outfit:'tshirt'};
+}
+function wearOutfit(id){
+  const o = OUTFITS[id], L = S.look;
+  L.outfit = id; L.top = o.top; L.bottom = o.bottom || null; L.dress = o.dress ? 1 : 0; L.long = o.long ? 1 : 0; L.tie = o.tie ? 1 : 0; L.stripe = o.stripe || null;
+}
+const BRIGHT = ['#E5392C','#3157C8','#39C06A','#FFB21E','#8E44AD','#F2F2F2','#16A085','#E67E22','#F5B7B1','#1b2a49','#C0392B','#F4D03F','#2E86C1','#6D4C41'];
+function randomLook(r = Math.random){
+  const g = r() < .5 ? 'm' : 'f';
+  const hair = g === 'm' ? pick(['low','low','fade','fade','waves','afro','dreads','cornrows','bald'], r) : pick(['braids','braids','cornrows','puff','bun','weave','headtie','headtie','natural','afro'], r);
+  const dress = g === 'f' && r() < .72;
+  return {g, skin: pick(SKINS, r), hair, hc: hair === 'headtie' ? pick(TIES, r) : pick(HAIRC, r), top: pick(BRIGHT, r),
+    bottom: dress ? null : pick(['#1F3A5F','#2b2b2b','#5d4037','#7F8C8D','#e8e0cc','#34495e','#24324a'], r), dress: dress ? 1 : 0, long: dress && r() < .4 ? 1 : 0};
+}
+
+/* ---------- extra places ---------- */
+function panelExtra(l){
+  const L = S.look;
+  switch (l.type){
+    case 'clothes': {
+      S.wardrobe = S.wardrobe || [];
+      const list = Object.entries(OUTFITS).filter(([k, o]) => o.g === '*' || o.g === L.g);
+      return {ic:'👕', t:l.n, sub:`Shirts, trousers, dresses and lappa. You are wearing: <b>${OUTFITS[L.outfit] ? OUTFITS[L.outfit].t : 'your own clothes'}</b>.`,
+        acts: list.map(([k, o]) => { const own = S.wardrobe.includes(k), on = L.outfit === k;
+          return own ? {l:o.t, s: on ? 'Wearing now' : 'In your wardrobe · tap to wear', p: on ? '✓' : 'Wear', dis:on, fn:() => { wearOutfit(k); toast(`Looking sharp in your ${o.t}!`, 'good'); save(); }}
+                     : {l:o.t, s: o.dress ? 'Dress' : 'Shirt & trousers', p:money(o.p), pc:'minus', dis:!canPay(o.p), fn:() => { spend(o.p); S.wardrobe.push(k); wearOutfit(k); toast(`You bought a ${o.t}`, 'gold'); save(); }}; })};
+    }
+    case 'barber': case 'salon': {
+      const styles = l.type === 'barber' ? BARBER_STYLES : SALON_STYLES;
+      return {ic: l.type === 'barber' ? '💈' : '💇🏾‍♀️', t:l.n, sub: `Current style: <b>${HAIR[L.hair].t}</b>. Sit down, get fresh.`,
+        acts: styles.map(k => ({l:HAIR[k].t, s: L.hair === k ? 'Your current style' : (k === 'headtie' ? 'Colourful lappa wrap' : 'About 1 hour'), p: L.hair === k ? '✓' : money(HAIR[k].p), pc:'minus', dis: L.hair === k || !canPay(HAIR[k].p),
+          fn:() => { spend(HAIR[k].p); busy(l.type === 'barber' ? '💈' : '💇🏾‍♀️', `Getting a ${HAIR[k].t}…`, l.type === 'barber' ? 'The barber is telling football stories' : 'The ladies are gisting about everybody', 1.4, () => { advance(60); L.hair = k; L.hc = k === 'headtie' ? pick(TIES) : (L.hc && !TIES.includes(L.hc) ? L.hc : '#1a1410'); toast(`Fresh ${HAIR[k].t}! Looking good.`, 'gold'); }); }}))};
+    }
+    case 'rest': {
+      const menu = MENUS[l.id] || ['jollof'];
+      return {ic:'🍽️', t:l.n, sub:'Sit-down Liberian food, served hot.', acts: menu.map(k => { const d = DISHES[k];
+        return {l:d.t, s:`+${d.f} food`, p:money(d.p), pc:'minus', dis:!canPay(d.p) || S.food >= 100, fn:() => { spend(d.p); S.food = clamp(S.food + d.f, 0, 100); advance(30); toast(`That ${d.t} was sweet-o!`, 'good'); }}; })};
+    }
+    case 'bar': return {ic:'🍻', t:l.n, sub:'Music, cold drinks and the big match on the screen.',
+      acts:[...DRINKS.map(d => ({l:`${d.ic} ${d.t}`, s:[d.f ? `+${d.f} food` : '', d.e ? `+${d.e} energy` : ''].filter(Boolean).join(' · ') || 'Refreshing', p:money(d.p), pc:'minus', dis:!canPay(d.p), fn:() => { spend(d.p); if (d.f) S.food = clamp(S.food + d.f, 0, 100); if (d.e) S.energy = clamp(S.energy + d.e, 0, 100); advance(15); toast(`${d.t}, ice cold!`); }})),
+        {l:'Watch the football match', s:'2 hours · +12 energy · Lone Star are playing!', p:money(300), pc:'minus', primary:true, dis:!canPay(300), fn:() => { spend(300); busy('⚽', 'Watching the match…', pick(['GOAL! The whole bar is shouting!','Penalty! Everybody is on their feet','The referee is getting plenty of advice']), 1.6, () => { advance(120); S.energy = clamp(S.energy + 12, 0, 100); toast(pick(['Lone Star won 2-1! Big celebration.','It ended 1-1. Good game.','Lone Star lost, but the vibes were nice.']), 'gold'); }); }},
+        {l:'Dance to hipco music', s:'1 hour · burns energy, lifts the spirit', fn:() => busy('🕺🏾', 'Dancing…', 'The DJ is playing the latest hipco', 1, () => { advance(60); S.energy = clamp(S.energy - 6, 0, 100); toast('You danced like a star!'); })}]};
+    case 'furniture': {
+      const home = S.home, hm = HOMES[home], have = (S.furn && S.furn[home]) || [];
+      const small = home === 'auntie';
+      return {ic:'🛋️', t:l.n, sub:`Furniture is delivered to your current home: <b>${hm.t}</b>.${small ? ' Auntie only has space for small things.' : ''}`,
+        acts:Object.entries(FURN).map(([k, f]) => { const own = have.includes(k), blocked = small && !f.small;
+          return {l:`${f.ic} ${f.t}`, s: own ? 'Already in your home' : blocked ? 'Needs your own room or house' : (f.sleep ? `Sleep +${f.sleep}%` : 'Makes your home nicer'), p: own ? '✓' : money(f.p), pc:'minus', dis: own || blocked || !canPay(f.p),
+            fn:() => { spend(f.p); S.furn = S.furn || {}; (S.furn[home] = S.furn[home] || []).push(k); toast(`${f.t} delivered to ${hm.t}!`, 'gold'); save(); }}; })};
+    }
+  }
+  return null;
+}
+
+/* ---------- phone apps ---------- */
+const APPS = [
+  {id:'momo', t:'MoMo', ic:'💸', bg:'#FFCB05'}, {id:'ourride', t:'OurRide', ic:'🚘', bg:'#1E8E5A'}, {id:'maps', t:'Maps', ic:'🗺️', bg:'#2E86C1'},
+  {id:'hotfresh', t:'Hot & Fresh', ic:'🔥', bg:'#E03A18'}, {id:'goals', t:'Goals', ic:'🏆', bg:'#8E44AD'}, {id:'me', t:'Me', ic:'🙂', bg:'#34495e'},
+  {id:'myhome', t:'My home', ic:'🏠', bg:'#16A085'}, {id:'settings', t:'Settings', ic:'⚙️', bg:'#555'}
+];
+const RIDE = {penpen:{t:'Pen-pen', ic:'🏍️', base:40, rate:.05, kind:'moto', c:'#E5392C'}, keke:{t:'Keke', ic:'🛺', base:60, rate:.065, kind:'keke', c:'#F2C230'}, car:{t:'OurRide Car', ic:'🚗', base:110, rate:.1, kind:'car', c:'#1E8E5A'}};
+const rideFare = (svc, l) => Math.round(RIDE[svc].base + dist(S.x, S.y, l.x, l.y) * RIDE[svc].rate);
+const DRIVABLE = ['corolla','pickup','cruiser','keke'];
+let phoneApp = 'home', rideSvc = 'keke', rideTab = 'ride';
+function appScreen(){
+  const back = `<button class="pback" data-app="home">‹ Apps</button>`;
+  const balance = `<div class="statgrid"><div class="stat"><span>Cash</span><b class="num">${money(S.money)}</b></div><div class="stat"><span>MoMo</span><b class="num">${money(S.momo || 0)}</b></div></div>`;
+  switch (phoneApp){
+    case 'home': return {t:`${S.name}'s phone`, ic:'📱', sub:`${fmtTime(S.min)} · Day ${S.day} · ${districtAt(S.x, S.y)}`,
+      body:`<div class="apps">${APPS.map(a => `<button class="app" data-app="${a.id}"><span style="background:${a.bg}">${a.ic}</span>${a.t}</button>`).join('')}</div>`, acts:[]};
+    case 'momo': {
+      const tx = (S.tx || []).slice(0, 8);
+      return {t:'MoMo', ic:'💸', sub:'Mobile money. Delivery and OurRide pay comes here. Shops take MoMo when your cash is short.',
+        body: back + balance + `<div class="list">${tx.length ? tx.map(t => `<div class="goal"><span class="dot" style="border-color:${t.n > 0 ? 'var(--green)' : 'var(--bad)'}">${t.n > 0 ? '+' : '−'}</span><span style="flex:1">${esc(t.what)}<br><small style="color:var(--muted)">Day ${t.d}, ${fmtTime(t.m)}</small></span><b class="num" style="color:${t.n > 0 ? 'var(--green)' : 'var(--ink)'}">${money(Math.abs(t.n))}</b></div>`).join('') : '<div class="goal"><span class="dot">·</span>No transactions yet</div>'}</div>`,
+        acts:[
+          {l:'Cash in L$1,000', s:'Put cash on your MoMo, free', dis:S.money < 1000, fn:() => { S.money -= 1000; S.momo = (S.momo || 0) + 1000; logTx(1000, 'Cash in'); }},
+          {l:'Cash in everything', dis:S.money <= 0, fn:() => { const n = S.money; S.momo = (S.momo || 0) + n; S.money = 0; logTx(n, 'Cash in'); }},
+          {l:'Cash out L$1,000', s:'Agent fee 2%', dis:(S.momo || 0) < 1020, fn:() => { S.momo -= 1020; S.money += 1000; logTx(-1020, 'Cash out (incl. fee)'); }},
+          {l:'Send all to the bank', s:'Earns 0.5% a day there', dis:!(S.momo > 0), fn:() => { S.bank += S.momo; logTx(-S.momo, 'Sent to Broad Street Bank'); S.momo = 0; toast('Sent to your bank account', 'good'); }}
+        ]};
+    }
+    case 'ourride': {
+      const tabs = `<div class="tabs"><button data-rtab="ride" aria-selected="${rideTab === 'ride'}">Book a ride</button><button data-rtab="drive" aria-selected="${rideTab === 'drive'}">Drive & earn</button></div>`;
+      if (rideTab === 'drive'){
+        const car = S.vehicles.find(v => DRIVABLE.includes(v));
+        return {t:'OurRide', ic:'🚘', sub:'Drive people around Montserrado with your own car or keke. Fares are paid to MoMo.', body: back + tabs +
+          `<div class="facts"><span class="chip ${car ? 'ok' : 'no'}">${car ? '✓ ' + VEHICLES[car].t : 'Needs a car or keke'}</span><span class="chip">${S.stats.ourride || 0} trips</span><span class="chip gold">${S.online ? 'You are online' : 'Offline'}</span></div>`,
+          acts:[S.online ? {l:'Go offline', fn:() => { S.online = false; toast('You are offline'); }} : {l:'Go online', s: car ? 'Ride requests will come to you while you drive' : 'Buy a car or keke at Somalia Drive Motors', primary:!!car, dis:!car, fn:() => { S.online = true; if (!DRIVABLE.includes(S.ride)) S.ride = car; toast('You are online. Get in your vehicle (Ride) and wait for requests.', 'gold'); closeModal(); }}]};
+      }
+      if (S.booking) return {t:'OurRide', ic:'🚘', sub:'Your ride is on the way.', body: back + tabs + `<div class="goal"><span class="dot">${RIDE[S.booking.svc].ic}</span><span><b>${esc(S.booking.driver)}</b> · ${esc(S.booking.plate)}<br><small style="color:var(--muted)">To ${esc(LOC[S.booking.dest].n)} · ${money(S.booking.fare)}</small></span></div>`,
+        acts:[{l:'Cancel ride', s:'Free while the driver is coming', fn:() => { S.booking = null; toast('Ride cancelled'); }}]};
+      const dests = LOCS.filter(l => l.type !== 'taxi' && dist(S.x, S.y, l.x, l.y) > 150).sort((a, b) => a.n.localeCompare(b.n));
+      return {t:'OurRide', ic:'🚘', sub:'Where are you going? Pick a ride type, then a place.', body: back + tabs +
+        `<div class="tabs">${Object.entries(RIDE).map(([k, r]) => `<button data-svc="${k}" aria-selected="${rideSvc === k}">${r.ic} ${r.t}</button>`).join('')}</div>` + balance,
+        acts: dests.map(l => { const f = rideFare(rideSvc, l); return {l:`${l.ic} ${l.n}`, s:`${districtAt(l.x, l.y)} · about ${Math.max(2, Math.round(dist(S.x, S.y, l.x, l.y) / 22))} min`, p:money(f), pc:'minus', dis:!canPay(f) || S.inside, fn:() => bookRide(rideSvc, l, f)}; })};
+    }
+    case 'maps': return {t:'Maps', ic:'🗺️', sub:'Tap the map or a place to set a waypoint.', body: back + `<canvas id="pmap" class="pmap"></canvas>
+      <div class="facts">${S.wp ? `<button class="chip gold" data-wp="clear">✕ Clear waypoint: ${esc(S.wp.n)}</button>` : ''}${LOCS.filter(l => l.type !== 'taxi').map(l => `<button class="chip" data-wp="${l.id}">${l.ic} ${esc(l.n)}</button>`).join('')}</div>`, acts:[]};
+    case 'hotfresh': {
+      const items = ['palmbutter','jollof','fufu','cassava','pepperchicken'];
+      return {t:'Hot & Fresh', ic:'🔥', sub: S.order ? `Your ${esc(S.order.t)} is on the way. A rider will bring it to you.` : 'Order Liberian food to wherever you are. Delivery L$150.', body: back + balance,
+        acts: S.order ? [] : items.map(k => { const d = DISHES[k], p = d.p + 150; return {l:d.t, s:`+${d.f} food · arrives in about 30 min`, p:money(p), pc:'minus', dis:!canPay(p), fn:() => { spend(p, true); S.order = {t:d.t, f:d.f, at:S.day*1440 + S.min + 30}; toast(`Order placed! ${d.t} is coming.`, 'gold'); }}; })};
+    }
+    case 'goals': { const done = GOALS.filter(g => g.ok(S)).length;
+      return {t:'Goals', ic:'🏆', sub:`${done} of ${GOALS.length} done`, body: back + `<div class="prog"><i style="width:${done/GOALS.length*100}%"></i></div><div class="list">${GOALS.map((g, i) => `<div class="goal ${g.ok(S) ? 'done' : ''}"><span class="dot">${g.ok(S) ? '✓' : i + 1}</span><b>${g.t}</b></div>`).join('')}</div>`, acts:[]}; }
+    case 'me': {
+      if (renaming){
+        setTimeout(() => { const f = $('#renameForm'); if (!f) return; const i = $('#newName'); i.focus(); i.select();
+          f.onsubmit = e => { e.preventDefault(); const v = i.value.trim().slice(0, 16); if (v){ S.name = v; save(); toast(`You are now ${v}`, 'good'); } renaming = false; hud(); renderModal(); }; }, 0);
+        return {t:'Me', ic:'🙂', body: back + `<form class="field" id="renameForm"><label for="newName">New name</label><input id="newName" maxlength="16" value="${esc(S.name)}" autocomplete="off"><button class="go" type="submit" style="margin-top:6px">Save name</button></form>`, acts:[]};
+      }
+      return {t:S.name, ic:'🙂', sub:`${S.look.g === 'f' ? 'Woman' : 'Man'} · ${HAIR[S.look.hair].t} · ${OUTFITS[S.look.outfit] ? OUTFITS[S.look.outfit].t : 'Everyday clothes'}`, body: back + `<div class="statgrid">
+        <div class="stat"><span>Cash</span><b class="num">${money(S.money)}</b></div><div class="stat"><span>MoMo</span><b class="num">${money(S.momo || 0)}</b></div>
+        <div class="stat"><span>Bank</span><b class="num">${money(S.bank)}</b></div><div class="stat"><span>Net worth</span><b class="num">${money(netWorth(S))}</b></div>
+        <div class="stat"><span>Deliveries</span><b class="num">${S.stats.deliveries}</b></div><div class="stat"><span>Rides given</span><b class="num">${S.stats.rides + (S.stats.ourride || 0)}</b></div></div>
+        <div class="facts">${Object.entries(COURSES).map(([k, c]) => `<span class="chip ${S.certs.includes(k) ? 'ok' : ''}">${S.certs.includes(k) ? '✓' : (S.enrolled[k] !== undefined ? `${S.enrolled[k]}/${c.n}` : '–')} ${c.t}</span>`).join('')}</div>`,
+        acts:[{l:'Change my name', s:`Currently ${esc(S.name)}`, fn:() => { renaming = true; }}]};
+    }
+    case 'myhome': default: {
+      const hm = HOMES[S.home], f = (S.furn && S.furn[S.home]) || [];
+      return {t:'My home', ic:'🏠', sub:`${hm.t}${S.renting && S.home === 'room' ? ` · rent due day ${S.rentDue}` : ''}`, body: back + `<div class="facts">${f.length ? f.map(k => `<span class="chip ok">${FURN[k].ic} ${FURN[k].t}</span>`).join('') : '<span class="chip">No furniture yet. Visit Home & Things in Red Light.</span>'}</div>
+        <div class="list">${S.vehicles.map(v => `<div class="goal done"><span class="dot">${VEHICLES[v].ic}</span><b style="text-decoration:none">${VEHICLES[v].t}${S.ride === v ? ' · active' : ''}</b></div>`).join('')}</div>`, acts:[]};
+    }
+  }
+}
+function phoneScreen(){
+  if (phoneApp === 'settings') return {t:'Settings', ic:'⚙️', body:`<button class="pback" data-app="home">‹ Apps</button><div class="list" style="font-size:14px;line-height:1.45;color:var(--muted)">
+      <div class="goal"><span class="dot">1</span><span>Walk with <b>WASD</b> or the joystick. Drag the screen to look around.</span></div>
+      <div class="goal"><span class="dot">2</span><span>Walk to a door and press <b>Enter</b>. Your own home has a <b>Go inside</b> button.</span></div>
+      <div class="goal"><span class="dot">3</span><span>Delivery and OurRide pay goes to <b>MoMo</b>. Shop with cash or MoMo.</span></div>
+      <div class="goal"><span class="dot">4</span><span>Every day costs L$150. Vehicles burn fuel. Plan your money!</span></div></div>`,
+    acts:[{l:'Start a new life', s:'Erases this save', fn:() => { closeModal(); showIntro(true); }}]};
+  return appScreen();
+}
+function bookRide(svc, l, fare){
+  const n = nearestRoad(S.x, S.y), a = Math.random() * Math.PI * 2;
+  S.booking = {svc, dest:l.id, fare, driver: pick(FIRST) + ' ' + pick(LAST), plate: 'LB-' + (1000 + Math.floor(Math.random() * 8999)), t0: performance.now(), wait: 6000 + Math.random() * 3000,
+    sx: n.x + Math.cos(a) * 260, sy: n.y + Math.sin(a) * 260};
+  toast(`${S.booking.driver} accepted! ${RIDE[svc].ic} ${S.booking.plate} is coming.`, 'gold'); closeModal(); save();
+}
+function lifeTick(dt){
+  // Hot & Fresh order arrives
+  if (S.order && S.day*1440 + S.min >= S.order.at){ S.food = clamp(S.food + S.order.f, 0, 100); toast(`🔥 Hot & Fresh rider: "Your ${S.order.t} reach!" +${S.order.f} food`, 'good'); S.order = null; save(); }
+  // OurRide booking: driver arrives, then the trip
+  const b = S.booking;
+  if (b && !b.done && performance.now() - b.t0 > b.wait && !S.inside){
+    b.done = true; const l = LOC[b.dest]; const mins = Math.max(4, Math.round(dist(S.x, S.y, l.x, l.y) / 22));
+    busy(RIDE[b.svc].ic, `Riding with ${b.driver}…`, `${RIDE[b.svc].t} ${b.plate} to ${l.n}`, 2, () => {
+      spend(b.fare, true); advance(mins); S.x = l.x; S.y = l.y; cam.x = S.x; cam.y = S.y; S.riding = false; S.booking = null;
+      faceFrom(l); toast(`You reached ${l.n}. Paid ${money(b.fare)}. You rated ${b.driver.split(' ')[0]} ⭐⭐⭐⭐⭐`, 'good');
+    });
+  }
+  // OurRide driver mode: new requests while online and in a car
+  if (S.online && !S.gig && S.riding && DRIVABLE.includes(S.ride)){ lifeTick.wait = (lifeTick.wait || 6) - dt; if (lifeTick.wait <= 0){ lifeTick.wait = 6 + Math.random() * 6; startGig('ourride'); } }
+  // waypoint reached
+  if (S.wp && dist(S.x, S.y, S.wp.x, S.wp.y) < 45){ toast(`📍 You reached ${S.wp.n}`, 'good'); S.wp = null; }
+}
+
 /* ---------- traffic & people ---------- */
 const PAVED = ROADS.filter(r => r.t === 'paved');
 const totalPaved = PAVED.reduce((a, r) => a + r.len, 0);
 const CARCOL = ['#d9d9d9','#2c3e50','#8e1b1b','#ffffff','#1b4f8e','#5d6d7e','#145a32'];
 const traffic = [];
-for (let i = 0; i < 48; i++){
+for (let i = 0; i < 72; i++){
   let pickLen = Math.random() * totalPaved, road = PAVED[0];
   for (const r of PAVED){ if (pickLen < r.len){ road = r; break; } pickLen -= r.len; }
   const kind = pick(['taxi','taxi','keke','keke','car','car','moto','moto','bus']);
@@ -515,20 +772,22 @@ for (let i = 0; i < 48; i++){
 const SHIRTS = ['#E5392C','#3157C8','#39C06A','#FFB21E','#8E44AD','#F2F2F2','#16A085','#E67E22'];
 const SKINS = ['#5a3825','#7a4a2c','#3e2618','#8d5a3b'];
 const people = [];
-for (let i = 0; i < 110; i++){
-  const anchor = Math.random() < .55 ? pick(LOCS.filter(l => !l.home)) : pick(ADDR);
-  const a = {x: anchor.x + (Math.random()-.5)*60, y: anchor.y + (Math.random()-.5)*60};
+const COARSE = matchMedia('(pointer: coarse)').matches;
+const crowdSpots = LOCS.filter(l => !['home','beach'].includes(l.type));
+for (let i = 0, tries = 0; i < (COARSE ? 230 : 340) && tries < 3000; tries++){
+  const busy = Math.random() < .72, anchor = busy ? pick(crowdSpots) : pick(ADDR), spread = busy ? 90 : 60;
+  const a = {x: anchor.x + (Math.random()-.5)*spread, y: anchor.y + (Math.random()-.5)*spread};
   if (isWater(a.x, a.y) || hitsSolid(a.x, a.y, 5)) continue;
-  people.push({ax:a.x, ay:a.y, x:a.x, y:a.y, tx:a.x, ty:a.y, sp: 18 + Math.random()*20, shirt: pick(SHIRTS), skin: pick(SKINS), t: Math.random()*10, head: Math.random() < .25});
+  people.push({ax:a.x, ay:a.y, x:a.x, y:a.y, tx:a.x, ty:a.y, sp: 16 + Math.random()*22, t: Math.random()*10, a:0, look: randomLook(), load: Math.random() < .16}); i++;
 }
 
 /* =========================================================
    STATE
    ========================================================= */
 const KEY = 'smallsmall-save-v1';
-function fresh(name, shirt, skin){
+function fresh(name, shirt, skin, look){
   const h = LOC.h_auntie;
-  return {name: name || 'Tayo', shirt, skin, x:h.x, y:h.y, money:1500, bank:0, day:1, min:7*60, energy:90, food:70,
+  return {name: name || 'Tayo', shirt, skin, look: look || defaultLook('m', shirt, skin), momo:0, furn:{}, wardrobe:[(look && look.outfit) || 'tshirt'], tx:[], wp:null, booking:null, order:null, online:false, inside:null, x:h.x, y:h.y, money:1500, bank:0, day:1, min:7*60, energy:90, food:70,
     certs:[], enrolled:{}, vehicles:[], ride:null, riding:false, home:'auntie', owned:['auntie'], renting:false, rentDue:0,
     goals:[], gig:null, rain:false, stats:{earned:0, deliveries:0, rides:0, shifts:0, classes:0}, created:Date.now()};
 }
@@ -536,7 +795,7 @@ let S = null;
 function load(){ try { const raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) : null; } catch(e){ return null; } }
 function save(){ if (!S) return; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
 function netWorth(s){
-  return s.money + s.bank + s.vehicles.reduce((a, v) => a + VEHICLES[v].price*.8, 0) + s.owned.reduce((a, h) => a + (HOMES[h].price || 0), 0);
+  return s.money + (s.momo || 0) + s.bank + s.vehicles.reduce((a, v) => a + VEHICLES[v].price*.8, 0) + s.owned.reduce((a, h) => a + (HOMES[h].price || 0), 0);
 }
 
 /* =========================================================
@@ -584,11 +843,11 @@ cv.addEventListener('pointermove', e => {
   const p = ptrs.get(e.pointerId); if (!p) return;
   if (ptrs.size === 2){ const [a, b] = [...ptrs.values()]; const d0 = Math.hypot(a.x - b.x, a.y - b.y); p.x = e.clientX; p.y = e.clientY; const [c, d] = [...ptrs.values()]; const d1 = Math.hypot(c.x - d.x, c.y - d.y); if (d0) orbit.dist = clamp(orbit.dist * d0 / d1, 60, 420); return; }
   const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
-  orbit.yaw -= dx * .006; orbit.pitch = clamp(orbit.pitch + dy * .004, .18, 1.35); lastLook = performance.now();
+  const O = S && S.inside ? orbitIn : orbit; O.yaw -= dx * .006; O.pitch = clamp(O.pitch + dy * .004, .18, 1.35); lastLook = performance.now();
 });
 const endPtr = e => ptrs.delete(e.pointerId);
 cv.addEventListener('pointerup', endPtr); cv.addEventListener('pointercancel', endPtr);
-cv.addEventListener('wheel', e => { e.preventDefault(); orbit.dist = clamp(orbit.dist * (1 + Math.sign(e.deltaY) * .1), 60, 420); }, {passive:false});
+cv.addEventListener('wheel', e => { e.preventDefault(); const O = S && S.inside ? orbitIn : orbit; O.dist = clamp(O.dist * (1 + Math.sign(e.deltaY) * .1), 50, 420); }, {passive:false});
 function inputVec(){
   let x = 0, y = 0;
   if (keys.has('a') || keys.has('arrowleft')) x -= 1; if (keys.has('d') || keys.has('arrowright')) x += 1;
@@ -616,15 +875,22 @@ function openModal(render){ modalRender = render; renderModal(); $('#scrim').hid
 function renderModal(){
   if (!modalRender) return;
   const m = modalRender(); modalActs = m.acts || [];
+  $('#modal').classList.toggle('phone', !!m.phone);
   $('#modal').innerHTML = `<header><span class="ic">${m.ic || '📍'}</span><div style="min-width:0"><h2>${esc(m.t)}</h2>${m.sub ? `<div class="sub">${m.sub}</div>` : ''}</div><button class="x" data-close aria-label="Close">✕</button></header>
     ${m.body || ''}
     ${modalActs.length ? `<div class="acts">${modalActs.map((a, i) => `<button class="act ${a.primary ? 'primary' : ''}" data-i="${i}" ${a.dis ? 'disabled' : ''}><span class="l"><b>${a.l}</b>${a.s ? `<small>${a.s}</small>` : ''}</span>${a.p ? `<span class="p ${a.pc || ''}">${a.p}</span>` : ''}</button>`).join('')}</div>` : ''}`;
   const first = $('#modal').querySelector('.act:not(:disabled)'); (first || $('#modal .x')).focus({preventScroll:true});
+  if ($('#pmap')) drawPhoneMap();
 }
 function closeModal(){ $('#scrim').hidden = true; modalRender = null; }
 $('#scrim').addEventListener('click', e => {
   if (e.target === $('#scrim') || e.target.closest('[data-close]')) return closeModal();
   const tab = e.target.closest('[data-tab]'); if (tab){ phoneTab = tab.dataset.tab; renderModal(); return; }
+  const app = e.target.closest('[data-app]'); if (app){ phoneApp = app.dataset.app; renaming = false; renderModal(); $('#modal').scrollTop = 0; return; }
+  const rt = e.target.closest('[data-rtab]'); if (rt){ rideTab = rt.dataset.rtab; renderModal(); return; }
+  const sv = e.target.closest('[data-svc]'); if (sv){ rideSvc = sv.dataset.svc; renderModal(); return; }
+  const wp = e.target.closest('[data-wp]'); if (wp){ if (wp.dataset.wp === 'clear') S.wp = null; else { const l = LOC[wp.dataset.wp]; S.wp = {x:l.x, y:l.y, n:l.n}; toast(`📍 Waypoint set: ${l.n}`); } renderModal(); hud(); return; }
+  if (e.target.id === 'pmap'){ const r = e.target.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * W, y = (e.clientY - r.top) / r.height * H; if (!isWater(x, y)){ S.wp = {x, y, n:districtAt(x, y)}; toast(`📍 Waypoint set in ${S.wp.n}`); renderModal(); hud(); } return; }
   const b = e.target.closest('.act'); if (!b || b.disabled) return;
   const a = modalActs[+b.dataset.i]; if (a && a.fn) a.fn();
   hud(); if (modalRender) renderModal();
@@ -690,17 +956,17 @@ function startGig(kind){
     S.gig = {kind, stage:'drop', who, x:a.x, y:a.y, d:a.d, st:a.st, start:S.min + S.day*1440, dist:dist(S.x, S.y, a.x, a.y), food:pick(['palm butter & rice','jollof & pepper chicken','fufu & pepper soup','cassava leaf','check rice & fish'])};
     toast(`Deliver ${S.gig.food} to ${who} in ${a.d}`, 'gold');
   } else {
-    const p = farAddr(S.x, S.y, 120, 600), d = farAddr(p.x, p.y, 400, 1400);
+    const p = farAddr(S.x, S.y, 120, kind === 'ourride' ? 700 : 600), d = farAddr(p.x, p.y, 400, kind === 'ourride' ? 1800 : 1400);
     S.gig = {kind, stage:'pick', who, px:p.x, py:p.y, x:p.x, y:p.y, dx:d.x, dy:d.y, d:p.d, dd:d.d, start:0, dist:dist(p.x, p.y, d.x, d.y)};
-    toast(`${who} is waiting for a pen-pen in ${p.d}`, 'gold');
+    toast(kind === 'ourride' ? `🚘 OurRide request: ${who} in ${p.d}` : `${who} is waiting for a pen-pen in ${p.d}`, 'gold');
   }
-  closeModal(); save(); hud();
+  if (kind !== 'ourride') closeModal(); save(); hud();
 }
 function gigCheck(){
   const g = S.gig; if (!g) return;
   if (dist(S.x, S.y, g.x, g.y) > 42) return;
-  if (g.kind === 'passenger' && g.stage === 'pick'){
-    if (!(S.riding && S.ride === 'moto')){ return; }
+  if ((g.kind === 'passenger' || g.kind === 'ourride') && g.stage === 'pick'){
+    if (!(S.riding && (g.kind === 'passenger' ? S.ride === 'moto' : DRIVABLE.includes(S.ride)))){ return; }
     g.stage = 'drop'; g.x = g.dx; g.y = g.dy; g.d = g.dd; g.start = S.min + S.day*1440;
     toast(`${g.who} climbed on. Take them to ${g.dd}.`, 'gold'); hud(); return;
   }
@@ -709,8 +975,10 @@ function gigCheck(){
   let pay = Math.round((g.kind === 'delivery' ? 40 : 35) + g.dist * (g.kind === 'delivery' ? .09 : .08));
   if (S.rain) pay = Math.round(pay * 1.25);
   let tip = 0; if (took <= expect){ tip = Math.round(pay * .2); }
-  addMoney(pay + tip);
-  if (g.kind === 'delivery') S.stats.deliveries++; else S.stats.rides++;
+  if (g.kind === 'ourride'){ pay = Math.round(pay * 1.9); payMomo(pay + tip, `OurRide fare from ${g.who}`); S.stats.ourride = (S.stats.ourride || 0) + 1; }
+  else if (g.kind === 'delivery'){ payMomo(pay + tip, `Hot & Fresh delivery to ${g.who}`); S.stats.deliveries++; }
+  else { addMoney(pay + tip); S.stats.rides++; }
+  const elM = $('#hMoney'); elM.classList.remove('flash'); void elM.offsetWidth; elM.classList.add('flash');
   toast(`${g.who}: "Thank you-o!" +${money(pay)}${tip ? ` + ${money(tip)} tip for speed` : ''}`, 'good');
   S.gig = null; save(); hud(); checkGoals();
 }
@@ -720,13 +988,14 @@ function gigCheck(){
    ========================================================= */
 function reqText(c){ return COURSES[c].t; }
 function panelFor(l){
+  const ex = panelExtra(l); if (ex) return ex;
   const h = hour();
   switch (l.type){
     case 'job': {
       const j = JOBS[l.job], need = j.req && !S.certs.includes(j.req);
       const open = h >= 6 && h < 20, why = need ? `Needs a ${reqText(j.req)}` : !open ? 'Shifts start between 6 AM and 8 PM' : canWork(j.e, j.f);
       const acts = [{l:`Work a shift as ${j.t}`, s: why || `8 hours · uses ${j.e} energy`, p:'+' + money(j.wage), pc:'plus', dis:!!why, primary:!why, fn:() => workShift(l.job)}];
-      if (l.heal) acts.push({l:'Get a check-up', s:'+30 energy, 1 hour', p:money(600), pc:'minus', dis:S.money < 600, fn:() => { S.money -= 600; advance(60); S.energy = clamp(S.energy + 30, 0, 100); toast('The doctor says you need more rest. +30 energy', 'good'); }});
+      if (l.heal) acts.push({l:'Get a check-up', s:'+30 energy, 1 hour', p:money(600), pc:'minus', dis:!canPay(600), fn:() => { spend(600); advance(60); S.energy = clamp(S.energy + 30, 0, 100); toast('The doctor says you need more rest. +30 energy', 'good'); }});
       return {ic:l.ic, t:l.n, sub:`Job: <b>${j.t}</b>. Pays ${money(j.wage)} per 8-hour shift.`,
         body:`<div class="facts"><span class="chip ${need ? 'no' : 'ok'}">${j.req ? (need ? '✗ ' : '✓ ') + reqText(j.req) : 'No certificate needed'}</span><span class="chip">Open 6 AM – 8 PM</span></div>`, acts};
     }
@@ -744,23 +1013,23 @@ function panelFor(l){
       const need = c.req && !S.certs.includes(c.req), open = h >= 8 && h < 18;
       const acts = [];
       if (done) acts.push({l:'You graduated', s:'Certificate is in your phone', dis:true});
-      else if (prog === undefined) acts.push({l:`Enroll in ${c.t}`, s: need ? `Needs ${reqText(c.req)} first` : `${c.n} classes to graduate`, p:money(c.fee), pc:'minus', primary:!need && S.money >= c.fee, dis: need || S.money < c.fee, fn:() => { S.money -= c.fee; S.enrolled[l.course] = 0; toast(`Enrolled in ${c.t}`, 'good'); save(); }});
+      else if (prog === undefined) acts.push({l:`Enroll in ${c.t}`, s: need ? `Needs ${reqText(c.req)} first` : `${c.n} classes to graduate`, p:money(c.fee), pc:'minus', primary:!need && canPay(c.fee), dis: need || !canPay(c.fee), fn:() => { spend(c.fee); S.enrolled[l.course] = 0; toast(`Enrolled in ${c.t}`, 'good'); save(); }});
       else { const why = !open ? 'Classes run 8 AM – 6 PM' : S.energy < 15 ? 'Too tired for class' : S.food < 10 ? 'Too hungry for class' : '';
         acts.push({l:`Attend class ${prog + 1} of ${c.n}`, s: why || '4 hours · -15 energy', primary:!why, dis:!!why, fn:() => attendClass(l.course)}); }
       return {ic:c.ic, t:l.n, sub:`Study for your <b>${c.t}</b>.`,
         body:`<div class="facts"><span class="chip">Fee ${money(c.fee)}</span><span class="chip">${c.n} classes</span>${c.req ? `<span class="chip ${need ? 'no' : 'ok'}">Needs ${reqText(c.req)}</span>` : ''}</div>${prog !== undefined && !done ? `<div class="prog"><i style="width:${prog/c.n*100}%"></i></div>` : ''}`, acts};
     }
-    case 'food': return {ic:'🍛', t:l.n, sub:'Hot food, cooked fresh. Pay and eat.', acts:Object.entries(FOOD).map(([k, f]) => ({l:`${f.ic} ${f.t}`, s:`+${f.f} food`, p:money(f.p), pc:'minus', dis:S.money < f.p || S.food >= 100, fn:() => { S.money -= f.p; S.food = clamp(S.food + f.f, 0, 100); if (f.e) S.energy = clamp(S.energy + f.e, 0, 100); advance(20); toast(`Mmm, ${f.t}!`, 'good'); }}))};
+    case 'food': return {ic:'🍛', t:l.n, sub:'Hot food, cooked fresh. Pay and eat.', acts:Object.entries(FOOD).map(([k, f]) => ({l:`${f.ic} ${f.t}`, s:`+${f.f} food`, p:money(f.p), pc:'minus', dis:!canPay(f.p) || S.food >= 100, fn:() => { spend(f.p); S.food = clamp(S.food + f.f, 0, 100); if (f.e) S.energy = clamp(S.energy + f.e, 0, 100); advance(20); toast(`Mmm, ${f.t}!`, 'good'); }}))};
     case 'dealer': return {ic:'🚗', t:l.n, sub:'New and used rides. Drive faster and earn more on deliveries.',
       acts:Object.entries(VEHICLES).map(([k, v]) => { const own = S.vehicles.includes(k);
         return own ? {l:`${v.ic} ${v.t}`, s: S.ride === k ? 'Your active ride' : 'Owned · tap to make it your ride', p:'Owned', dis:S.ride === k, fn:() => { S.ride = k; toast(`${v.t} is now your ride. Press Ride.`); save(); }}
-                   : {l:`${v.ic} ${v.t}`, s:`${v.sp}× walking speed · fuel about ${money(v.fuel*400)} per km`, p:money(v.price), pc:'minus', dis:S.money < v.price, primary:S.money >= v.price, fn:() => { S.money -= v.price; S.vehicles.push(k); S.ride = k; toast(`You bought a ${v.t}! Press Ride to drive it.`, 'gold'); save(); checkGoals(); }}; })};
+                   : {l:`${v.ic} ${v.t}`, s:`${v.sp}× walking speed · fuel about ${money(v.fuel*400)} per km`, p:money(v.price), pc:'minus', dis:!canPay(v.price), primary:canPay(v.price), fn:() => { spend(v.price); S.vehicles.push(k); S.ride = k; toast(`You bought a ${v.t}! Press Ride to drive it.`, 'gold'); save(); checkGoals(); }}; })};
     case 'realty': return {ic:'🔑', t:l.n, sub:'Rooms and houses across Montserrado. The home you pick is where you sleep.',
       acts:Object.entries(HOMES).map(([k, hm]) => {
         const own = S.owned.includes(k) || (k === 'room' && S.renting), cur = S.home === k;
         if (own) return {l:hm.t, s: cur ? 'Your current home' : hm.d + ' Tap to move here.', p: cur ? 'Home' : 'Move in', dis:cur, fn:() => { S.home = k; toast(`You moved to ${hm.t}`, 'good'); save(); }};
-        if (hm.rent) return {l:hm.t, s:hm.d, p:money(hm.rent) + '/wk', pc:'minus', dis:S.money < hm.rent, fn:() => { S.money -= hm.rent; S.renting = true; S.rentDue = S.day + 7; S.home = 'room'; toast('You rented a room in Duala!', 'gold'); save(); checkGoals(); }};
-        return {l:hm.t, s:hm.d, p:money(hm.price), pc:'minus', dis:S.money < hm.price, fn:() => { S.money -= hm.price; S.owned.push(k); S.home = k; toast(`You bought the ${hm.t}! 🎉`, 'gold'); save(); checkGoals(); }};
+        if (hm.rent) return {l:hm.t, s:hm.d, p:money(hm.rent) + '/wk', pc:'minus', dis:!canPay(hm.rent), fn:() => { spend(hm.rent); S.renting = true; S.rentDue = S.day + 7; S.home = 'room'; toast('You rented a room in Duala!', 'gold'); save(); checkGoals(); }};
+        return {l:hm.t, s:hm.d, p:money(hm.price), pc:'minus', dis:!canPay(hm.price), fn:() => { spend(hm.price); S.owned.push(k); S.home = k; toast(`You bought the ${hm.t}! 🎉`, 'gold'); save(); checkGoals(); }};
       })};
     case 'bank': return {ic:'🏦', t:l.n, sub:`Savings grow <b>0.5% every day</b>. Cash in hand: ${money(S.money)}.`,
       body:`<div class="statgrid"><div class="stat"><span>In the bank</span><b class="num">${money(S.bank)}</b></div><div class="stat"><span>Cash</span><b class="num">${money(S.money)}</b></div></div>`,
@@ -772,10 +1041,10 @@ function panelFor(l){
       ]};
     case 'taxi': return {ic:'🚕', t:l.n, sub:'Hop in a shared yellow taxi to another part of the county.',
       acts:LOCS.filter(o => o.type === 'taxi' && o.id !== l.id).map(o => { const d = dist(l.x, l.y, o.x, o.y), fare = Math.round(40 + d * .09), mins = Math.round(d / 18);
-        return {l:o.n.replace(/ Taxi (Park|Stop)/, ''), s:`About ${mins} min`, p:money(fare), pc:'minus', dis:S.money < fare, fn:() => taxi(o, fare, mins)}; })};
+        return {l:o.n.replace(/ Taxi (Park|Stop)/, ''), s:`About ${mins} min`, p:money(fare), pc:'minus', dis:!canPay(fare), fn:() => taxi(o, fare, mins)}; })};
     case 'beach': return {ic:'🏖️', t:l.n, sub:'Waves, breeze and a cold coconut. Good for the mind.',
       acts:[{l:'Relax by the sea', s:'2 hours · +15 energy', primary:true, fn:() => busy('🌊', 'Relaxing at ELWA Beach…', 'Listening to the waves', 1.2, () => { advance(120); S.energy = clamp(S.energy + 15, 0, 100); toast('You feel refreshed. +15 energy', 'good'); })},
-            {l:'Buy a fresh coconut', s:'+12 food', p:money(50), pc:'minus', dis:S.money < 50, fn:() => { S.money -= 50; S.food = clamp(S.food + 12, 0, 100); toast('Sweet coconut water!'); }}]};
+            {l:'Buy a fresh coconut', s:'+12 food', p:money(50), pc:'minus', dis:!canPay(50), fn:() => { spend(50); S.food = clamp(S.food + 12, 0, 100); toast('Sweet coconut water!'); }}]};
     case 'home': {
       const hm = HOMES[l.home], mine = S.owned.includes(l.home) || (l.home === 'room' && S.renting);
       if (!mine) return {ic:l.ic, t:l.n, sub: hm.rent ? `Room for rent: ${money(hm.rent)} every 7 days.` : `For sale: <b>${money(hm.price)}</b>. ${hm.d}`, body:'<div class="facts"><span class="chip gold">Buy or rent at Mamba Point Realty</span></div>', acts:[]};
@@ -783,7 +1052,8 @@ function panelFor(l){
       return {ic:l.ic, t:l.n, sub: isHome ? 'Home sweet home.' : `You own this place. Make it your home at the realty office or here.`,
         body:`<div class="facts"><span class="chip ok">Sleep restores up to ${hm.sleep}% energy</span></div>`,
         acts:[ isHome ? null : {l:'Make this my home', fn:() => { S.home = l.home; toast(`${hm.t} is now your home`); }},
-          {l:'Sleep until 6 AM', s:'Restores energy, you wake up a bit hungry', primary:true, dis:!isHome, fn:() => sleep(hm)},
+          {l:'Go inside', s:'Walk around, use your furniture, sleep in your bed', primary:true, fn:() => goInside(l.home)},
+          {l:'Sleep until 6 AM', s:'Restores energy, you wake up a bit hungry', dis:!isHome, fn:() => sleep(hm)},
           {l:'Take a nap', s:'2 hours · +20 energy', dis:!isHome, fn:() => busy('😴', 'Napping…', '', 1, () => { advance(120); S.energy = clamp(S.energy + 20, 0, hm.sleep); S.food = clamp(S.food - 5, 0, 100); })}
         ].filter(Boolean)};
     }
@@ -807,7 +1077,7 @@ function sleep(hm){
   });
 }
 function taxi(o, fare, mins){
-  S.money -= fare;
+  spend(fare);
   busy('🚕', `Riding to ${o.n.replace(/ Taxi (Park|Stop)/, '')}…`, 'Squeezed in the back seat with three people', 1.2, () => {
     advance(mins); S.x = o.x; S.y = o.y + 4; cam.x = S.x; cam.y = S.y; S.riding = false; const nb = LOCS.filter(q => q.b).sort((a, b) => dist(a.x, a.y, o.x, o.y) - dist(b.x, b.y, o.x, o.y))[0]; if (nb && dist(nb.x, nb.y, o.x, o.y) < 120) faceFrom(nb); toast(`You reached ${districtAt(S.x, S.y)}`);
   });
@@ -818,13 +1088,14 @@ function taxi(o, fare, mins){
    ========================================================= */
 let near = null;
 function findNear(){
+  if (S.inside) return near;
   let best = null, bd = S.riding ? 58 : 46;
   for (const l of LOCS){ const d = dist(S.x, S.y, l.x, l.y); if (d < bd){ bd = d; best = l; } }
   return best;
 }
-function doAction(){ if (near) openModal(() => panelFor(near)); }
+function doAction(){ if (!near) return; const n = near; openModal(() => n.type === 'inside' ? panelInside(n) : panelFor(n)); }
 function toggleRide(){
-  if (!S) return;
+  if (!S || S.inside) return;
   if (!S.vehicles.length){ toast('You don\'t own a vehicle yet. Visit Somalia Drive Motors.', 'bad'); return; }
   if (!S.ride) S.ride = S.vehicles[0];
   if (!S.riding && hitsSolid(S.x, S.y, 12)){ toast('Step away from the building to get on.', 'bad'); return; }
@@ -832,41 +1103,15 @@ function toggleRide(){
   toast(S.riding ? `On your ${VEHICLES[S.ride].t}` : 'You parked and got off'); hud();
 }
 let phoneTab = 'me', renaming = false;
-function openPhone(){
-  renaming = false;
-  openModal(() => {
-    const tabs = [['me','Me'],['goals','Goals'],['stuff','My things'],['tips','How to play']];
-    let body = `<div class="tabs" role="tablist">${tabs.map(([k, t]) => `<button role="tab" data-tab="${k}" aria-selected="${phoneTab === k}">${t}</button>`).join('')}</div>`;
-    if (phoneTab === 'me' && renaming){
-      body += `<form class="field" id="renameForm"><label for="newName">New name</label><input id="newName" maxlength="16" value="${esc(S.name)}" autocomplete="off"><button class="go" type="submit" style="margin-top:6px">Save name</button></form>`;
-      setTimeout(() => { const f = $('#renameForm'); if (!f) return; const i = $('#newName'); i.focus(); i.select();
-        f.onsubmit = e => { e.preventDefault(); const v = i.value.trim().slice(0, 16); if (v){ S.name = v; save(); toast(`You are now ${v}`, 'good'); } renaming = false; hud(); renderModal(); }; }, 0);
-    } else if (phoneTab === 'me'){
-      body += `<div class="statgrid">
-        <div class="stat"><span>Cash</span><b class="num">${money(S.money)}</b></div><div class="stat"><span>Bank</span><b class="num">${money(S.bank)}</b></div>
-        <div class="stat"><span>Net worth</span><b class="num">${money(netWorth(S))}</b></div><div class="stat"><span>Day</span><b class="num">${S.day}</b></div>
-        <div class="stat"><span>Earned total</span><b class="num">${money(S.stats.earned)}</b></div><div class="stat"><span>Shifts worked</span><b class="num">${S.stats.shifts}</b></div>
-        <div class="stat"><span>Deliveries</span><b class="num">${S.stats.deliveries}</b></div><div class="stat"><span>Pen-pen rides</span><b class="num">${S.stats.rides}</b></div></div>
-        <div class="facts">${Object.entries(COURSES).map(([k, c]) => `<span class="chip ${S.certs.includes(k) ? 'ok' : ''}">${S.certs.includes(k) ? '✓' : (S.enrolled[k] !== undefined ? `${S.enrolled[k]}/${c.n}` : '–')} ${c.t}</span>`).join('')}</div>`;
-    } else if (phoneTab === 'goals'){
-      const done = GOALS.filter(g => g.ok(S)).length;
-      body += `<div class="prog"><i style="width:${done/GOALS.length*100}%"></i></div><div class="list">${GOALS.map((g, i) => `<div class="goal ${g.ok(S) ? 'done' : ''}"><span class="dot">${g.ok(S) ? '✓' : i + 1}</span><b>${g.t}</b></div>`).join('')}</div>`;
-    } else if (phoneTab === 'stuff'){
-      body += `<div class="list"><div class="goal"><span class="dot">🏠</span><span><b>${HOMES[S.home].t}</b><br><small style="color:var(--muted)">${S.renting ? `Rent due on day ${S.rentDue}` : 'Where you sleep'}</small></span></div>
-        ${S.owned.filter(h => h !== 'auntie').map(h => `<div class="goal done"><span class="dot">🔑</span><b style="text-decoration:none">${HOMES[h].t}</b></div>`).join('')}
-        ${S.vehicles.length ? S.vehicles.map(v => `<div class="goal done"><span class="dot">${VEHICLES[v].ic}</span><b style="text-decoration:none">${VEHICLES[v].t}${S.ride === v ? ' · active' : ''}</b></div>`).join('') : '<div class="goal"><span class="dot">🚶</span><b>No vehicle yet</b></div>'}</div>`;
-    } else {
-      body += `<div class="list" style="font-size:14px;line-height:1.45;color:var(--muted)">
-        <div class="goal"><span class="dot">1</span><span>Walk with <b>WASD</b> or the joystick. Walk up to a building and press <b>Enter</b>.</span></div>
-        <div class="goal"><span class="dot">2</span><span>Start at <b>Waterside Market</b> or the <b>Freeport</b> for quick money, or run <b>Hot &amp; Fresh</b> deliveries in Sinkor.</span></div>
-        <div class="goal"><span class="dot">3</span><span>Eat at cookshops and sleep at home. If your energy hits zero you faint and pay a hospital bill.</span></div>
-        <div class="goal"><span class="dot">4</span><span>Get your <b>WAEC</b> at Night School, then a degree or nursing diploma for big-pay jobs.</span></div>
-        <div class="goal"><span class="dot">5</span><span>Buy a <b>pen-pen</b> to carry passengers at Red Light, then a car, then your own house.</span></div>
-        <div class="goal"><span class="dot">6</span><span>Yellow taxi parks take you across the county fast. Put savings in the bank for 0.5% a day. Every day costs L$150 for phone credit and small things, and vehicles burn fuel.</span></div></div>`;
-    }
-    return {ic:'📱', t:`${S.name}'s phone`, sub:`${HOMES[S.home].t} · Day ${S.day}, ${fmtTime(S.min)}`, body,
-      acts: phoneTab === 'tips' ? [{l:'Start a new life', s:'Erases this save', fn:() => { closeModal(); showIntro(true); }}] : phoneTab === 'me' ? [{l:'Change my name', s:`Currently ${esc(S.name)}`, fn:() => { renaming = true; }}] : []};
-  });
+function openPhone(){ if (!S) return; renaming = false; phoneApp = 'home'; openModal(() => Object.assign(phoneScreen(), {phone:true})); }
+function drawPhoneMap(){
+  const c = $('#pmap'); if (!c) return; if (!bigBase) bigBase = prerender(0.25);
+  c.width = bigBase.width; c.height = bigBase.height; const x = c.getContext('2d'), s = .25; x.drawImage(bigBase, 0, 0);
+  x.font = '18px system-ui, "Apple Color Emoji"'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  for (const l of LOCS) if (l.type !== 'taxi') x.fillText(l.ic, l.x*s, l.y*s);
+  if (S.wp){ x.strokeStyle = '#4aa3ff'; x.lineWidth = 5; x.beginPath(); x.arc(S.wp.x*s, S.wp.y*s, 12, 0, 7); x.stroke(); }
+  if (S.gig){ x.strokeStyle = '#FFB21E'; x.lineWidth = 4; x.beginPath(); x.arc(S.gig.x*s, S.gig.y*s, 10, 0, 7); x.stroke(); }
+  x.fillStyle = '#fff'; x.strokeStyle = '#E5392C'; x.lineWidth = 5; x.beginPath(); x.arc(S.x*s, S.y*s, 9, 0, 7); x.fill(); x.stroke();
 }
 function checkGoals(){
   for (const g of GOALS){ if (!S.goals.includes(g.id) && g.ok(S)){ S.goals.push(g.id); toast(`🏆 Goal reached: ${g.t}`, 'gold'); confetti(); } }
@@ -895,6 +1140,8 @@ function update(dt){
   S.energy = clamp(S.energy - gm * (S.food <= 0 ? .3 : .085), 0, 100);
   if (S.food <= 0 && (warnT -= dt) < 0){ toast('You are starving! Eat at a cookshop.', 'bad'); warnT = 20; }
   if (S.energy <= 0) return faint();
+  lifeTick(dt);
+  if (S.inside && INT){ const [jx, jy] = inputVec(); near = interiorMove(jx, jy, dt); if ((tAcc += dt) > .25){ tAcc = 0; hud(); } if ((saveT += dt) > 8){ saveT = 0; save(); } return; }
   // movement
   const [ix, iy] = inputVec(); player.moving = Math.hypot(ix, iy) > .1;
   const v = S.riding ? VEHICLES[S.ride] : null;
@@ -935,7 +1182,8 @@ function hud(){
   $('#hWhere').textContent = districtAt(S.x, S.y);
   $('#fEn').style.width = S.energy + '%'; $('#fHu').style.width = S.food + '%';
   $('#bEn').classList.toggle('low', S.energy < 20); $('#bHu').classList.toggle('low', S.food < 20);
-  $('#hMoney').innerHTML = `${money(S.money)}${S.bank ? ` <small class="num">+${money(S.bank)} bank</small>` : ''}`;
+  $('#hMoney').innerHTML = `${money(S.money)}${S.momo ? ` <small class="num">MoMo ${money(S.momo)}</small>` : ''}`;
+  $('#hWhere').textContent = S.inside ? 'Inside ' + HOMES[S.inside].t : districtAt(S.x, S.y);
   const p = $('#prompt'), act = $('#actBtn');
   if (near){ p.hidden = false; p.innerHTML = `<kbd>E</kbd>${near.ic} ${esc(near.n)}`; act.disabled = false; act.textContent = 'ENTER'; }
   else { p.hidden = true; act.disabled = true; act.textContent = 'ENTER'; }
@@ -943,10 +1191,19 @@ function hud(){
   const g = S.gig, gb = $('#gigBox');
   if (g){
     const d = Math.round(dist(S.x, S.y, g.x, g.y) * MPP);
-    const label = g.kind === 'delivery' ? `🔥 Deliver ${g.food}` : g.stage === 'pick' ? `🏍️ Pick up ${g.who}` : `🏍️ Drop ${g.who}`;
+    const vi = g.kind === 'ourride' ? '🚘' : '🏍️';
+    const label = g.kind === 'delivery' ? `🔥 Deliver ${g.food}` : g.stage === 'pick' ? `${vi} Pick up ${g.who}` : `${vi} Drop ${g.who}`;
     const ddx = g.x - S.x, ddz = g.y - S.y, ang = Math.atan2(ddx * Math.cos(orbit.yaw) - ddz * Math.sin(orbit.yaw), -ddx * Math.sin(orbit.yaw) - ddz * Math.cos(orbit.yaw));
-    gb.hidden = false; gb.innerHTML = `<b><svg class="arrow" viewBox="0 0 24 24" style="transform:rotate(${ang}rad)"><path d="M12 2l7 18-7-4-7 4z" fill="#FFB21E"/></svg>${esc(label)}</b><span>${g.kind === 'delivery' ? 'To ' + esc(g.who) + ', ' : ''}${esc(g.d)}</span><span class="meta num">${d >= 1000 ? (d/1000).toFixed(1) + ' km' : d + ' m'} away${g.kind === 'passenger' && g.stage === 'pick' && !(S.riding && S.ride === 'moto') ? ' · ride your pen-pen' : ''}</span>`;
-  } else gb.hidden = true;
+    gb.hidden = false; gb.innerHTML = `<b><svg class="arrow" viewBox="0 0 24 24" style="transform:rotate(${ang}rad)"><path d="M12 2l7 18-7-4-7 4z" fill="#FFB21E"/></svg>${esc(label)}</b><span>${g.kind === 'delivery' ? 'To ' + esc(g.who) + ', ' : ''}${esc(g.d)}</span><span class="meta num">${d >= 1000 ? (d/1000).toFixed(1) + ' km' : d + ' m'} away${g.kind === 'passenger' && g.stage === 'pick' && !(S.riding && S.ride === 'moto') ? ' · ride your pen-pen' : ''}${g.kind === 'ourride' && g.stage === 'pick' && !(S.riding && DRIVABLE.includes(S.ride)) ? ' · get in your car' : ''}</span>`;
+  } else if (S.booking){
+    const b = S.booking, left = Math.max(0, Math.ceil((b.wait - (performance.now() - b.t0)) / 1000));
+    gb.hidden = false; gb.innerHTML = `<b>${RIDE[b.svc].ic} OurRide · ${esc(b.driver)}</b><span>${esc(b.plate)} to ${esc(LOC[b.dest].n)}</span><span class="meta">${left ? `Arriving in ${left}s` : 'Your ride is here!'}</span>`;
+  } else if (S.wp && !S.inside){
+    const d = Math.round(dist(S.x, S.y, S.wp.x, S.wp.y) * MPP), ddx = S.wp.x - S.x, ddz = S.wp.y - S.y, ang = Math.atan2(ddx * Math.cos(orbit.yaw) - ddz * Math.sin(orbit.yaw), -ddx * Math.sin(orbit.yaw) - ddz * Math.cos(orbit.yaw));
+    gb.hidden = false; gb.innerHTML = `<b><svg class="arrow" viewBox="0 0 24 24" style="transform:rotate(${ang}rad)"><path d="M12 2l7 18-7-4-7 4z" fill="#4aa3ff"/></svg>📍 ${esc(S.wp.n)}</b><span class="meta num">${d >= 1000 ? (d/1000).toFixed(1) + ' km' : d + ' m'} away</span>`;
+  } else if (S.online){ gb.hidden = false; gb.innerHTML = `<b>🚘 OurRide · online</b><span class="meta">${S.riding && DRIVABLE.includes(S.ride) ? 'Waiting for a ride request…' : 'Get in your car or keke to receive requests'}</span>`; }
+  else gb.hidden = true;
+  if (S.inside) gb.hidden = true;
 }
 
 /* =========================================================
@@ -1212,15 +1469,59 @@ function vehicleMesh(kind, color){
   add(.6, 1.2, 2, '#c0392b', -L/2 - .2, 4.5, Wd/2 - 2, true); add(.6, 1.2, 2, '#c0392b', -L/2 - .2, 4.5, -Wd/2 + 2, true);
   return g;
 }
-for (const c of traffic){ c.mesh = vehicleMesh(c.kind, c.c); if (c.kind === 'moto'){ const rd = personMesh(pick(SHIRTS), pick(SKINS)); rd.position.set(-1, 4, 0); rd.scale.setScalar(.85); c.mesh.add(rd); } scene.add(c.mesh); }
+
 
 /* ---------- people ---------- */
-function personMesh(shirt, skin){
-  const g = new THREE.Group();
-  const legs = [-1.6, 1.6].map(z => { const p = new THREE.Group(); const m = new THREE.Mesh(new THREE.BoxGeometry(2, 6.5, 2), lam('#2a2a2a')); m.position.y = -3.25; m.castShadow = true; p.add(m); p.position.set(0, 6.5, z); g.add(p); return p; });
-  const torso = new THREE.Mesh(new THREE.BoxGeometry(4, 7, 6), lam(shirt)); torso.position.y = 10; torso.castShadow = true; g.add(torso);
-  const arms = [-3.6, 3.6].map(z => { const p = new THREE.Group(); const m = new THREE.Mesh(new THREE.BoxGeometry(1.6, 6, 1.6), lam(skin)); m.position.y = -3; p.add(m); p.position.set(0, 13, z); g.add(p); return p; });
-  const head = new THREE.Mesh(new THREE.SphereGeometry(2.8, 10, 8), lam(skin)); head.position.y = 16.2; head.castShadow = true; g.add(head);
+/* ---------- characters ---------- */
+const printTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
+  x.fillStyle = '#E67E22'; x.fillRect(0, 0, 64, 64); x.strokeStyle = '#145a32'; x.lineWidth = 4;
+  for (let y = 4; y < 64; y += 16){ x.beginPath(); for (let i = 0; i <= 8; i++) x.lineTo(i * 8, y + (i % 2 ? 6 : 0)); x.stroke(); }
+  x.fillStyle = '#1b1206'; for (let i = 0; i < 9; i++){ x.beginPath(); x.arc((i * 23) % 64, (i * 37) % 64, 3, 0, 7); x.fill(); }
+  const t = tex(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; })();
+const printMat = new THREE.MeshLambertMaterial({map: printTex});
+const clothMat = c => c === 'print' ? printMat : lam(c);
+function hairGroup(L){
+  const g = new THREE.Group(), m = lam(L.hc || '#111');
+  const sph = (r, x, y, z, sy = 1) => { const s = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), m); s.position.set(x, y, z); s.scale.y = sy; s.castShadow = true; g.add(s); return s; };
+  const cap = (sy = .62, r = 2.95) => sph(r, -.1, 16.9, 0, sy);
+  switch (L.hair){
+    case 'low': cap(.55); break;
+    case 'fade': cap(.45, 2.9); break;
+    case 'waves': { cap(.55); const w = new THREE.Mesh(new THREE.TorusGeometry(2.3, .25, 4, 16).rotateX(Math.PI/2), lam('#333')); w.position.y = 18.1; g.add(w); break; }
+    case 'cornrows': { cap(.6); for (let i = -2; i <= 2; i++){ const r = new THREE.Mesh(new THREE.BoxGeometry(5.6, .6, .5), lam('#2a1d14')); r.position.set(-.3, 18.2, i * 1.1); g.add(r); } break; }
+    case 'natural': cap(.75, 3.1); break;
+    case 'afro': sph(4.4, -.6, 18.4, 0, .9); break;
+    case 'puff': cap(.6); sph(2.4, -1.2, 20.4, 0); break;
+    case 'bun': cap(.62); sph(1.8, -2.6, 19.2, 0); break;
+    case 'braids': case 'weave': { cap(.65, 3.05); const len = L.hair === 'weave' ? 9 : 8; const back = new THREE.Mesh(new THREE.BoxGeometry(1.6, len, 6), m); back.position.set(-2.6, 16.6 - len/2 + 1.5, 0); back.castShadow = true; g.add(back);
+      if (L.hair === 'braids') for (let i = -2; i <= 2; i++){ const b = new THREE.Mesh(new THREE.CylinderGeometry(.35, .35, len + 1, 5), m); b.position.set(-2.2, 16.6 - len/2 + 1, i * 1.2); g.add(b); } break; }
+    case 'dreads': { cap(.6); for (let i = 0; i < 9; i++){ const a = (i / 8) * Math.PI - Math.PI/2, d = new THREE.Mesh(new THREE.CylinderGeometry(.45, .4, 7, 5), m); d.position.set(-Math.cos(a) * 2.5 - .6, 14.6, Math.sin(a) * 2.7); g.add(d); } break; }
+    case 'headtie': { const t = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.1, 3.6, 12), lam(L.hc || '#E67E22')); t.position.set(-.3, 18.3, 0); t.castShadow = true; g.add(t);
+      const k = new THREE.Mesh(new THREE.SphereGeometry(1.4, 8, 6), lam(L.hc || '#E67E22')); k.position.set(.6, 20.2, 1.4); g.add(k); break; }
+  }
+  return g;
+}
+function personMesh(L){
+  if (typeof L === 'string') L = randomLook();
+  const g = new THREE.Group(), skin = lam(L.skin);
+  const legCol = L.dress ? L.skin : (L.bottom || '#1F3A5F');
+  const legs = [-1.5, 1.5].map(z => { const p = new THREE.Group();
+    const m = new THREE.Mesh(new THREE.BoxGeometry(2, 6.5, 2), L.dress ? skin : clothMat(legCol)); m.position.y = -3.25; m.castShadow = true; p.add(m);
+    const shoe = new THREE.Mesh(new THREE.BoxGeometry(3, 1, 2.1), lam(L.dress ? '#7a3b2a' : '#111')); shoe.position.set(.5, -6.4, 0); p.add(shoe);
+    p.position.set(0, 6.5, z); g.add(p); return p; });
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(4, 7, L.g === 'f' ? 5.4 : 6), clothMat(L.top)); torso.position.y = 10; torso.castShadow = true; g.add(torso);
+  if (L.dress){ const len = L.long ? 6.5 : 4.2; const sk = new THREE.Mesh(new THREE.CylinderGeometry(2.9, L.long ? 4.6 : 4.4, len, 12), clothMat(L.top)); sk.position.y = 6.6 - len/2 + .2; sk.castShadow = true; g.add(sk); }
+  if (L.stripe){ const s = new THREE.Mesh(new THREE.BoxGeometry(4.1, 1.4, 6.1), lam(L.stripe)); s.position.y = 11.5; g.add(s); }
+  if (L.tie){ const sh = new THREE.Mesh(new THREE.BoxGeometry(.3, 4, 1.6), lam('#f5f5f5')); sh.position.set(2.05, 11, 0); g.add(sh); const t = new THREE.Mesh(new THREE.BoxGeometry(.35, 3.6, .7), lam('#B03A2E')); t.position.set(2.15, 10.8, 0); g.add(t); }
+  const arms = [-3.5, 3.5].map(z => { const p = new THREE.Group();
+    const sleeve = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.6, 1.8), clothMat(L.top)); sleeve.position.y = -1.2; p.add(sleeve);
+    const m = new THREE.Mesh(new THREE.BoxGeometry(1.5, 4, 1.5), L.tie || L.outfit === 'hoodie' ? clothMat(L.top) : skin); m.position.y = -4.4; p.add(m);
+    p.position.set(0, 13.2, z * (L.g === 'f' ? .92 : 1)); g.add(p); return p; });
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1.4, 8), skin); neck.position.y = 14; g.add(neck);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(2.8, 12, 10), skin); head.position.y = 16.2; head.castShadow = true; g.add(head);
+  for (const z of [-1, 1]){ const e = new THREE.Mesh(new THREE.BoxGeometry(.3, .55, .55), lam('#111')); e.position.set(2.6, 16.6, z); g.add(e); }
+  if (L.g === 'f'){ for (const z of [-2.75, 2.75]){ const r = new THREE.Mesh(new THREE.SphereGeometry(.45, 6, 4), lam('#F1C40F')); r.position.set(0, 15.6, z); g.add(r); } }
+  g.add(hairGroup(L));
   g.userData = {legs, arms};
   return g;
 }
@@ -1229,41 +1530,192 @@ function animPerson(g, step, moving){
   g.userData.legs[0].rotation.z = s; g.userData.legs[1].rotation.z = -s;
   g.userData.arms[0].rotation.z = -s * .8; g.userData.arms[1].rotation.z = s * .8;
 }
+
+/* ---------- crowd (instanced, so the city can be busy) ---------- */
+const SHAPE = {low:'cap', fade:'cap', waves:'cap', cornrows:'cap', natural:'cap', afro:'afro', puff:'puff', bun:'bun', braids:'long', weave:'long', dreads:'long', headtie:'tie', bald:null};
+const CROWD = {};
 {
-  const bodyI = new THREE.InstancedMesh(new THREE.BoxGeometry(4.4, 9, 5.6).translate(0, 4.5, 0), lam('#ffffff'), people.length);
-  const legI = new THREE.InstancedMesh(new THREE.BoxGeometry(3.6, 6, 5).translate(0, 3, 0), lam('#2a2a2a'), people.length);
-  const headI = new THREE.InstancedMesh(new THREE.SphereGeometry(2.7, 8, 6), lam('#ffffff'), people.length);
-  const loadI = new THREE.InstancedMesh(new THREE.CylinderGeometry(4, 3, 2.4, 10), lam('#d9b64a'), people.length);
-  const C = new THREE.Color();
-  people.forEach((p, i) => { bodyI.setColorAt(i, C.set(p.shirt)); headI.setColorAt(i, C.set(p.skin)); });
-  [bodyI, legI, headI, loadI].forEach(m => { m.castShadow = true; m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(m); });
-  var PEOPLE3 = {bodyI, legI, headI, loadI};
+  const C = new THREE.Color(), idx = k => people.map((p, i) => i).filter(i => k(people[i]));
+  const def = {
+    legs:{geo:new THREE.BoxGeometry(3.6, 6.5, 4.4).translate(0, 3.25, 0), ids:idx(() => true), col:p => p.look.dress ? p.look.skin : p.look.bottom, y:0},
+    torso:{geo:new THREE.BoxGeometry(4, 7, 5.8).translate(0, 3.5, 0), ids:idx(() => true), col:p => p.look.top, y:6.5},
+    skirt:{geo:new THREE.CylinderGeometry(2.9, 4.5, 1, 10).translate(0, -.5, 0), ids:idx(p => p.look.dress), col:p => p.look.top, y:7, sy:p => p.look.long ? 6.5 : 4.2},
+    head:{geo:new THREE.SphereGeometry(2.8, 9, 7), ids:idx(() => true), col:p => p.look.skin, y:16.2},
+    cap:{geo:new THREE.SphereGeometry(2.95, 9, 6).scale(1, .62, 1), ids:idx(p => ['cap','puff','bun','long'].includes(SHAPE[p.look.hair])), col:p => p.look.hc, y:16.9},
+    afro:{geo:new THREE.SphereGeometry(4.3, 9, 7).scale(1, .9, 1), ids:idx(p => SHAPE[p.look.hair] === 'afro'), col:p => p.look.hc, y:18.3, back:.6},
+    puff:{geo:new THREE.SphereGeometry(2.4, 8, 6), ids:idx(p => SHAPE[p.look.hair] === 'puff'), col:p => p.look.hc, y:20.4, back:1.2},
+    bun:{geo:new THREE.SphereGeometry(1.8, 8, 6), ids:idx(p => SHAPE[p.look.hair] === 'bun'), col:p => p.look.hc, y:19.2, back:2.6},
+    long:{geo:new THREE.BoxGeometry(1.6, 8, 6), ids:idx(p => SHAPE[p.look.hair] === 'long'), col:p => p.look.hc, y:13.5, back:2.6},
+    tie:{geo:new THREE.CylinderGeometry(3.2, 3.1, 3.6, 10), ids:idx(p => SHAPE[p.look.hair] === 'tie'), col:p => p.look.hc, y:18.3, back:.3},
+    load:{geo:new THREE.CylinderGeometry(4, 3, 2.4, 10), ids:idx(p => p.load && !['afro','tie','puff'].includes(SHAPE[p.look.hair])), col:() => pick(['#d9b64a','#c0392b','#2e86c1','#e8e0cc']), y:21.4}
+  };
+  for (const [k, d] of Object.entries(def)){
+    const m = new THREE.InstancedMesh(d.geo, lam('#ffffff', k === 'cap' || k === 'afro' ? {flatShading:true} : null), Math.max(1, d.ids.length));
+    m.count = d.ids.length; m.castShadow = true; m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    d.ids.forEach((pi, j) => m.setColorAt(j, C.set(d.col(people[pi]))));
+    if (m.instanceColor) m.instanceColor.needsUpdate = true;
+    scene.add(m); CROWD[k] = {m, ...d};
+  }
 }
 const _M = new THREE.Matrix4(), _Q = new THREE.Quaternion(), _P = new THREE.Vector3(), _S = new THREE.Vector3(), _E = new THREE.Euler();
 function syncPeople(){
-  const {bodyI, legI, headI, loadI} = PEOPLE3; let li = 0;
-  people.forEach((p, i) => {
-    const moving = dist(p.x, p.y, p.tx, p.ty) > 2, bob = moving ? Math.abs(Math.sin(p.t * 8)) * 1.2 : 0;
-    const a = Math.atan2(p.ty - p.y, p.tx - p.x); _E.set(0, -a, 0); _Q.setFromEuler(_E); _S.set(1, 1, 1);
-    _P.set(p.x, bob, p.y); _M.compose(_P, _Q, _S); legI.setMatrixAt(i, _M);
-    _P.set(p.x, 6 + bob, p.y); _M.compose(_P, _Q, _S); bodyI.setMatrixAt(i, _M);
-    _P.set(p.x, 17.6 + bob, p.y); _M.compose(_P, _Q, _S); headI.setMatrixAt(i, _M);
-    if (p.head){ _P.set(p.x, 21.5 + bob, p.y); _M.compose(_P, _Q, _S); loadI.setMatrixAt(li++, _M); }
-  });
-  loadI.count = li;
-  for (const m of [bodyI, legI, headI, loadI]) m.instanceMatrix.needsUpdate = true;
+  const v = camera.position;
+  for (const p of people){ p.a = Math.atan2(p.ty - p.y, p.tx - p.x) || p.a || 0; p.bob = dist(p.x, p.y, p.tx, p.ty) > 2 ? Math.abs(Math.sin(p.t * 8)) * 1.1 : 0; }
+  for (const k in CROWD){
+    const d = CROWD[k];
+    d.ids.forEach((pi, j) => { const p = people[pi]; _E.set(0, -p.a, 0); _Q.setFromEuler(_E); _S.set(1, d.sy ? d.sy(p) : 1, 1);
+      const b = d.back || 0; _P.set(p.x - Math.cos(p.a) * b, d.y + p.bob, p.y - Math.sin(p.a) * b); _M.compose(_P, _Q, _S); d.m.setMatrixAt(j, _M); });
+    d.m.instanceMatrix.needsUpdate = true;
+  }
 }
 
 /* ---------- player ---------- */
 let playerMesh = null, playerKey = '';
 const myRides = {};
 function ensurePlayer(){
-  const key = S ? S.shirt + S.skin : '';
-  if (key !== playerKey){ if (playerMesh) scene.remove(playerMesh); playerMesh = personMesh(S.shirt, S.skin); scene.add(playerMesh); playerKey = key; }
+  const key = JSON.stringify(S.look);
+  if (key !== playerKey){ if (playerMesh) scene.remove(playerMesh); playerMesh = personMesh(S.look); scene.add(playerMesh); playerKey = key; }
 }
+// OurRide car that comes to pick you up, and the waypoint beam
+let rideCar = null, rideCarSvc = '';
+const wpBeam = new THREE.Mesh(new THREE.CylinderGeometry(5, 5, 240, 16, 1, true), new THREE.MeshBasicMaterial({color:0x4aa3ff, transparent:true, opacity:.25, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide}));
+scene.add(wpBeam);
+function syncLifeWorld(){
+  const b = S && S.booking;
+  if (b && !b.done){
+    if (!rideCar || rideCarSvc !== b.svc){ if (rideCar) scene.remove(rideCar); rideCar = vehicleMesh(RIDE[b.svc].kind, RIDE[b.svc].c); rideCarSvc = b.svc; scene.add(rideCar); }
+    const t = clamp((performance.now() - b.t0) / b.wait, 0, 1), e = 1 - Math.pow(1 - t, 2);
+    const x = lerp(b.sx, S.x + 14, e), z = lerp(b.sy, S.y + 14, e);
+    rideCar.visible = true; rideCar.position.set(x, groundY(x, z), z); rideCar.rotation.y = -Math.atan2(S.y - b.sy, S.x - b.sx);
+  } else if (rideCar) rideCar.visible = false;
+  wpBeam.visible = !!(S && S.wp && S.x > -500); if (wpBeam.visible) wpBeam.position.set(S.wp.x, 120, S.wp.y);
+}
+
+/* ---------- home interiors ---------- */
+const ROOMS = {auntie:{w:70, d:52, floor:'#8d8a84', wall:'#e8dcc2'}, room:{w:72, d:56, floor:'#b9a58a', wall:'#d6e4e8'}, paynes:{w:120, d:84, floor:'#d9cfbf', wall:'#f1e3c8'},
+  congo:{w:140, d:96, floor:'#e9e2d6', wall:'#e3eef0'}, mamba:{w:170, d:110, floor:'#b07a4c', wall:'#f6efe2'}};
+const SLOTS = {bed:[-.66,-.62,0], mattress:[-.66,-.62,0], sofa:[.4,.3,0], chairs:[.4,-.25,0], table:[.4,-.25,0], rug:[.4,-.2,0], tv:[.4,-.92,-Math.PI/2],
+  fridge:[-.9,.42,0], dining:[-.42,.42,0], fan:[-.22,-.78,0], radio:[.86,.72,0], plant:[.9,-.86,0], art:[-.15,-.975,-Math.PI/2], shelf:[.96,.12,Math.PI], generator:[-.86,.86,0], ac:[-.66,-.97,-Math.PI/2]};
+let INT = null;
+function box(w, h, d, c, x, y, z, g, basic){ const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), basic ? new THREE.MeshBasicMaterial({color:c}) : lam(c)); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; g.add(m); return m; }
+function furnMesh(k, home){
+  const g = new THREE.Group(); let fw = 10, fd = 10, solid = true;
+  switch (k){
+    case 'bed': if (home === 'auntie'){ box(18, 1.2, 28, '#c9a86b', 0, .6, 0, g); box(16, .8, 6, '#e74c3c', 0, 1.4, -10, g); fw = 18; fd = 28; solid = false; }
+      else { box(22, 4, 32, '#6b4a2b', 0, 2, 0, g); box(20, 3, 29, '#f2f2f2', 0, 5.5, .8, g); box(16, 2, 6, '#ffffff', 0, 8, -10.5, g); fw = 22; fd = 32; } break;
+    case 'mattress': box(24, 5, 34, '#3e2a1e', 0, 2.5, 0, g); box(22, 5, 31, '#ffffff', 0, 7, .8, g); box(22, 1, 18, '#2E86C1', 0, 9.8, 6, g); box(24, 14, 2, '#3e2a1e', 0, 7, -16.5, g); box(18, 2.4, 6, '#f8f8f8', 0, 10.4, -11, g); fw = 24; fd = 34; break;
+    case 'sofa': box(34, 6, 12, '#16A085', 0, 4, 0, g); box(34, 10, 3, '#138d75', 0, 8, 5, g); box(3, 8, 12, '#138d75', -16, 6, 0, g); box(3, 8, 12, '#138d75', 16, 6, 0, g); fw = 34; fd = 12; break;
+    case 'chairs': for (const x of [-18, 18]){ box(11, 5, 11, '#8E44AD', x, 3.5, 0, g); box(2.5, 8, 11, '#7d3c98', x + (x < 0 ? -5 : 5), 7.5, 0, g); } fw = 48; fd = 12; break;
+    case 'table': box(16, 1.4, 10, '#8b5a2b', 0, 5, 0, g); for (const [x, z] of [[-7,-4],[7,-4],[-7,4],[7,4]]) box(1, 5, 1, '#6b4421', x, 2.5, z, g); fw = 16; fd = 10; break;
+    case 'rug': { const r = box(42, .3, 28, '#B03A2E', 0, .2, 0, g); box(36, .35, 22, '#F4D03F', 0, .25, 0, g); box(30, .4, 16, '#B03A2E', 0, .3, 0, g); solid = false; r.castShadow = false; break; }
+    case 'tv': { box(4, 9, 26, '#2b2b2b', 1, 4.5, 0, g); const c = document.createElement('canvas'); c.width = 128; c.height = 72; const x = c.getContext('2d'); x.fillStyle = '#2e8b3a'; x.fillRect(0, 0, 128, 72); x.strokeStyle = '#fff'; x.lineWidth = 2; x.strokeRect(6, 6, 116, 60); x.beginPath(); x.moveTo(64, 6); x.lineTo(64, 66); x.stroke(); x.beginPath(); x.arc(64, 36, 10, 0, 7); x.stroke(); x.fillStyle = '#C8102E'; for (let i = 0; i < 5; i++){ x.beginPath(); x.arc(30 + i * 12, 20 + (i % 2) * 22, 3, 0, 7); x.fill(); } x.fillStyle = '#fff'; x.font = 'bold 9px sans-serif'; x.fillText('LIB 2 - 1 GHA', 6, 70);
+      const scr = new THREE.Mesh(new THREE.PlaneGeometry(26, 15), new THREE.MeshBasicMaterial({map: tex(c)})); scr.position.set(3.1, 17, 0); scr.rotation.y = Math.PI/2; g.add(scr); box(1, 16, 27, '#111', 2.4, 17, 0, g); fw = 6; fd = 28; break; }
+    case 'fridge': box(12, 30, 12, '#f2f3f4', 0, 15, 0, g); box(.6, 8, 1, '#999', 6.2, 20, 3, g); box(.3, .3, 11, '#bbb', 6.1, 12, 0, g); fw = 12; fd = 12; break;
+    case 'dining': box(26, 1.4, 14, '#a0522d', 0, 8, 0, g); for (const [x, z] of [[-11,-6],[11,-6],[-11,6],[11,6]]) box(1.2, 8, 1.2, '#7a3e1d', x, 4, z, g); for (const [x, z] of [[-8,-11],[8,-11],[-8,11],[8,11]]){ box(6, 1, 6, '#5d4037', x, 5, z, g); box(6, 6, 1, '#5d4037', x, 8, z + (z < 0 ? -3 : 3), g); } fw = 26; fd = 28; break;
+    case 'fan': { box(1, 16, 1, '#555', 0, 8, 0, g); box(6, 1, 6, '#444', 0, .5, 0, g); const head = new THREE.Group(); head.position.set(1, 17, 0); for (let i = 0; i < 3; i++){ const b = new THREE.Mesh(new THREE.BoxGeometry(.3, 6, 1.6), lam('#2E86C1')); b.position.y = 3; const p = new THREE.Group(); p.rotation.x = i * 2.09; p.add(b); head.add(p); } g.add(head); g.userData.spin = head; fw = 6; fd = 6; break; }
+    case 'radio': box(8, 8, 8, '#6b4a2b', 0, 4, 0, g); box(7, 4, 3, '#222', 0, 10, 0, g); box(.4, 6, .4, '#999', 2.5, 15, 0, g); fw = 8; fd = 8; break;
+    case 'plant': { const pot = new THREE.Mesh(new THREE.CylinderGeometry(3, 2.2, 5, 10), lam('#b0582c')); pot.position.y = 2.5; g.add(pot); const b = new THREE.Mesh(new THREE.IcosahedronGeometry(5, 0), lam('#2e8b3a', {flatShading:true})); b.position.y = 10; b.castShadow = true; g.add(b); fw = 6; fd = 6; break; }
+    case 'art': { const c = document.createElement('canvas'); c.width = 96; c.height = 64; const x = c.getContext('2d'); x.fillStyle = '#F4D03F'; x.fillRect(0, 0, 96, 64); x.fillStyle = '#2E86C1'; x.fillRect(0, 34, 96, 30); x.fillStyle = '#E67E22'; x.beginPath(); x.arc(70, 22, 12, 0, 7); x.fill(); x.fillStyle = '#145a32'; x.fillRect(16, 18, 4, 22); x.beginPath(); x.ellipse(18, 18, 12, 5, 0, 0, 7); x.fill();
+      const p = new THREE.Mesh(new THREE.PlaneGeometry(22, 15), new THREE.MeshBasicMaterial({map: tex(c)})); p.position.set(.8, 20, 0); p.rotation.y = Math.PI/2; g.add(p); box(.6, 16.5, 23.5, '#5d4037', .2, 20, 0, g); solid = false; break; }
+    case 'shelf': box(6, 24, 20, '#7a4a2c', 0, 12, 0, g); for (let r = 0; r < 3; r++) for (let i = 0; i < 6; i++) box(4, 5, 1.8, pick(['#C0392B','#2E86C1','#27AE60','#F4D03F','#8E44AD']), -.5, 4 + r * 7.5, -7.5 + i * 2.8 + Math.random() * .4, g); fw = 6; fd = 20; break;
+    case 'generator': box(12, 9, 8, '#d35400', 0, 4.5, 0, g); box(10, 2, 6, '#2b2b2b', 0, 10, 0, g); fw = 12; fd = 8; break;
+    case 'ac': box(4, 7, 20, '#f8f8f8', 0, 26, 0, g); box(.4, 1, 18, '#ccc', 2.1, 23.6, 0, g); solid = false; break;
+  }
+  return {g, fw, fd, solid};
+}
+const SPOT = {bed:{n:'Bed', ic:'🛏️'}, mattress:{n:'Bed', ic:'🛏️'}, sofa:{n:'Sofa', ic:'🛋️'}, tv:{n:'TV', ic:'📺'}, fridge:{n:'Fridge', ic:'🧊'}, radio:{n:'Radio', ic:'📻'}, dining:{n:'Dining table', ic:'🍽️'}, door:{n:'Front door', ic:'🚪'}};
+function buildInterior(homeId){
+  const R = ROOMS[homeId], w = R.w, d = R.d, items = ((S.furn && S.furn[homeId]) || []).slice();
+  const sc = new THREE.Scene(); sc.background = new THREE.Color(0x15100c);
+  const hl = new THREE.HemisphereLight(0xfff4e0, 0x4a3a2a, 1.05); sc.add(hl);
+  const dl = new THREE.DirectionalLight(0xfff0dd, 1.1); dl.position.set(w * .3, 140, d * .6); dl.castShadow = true; dl.shadow.mapSize.set(1024, 1024);
+  Object.assign(dl.shadow.camera, {left:-w, right:w, top:d, bottom:-d, near:10, far:400}); dl.shadow.bias = -0.001; sc.add(dl, dl.target);
+  const bulb = new THREE.PointLight(0xffd9a0, 0, 0, 0); bulb.position.set(0, 30, 0); sc.add(bulb);
+  const g = new THREE.Group(); sc.add(g);
+  box(w + 4, 1, d + 4, R.floor, 0, -.5, 0, g);
+  const wall = R.wall, H = 34;
+  box(w + 4, H, 2, wall, 0, H/2, -d/2 - 1, g); box(2, H, d + 4, wall, -w/2 - 1, H/2, 0, g); box(2, H, d + 4, wall, w/2 + 1, H/2, 0, g);
+  box(w/2 - 9, 5, 2, wall, -(w/4 + 4.5), 2.5, d/2 + 1, g); box(w/2 - 9, 5, 2, wall, (w/4 + 4.5), 2.5, d/2 + 1, g);
+  box(w + 4, 2.4, .6, '#8d6e63', 0, 1.2, -d/2 + .1, g);
+  const winMat = new THREE.MeshBasicMaterial({color:0xbfe6ff});
+  for (const x of [-w/4, w/4]){ const win = new THREE.Mesh(new THREE.PlaneGeometry(16, 11), winMat); win.position.set(x + 10, 20, -d/2 + .05); g.add(win); box(17, 1, 1.2, '#6d4c41', x + 10, 14, -d/2 + .4, g); }
+  box(14, .3, 8, '#5d4037', 0, .15, d/2 - 4, g);
+  const solids = [], spots = [{k:'door', x:0, z:d/2 - 3}];
+  const placed = new Set();
+  const put = k => {
+    if (placed.has(k)) return; placed.add(k);
+    const sl = SLOTS[k]; if (!sl) return;
+    const f = furnMesh(k, homeId); const x = sl[0] * w/2, z = sl[1] * d/2;
+    f.g.position.set(x, 0, z); f.g.rotation.y = sl[2]; g.add(f.g);
+    const rot = Math.abs(Math.sin(sl[2])) > .5, fw = rot ? f.fd : f.fw, fd = rot ? f.fw : f.fd;
+    if (f.solid) solids.push({x:x - fw/2, z:z - fd/2, w:fw, d:fd});
+    if (SPOT[k]) spots.push({k, x, z, r: Math.max(fw, fd)/2 + 8});
+    if (f.g.userData.spin) INT_SPIN.push(f.g.userData.spin);
+  };
+  INT_SPIN = [];
+  put(items.includes('mattress') ? 'mattress' : 'bed');
+  items.filter(k => k !== 'mattress').forEach(put);
+  const me = personMesh(S.look); sc.add(me);
+  const cam = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 1, 1200);
+  return {home:homeId, sc, cam, w, d, solids, spots, me, bulb, winMat, hl, x:0, z:d/2 - 10, a:-Math.PI/2};
+}
+let INT_SPIN = [];
+const orbitIn = {yaw:0, pitch:.95, dist:120};
+function goInside(homeId){
+  INT = buildInterior(homeId); S.inside = homeId; orbitIn.yaw = 0; orbitIn.dist = Math.max(100, ROOMS[homeId].w * .9);
+  closeModal(); labelEls.forEach(e => e.style.display = 'none'); homeLab.style.display = gigLab.style.display = 'none';
+  toast(`Welcome home. Buy furniture at Home & Things in Red Light.`);
+}
+function goOutside(){
+  const l = LOC[HOMES[INT.home].loc]; S.inside = null; INT = null; S.x = l.x; S.y = l.y; cam.x = S.x; cam.y = S.y; faceFrom(l); closeModal(); hud();
+}
+function interiorMove(ix, iy, dt){
+  const fx = -Math.sin(orbitIn.yaw), fz = -Math.cos(orbitIn.yaw), rx = Math.cos(orbitIn.yaw), rz = -Math.sin(orbitIn.yaw);
+  const mx = rx * ix - fx * iy, mz = rz * ix - fz * iy, sp = 55;
+  const blocked = (x, z) => Math.abs(x) > INT.w/2 - 4 || z < -INT.d/2 + 4 || z > INT.d/2 - 4 || INT.solids.some(s => x + 3 > s.x && x - 3 < s.x + s.w && z + 3 > s.z && z - 3 < s.z + s.d);
+  if (Math.hypot(ix, iy) > .1){
+    const nx = INT.x + mx * sp * dt, nz = INT.z + mz * sp * dt;
+    if (!blocked(nx, INT.z)) INT.x = nx; if (!blocked(INT.x, nz)) INT.z = nz;
+    INT.a = Math.atan2(mz, mx); player.step += dt * 9; player.moving = true;
+  } else player.moving = false;
+  let best = null, bd = 1e9;
+  for (const s of INT.spots){ const d = Math.hypot(INT.x - s.x, INT.z - s.z); if (d < (s.r || 14) && d < bd){ bd = d; best = s; } }
+  return best ? {id:'in_' + best.k, k:best.k, n:SPOT[best.k].n, ic:SPOT[best.k].ic, type:'inside'} : null;
+}
+function panelInside(s){
+  const hm = HOMES[S.inside], have = (S.furn && S.furn[S.inside]) || [];
+  const bonus = have.reduce((a, k) => a + (FURN[k].sleep || 0), 0), q = Math.min(100, hm.sleep + bonus);
+  switch (s.k){
+    case 'door': return {ic:'🚪', t:'Front door', sub:'Go back out to the street.', acts:[{l:'Go outside', primary:true, fn:goOutside}]};
+    case 'bed': case 'mattress': return {ic:'🛏️', t:'Your bed', sub:`Sleep restores up to <b>${q}%</b> energy${bonus ? ` (furniture bonus +${bonus})` : ''}.`,
+      acts:[{l:'Sleep until 6 AM', primary:true, fn:() => sleep({sleep:q})}, {l:'Take a nap', s:'2 hours · +20 energy', fn:() => busy('😴', 'Napping…', '', 1, () => { advance(120); S.energy = clamp(S.energy + 20, 0, q); S.food = clamp(S.food - 5, 0, 100); })}]};
+    case 'sofa': return {ic:'🛋️', t:'Sofa', sub:'Put your feet up.', acts:[{l:'Rest on the sofa', s:'1 hour · +8 energy', primary:true, fn:() => busy('🛋️', 'Resting…', '', 1, () => { advance(60); S.energy = clamp(S.energy + 8, 0, 100); })}]};
+    case 'tv': return {ic:'📺', t:'Flat-screen TV', sub:'Football, news and Nollywood movies.', acts:[
+      {l:'Watch the football', s:'2 hours · +10 energy', primary:true, fn:() => busy('⚽', 'Watching the match at home…', 'Lone Star vs Ghana', 1.4, () => { advance(120); S.energy = clamp(S.energy + 10, 0, 100); toast('What a game!', 'gold'); })},
+      {l:'Watch a Nollywood movie', s:'2 hours · +8 energy', fn:() => busy('🎬', 'Watching a movie…', 'The drama is too much!', 1.4, () => { advance(120); S.energy = clamp(S.energy + 8, 0, 100); })}]};
+    case 'fridge': return {ic:'🧊', t:'Fridge', sub:'Cooking at home is cheaper than cookshops.', acts:[{l:'Cook rice & soup at home', s:'45 min · +40 food', p:money(120), pc:'minus', primary:true, dis:!canPay(120) || S.food >= 100, fn:() => { spend(120); busy('🍲', 'Cooking…', 'Pepper, onion, palm oil…', 1.2, () => { advance(45); S.food = clamp(S.food + 40, 0, 100); }); }}]};
+    case 'radio': return {ic:'📻', t:'Radio', sub:'News, hipco and call-in shows.', acts:[{l:'Listen to the radio', s:'30 min · +4 energy', primary:true, fn:() => busy('📻', 'Listening to the radio…', 'The DJ is reading shout-outs', 1, () => { advance(30); S.energy = clamp(S.energy + 4, 0, 100); })}]};
+    case 'dining': return {ic:'🍽️', t:'Dining table', sub:'A proper place to eat with family.', acts:[]};
+  }
+  return {t:s.n, acts:[]};
+}
+function renderInterior(){
+  const R = INT, dark = darkness() / .62;
+  for (const s of INT_SPIN) s.rotation.x += .3;
+  R.bulb.intensity = dark > .2 ? 1.6 : .2; R.hl.intensity = 1.05 - dark * .45;
+  R.winMat.color.setHSL(.56, .6, .85 - dark * .7);
+  R.me.position.set(R.x, 0, R.z); R.me.rotation.y = -R.a; animPerson(R.me, player.step, player.moving);
+  const cp = Math.cos(orbitIn.pitch), sp = Math.sin(orbitIn.pitch);
+  R.cam.aspect = innerWidth / innerHeight; R.cam.updateProjectionMatrix();
+  R.cam.position.set(R.x * .5 + Math.sin(orbitIn.yaw) * cp * orbitIn.dist, 8 + sp * orbitIn.dist, R.z * .5 + Math.cos(orbitIn.yaw) * cp * orbitIn.dist);
+  R.cam.lookAt(R.x * .5, 6, R.z * .5);
+  renderer.render(R.sc, R.cam);
+}
+
+for (const c of traffic){ c.mesh = vehicleMesh(c.kind, c.c); if (c.kind === 'moto'){ const rd = personMesh(randomLook()); rd.position.set(-1, 4, 0); rd.scale.setScalar(.85); c.mesh.add(rd); } scene.add(c.mesh); }
 const beam = new THREE.Mesh(new THREE.CylinderGeometry(7, 7, 260, 20, 1, true), new THREE.MeshBasicMaterial({color:0xffb21e, transparent:true, opacity:.28, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide}));
 const ring = new THREE.Mesh(new THREE.RingGeometry(16, 22, 32).rotateX(-Math.PI/2), new THREE.MeshBasicMaterial({color:0xffb21e, transparent:true, opacity:.85, depthWrite:false}));
-const waiting = personMesh('#8E44AD', '#5a3825');
+const waiting = personMesh(randomLook());
 scene.add(beam, ring, waiting);
 const homeBeam = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 120, 12, 1, true), new THREE.MeshBasicMaterial({color:0x39c06a, transparent:true, opacity:.22, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide}));
 scene.add(homeBeam);
@@ -1301,6 +1753,7 @@ const SKY = {day: new THREE.Color(0x9fd0f0), dusk: new THREE.Color(0xf0a86a), ni
 const _sky = new THREE.Color();
 function render(){
   T = performance.now() / 1000;
+  if (S && S.inside && INT){ renderInterior(); return; }
   const tx = cam.x, tz = cam.y, ty = S ? groundY(S.x, S.y) : 0;
   const cp = Math.cos(orbit.pitch), sp = Math.sin(orbit.pitch);
   camera.position.set(tx + Math.sin(orbit.yaw) * cp * orbit.dist, ty + 8 + sp * orbit.dist, tz + Math.cos(orbit.yaw) * cp * orbit.dist);
@@ -1346,6 +1799,7 @@ function render(){
   // rain follows the camera
   rain.visible = !!(S && S.rain);
   if (rain.visible){ const a = rainGeo.attributes.position.array; for (let i = 0; i < RAIN_N; i++){ a[i*3+1] -= 9; if (a[i*3+1] < 0) a[i*3+1] += 300; } rainGeo.attributes.position.needsUpdate = true; rain.position.set(tx, 0, tz); }
+  syncLifeWorld();
   renderer.render(scene, camera);
   // labels
   LOCS.forEach((l, i) => { const b = l.b, y = b ? BH.get(b) + (b.loc.big ? 18 : 14) : 26; labelEls[i].classList.toggle('near', !!(near && near.id === l.id)); place(labelEls[i], b ? b.x + b.w/2 : l.x, y, b ? b.y + b.h/2 : l.y, l.type === 'taxi' ? 260 : 620); });
@@ -1408,7 +1862,8 @@ function drawConfetti(){
 /* =========================================================
    INTRO / BOOT
    ========================================================= */
-let pickShirt = SHIRTS[0], pickSkin = SKINS[0];
+let pickShirt = SHIRTS[0], pickSkin = SKINS[0], pickG = 'm', pickHair = 'low';
+function hairChoices(){ const list = pickG === 'm' ? BARBER_STYLES : SALON_STYLES; if (!list.includes(pickHair)) pickHair = list[0]; $('#swHair').innerHTML = list.map(k => `<button data-h="${k}" aria-selected="${k === pickHair}">${HAIR[k].t}</button>`).join(''); $('#topLabel').textContent = pickG === 'm' ? 'Shirt colour' : 'Dress colour'; }
 function swatches(el, list, cur, set){
   el.innerHTML = list.map(c => `<button style="background:${c}" aria-label="Colour ${c}" aria-pressed="${c === cur}" data-c="${c}"></button>`).join('');
   el.onclick = e => { const b = e.target.closest('button'); if (!b) return; set(b.dataset.c); el.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); };
@@ -1419,16 +1874,20 @@ function showIntro(forceNew){
   $('#introNew').hidden = !!saved && !forceNew; $('#introCont').hidden = !saved || forceNew;
   if (saved && !forceNew) $('#contBtn').textContent = `Continue as ${saved.name} · Day ${saved.day}`;
   swatches($('#swShirt'), SHIRTS, pickShirt, c => pickShirt = c);
+  $('#swGender').onclick = e => { const b = e.target.closest('[data-g]'); if (!b) return; pickG = b.dataset.g; $('#swGender').querySelectorAll('button').forEach(x => x.setAttribute('aria-selected', x === b)); hairChoices(); };
+  $('#swHair').onclick = e => { const b = e.target.closest('[data-h]'); if (!b) return; pickHair = b.dataset.h; hairChoices(); };
+  hairChoices();
   swatches($('#swSkin'), SKINS, pickSkin, c => pickSkin = c);
 }
 $('#startBtn').addEventListener('click', () => {
   const name = $('#pname').value.trim().slice(0, 16) || 'Tayo';
-  S = fresh(name, pickShirt, pickSkin); cam.x = S.x; cam.y = S.y; orbit.pitch = .78; orbit.dist = 175; faceFrom(LOC.h_auntie); save();
+  const look = defaultLook(pickG, pickShirt, pickSkin); look.hair = pickHair; if (pickHair === 'headtie') look.hc = pick(TIES);
+  S = fresh(name, pickShirt, pickSkin, look); cam.x = S.x; cam.y = S.y; orbit.pitch = .78; orbit.dist = 175; faceFrom(LOC.h_auntie); save();
   $('#intro').hidden = true; hud();
   setTimeout(() => toast(`Welcome to Duala, ${S.name}! Head to Waterside Market or Freeport to start earning.`, 'gold'), 300);
   setTimeout(() => toast('Tip: press P (or Phone) for goals and how to play.'), 3200);
 });
-$('#contBtn').addEventListener('click', () => { S = load(); if (!S) return showIntro(true); S.riding = false; cam.x = S.x; cam.y = S.y; orbit.pitch = .78; orbit.dist = 175; faceFrom(findNear()); $('#intro').hidden = true; hud(); toast(`Welcome back, ${S.name}!`, 'good'); });
+$('#contBtn').addEventListener('click', () => { S = load(); if (!S) return showIntro(true); S.riding = false; S.inside = null; if (!S.look) S.look = defaultLook('m', S.shirt, S.skin); S.momo = S.momo || 0; S.furn = S.furn || {}; S.wardrobe = S.wardrobe || [S.look.outfit || 'tshirt']; S.tx = S.tx || []; if (S.booking) S.booking = null; cam.x = S.x; cam.y = S.y; orbit.pitch = .78; orbit.dist = 175; faceFrom(findNear()); $('#intro').hidden = true; hud(); toast(`Welcome back, ${S.name}!`, 'good'); });
 $('#newBtn').addEventListener('click', () => showIntro(true));
 $('#pname').addEventListener('keydown', e => { if (e.key === 'Enter') $('#startBtn').click(); });
 
@@ -1448,6 +1907,7 @@ function loop(now){
   if ((frame++ % 6) === 0) drawMini();
   requestAnimationFrame(loop);
 }
+if (location.search.includes('debug')) window.__ss = {LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR};
 showIntro(false);
 requestAnimationFrame(loop);
 addEventListener('beforeunload', save);
