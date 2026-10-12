@@ -332,7 +332,7 @@ const ROADS = [
   {t:'dirt', w:14, p:[[3880,800],[3650,600],[3600,300]]}
 ];
 
-ROADS.forEach(r => r.w = Math.round(r.w * (r.t === 'paved' ? 2 : 1.5)));
+ROADS.forEach(r => r.w = Math.round(r.w * (r.t === 'paved' ? (r.main ? 1.9 : 1.6) : 1.4)));
 /* ---------- game rules ---------- */
 const JOBS = {
   market:  {t:'Market seller',   wage:450,   e:30, f:22, verb:'Selling greens and pepper at Waterside', ic:'🥬'},
@@ -583,7 +583,9 @@ const ZINC = ['#9aa3a8','#8d969b','#a65a33','#b3683c','#3f6fb0','#4b8a5a','#7c8a
 const WALLS = ['#e9dcc3','#d9c7a5','#f2e6cf','#cfd8c9','#e8c9a8','#d6dbe0'];
 const buildings = [];
 // landmark buildings first (doors sit beside the road, building set back)
-for (const l of LOCS){
+const DEBUG_MOVES = location.search.includes('debug') ? (window.__moves = []) : null;
+const PRI = l => (l.type === 'landmark' || l.type === 'hotel') ? 0 : l.big ? 1 : 2;
+for (const l of [...LOCS].sort((a, b) => PRI(a) - PRI(b))){
   const n = nearestRoad(l.x, l.y);
   if (n.d < n.r.w/2 + 12){ const dx = l.x - n.x, dy = l.y - n.y, m = Math.hypot(dx, dy) || 1; l.x = n.x + dx/m*(n.r.w/2 + 14); l.y = n.y + dy/m*(n.r.w/2 + 14); }
   if (l.nob) continue;
@@ -592,7 +594,28 @@ for (const l of LOCS){
   if (m < 1 || n.d > 80){ dx = 0; dy = -1; } else { dx /= m; dy /= m; }
   // snap direction to the dominant axis so buildings stay square to the street
   if (Math.abs(dx) > Math.abs(dy)){ dx = Math.sign(dx); dy = 0; } else { dy = Math.sign(dy) || -1; dx = 0; }
-  const cx = l.x + dx*(bw/2 + 12), cy = l.y + dy*(bh/2 + 12);
+  // keep the whole footprint (and a hotel's pool) off every road; try other sides, then step back
+  const clear = (x, y) => { const ex = l.shape === 'hotel' ? 42 : 0;
+    for (let i = 0; i <= 6; i++) for (let j = 0; j <= 6; j++){ const px = x - 4 + (bw + ex + 8)*i/6, py = y - 4 + (bh + 8)*j/6, q = nearestRoad(px, py); if (q.d < q.r.w/2 + 3 || isWater(px, py)) return false; }
+    if (LOCS.some(o => o !== l && o.x > x - 8 && o.x < x + bw + ex + 8 && o.y > y - 8 && o.y < y + bh + 8)) return false;
+    return !buildings.some(o => x < o.x + o.w + 6 && x + bw + ex > o.x - 6 && y < o.y + o.h + 6 && y + bh > o.y - 6); };
+  let cx, cy, ok = false;
+  for (const back of [0, 10, 20, 32, 46, 62, 80]){
+    for (const [ddx, ddy] of [[dx, dy], [-dy, dx], [dy, -dx], [-dx, -dy]]){
+      const tx = l.x + ddx*(bw/2 + 12 + back), ty = l.y + ddy*(bh/2 + 12 + back);
+      if (clear(tx - bw/2, ty - bh/2)){ cx = tx; cy = ty; dx = ddx; dy = ddy; ok = true; if (back){ l.x = cx - dx*(bw/2 + 8); l.y = cy - dy*(bh/2 + 8); } break; }
+    }
+    if (ok) break;
+  }
+  // no room here: walk outward to the nearest free roadside spot and move the door there
+  for (let rad = 30; !ok && rad <= 900; rad += 15) for (let k = 0; k < 36 && !ok; k++){
+    const a = k / 36 * Math.PI * 2, px = l.x + Math.cos(a) * rad, py = l.y + Math.sin(a) * rad, q = nearestRoad(px, py);
+    if (q.d < q.r.w/2 + 10 || q.d > q.r.w/2 + 26) continue;
+    let ux = px - q.x, uy = py - q.y; if (Math.abs(ux) > Math.abs(uy)){ ux = Math.sign(ux); uy = 0; } else { uy = Math.sign(uy) || -1; ux = 0; }
+    const tx = px + ux*(bw/2 + 12), ty = py + uy*(bh/2 + 12);
+    if (clear(tx - bw/2, ty - bh/2) && !LOCS.some(o => o !== l && dist(o.x, o.y, px, py) < 40)){ cx = tx; cy = ty; if (DEBUG_MOVES) DEBUG_MOVES.push(l.id + ' ' + rad); l.x = px; l.y = py; ok = true; }
+  }
+  if (!ok){ cx = l.x + dx*(bw/2 + 12); cy = l.y + dy*(bh/2 + 12); }
   const b = {x:cx - bw/2, y:cy - bh/2, w:bw, h:bh, roof:l.roof, wall:'#f4ead8', loc:l};
   l.b = b; buildings.push(b); addSolid(b);
 }
@@ -1157,7 +1180,7 @@ const DOCK = ['talk','ourride','momo','maps'];
 let talkTab = 'room', shopTab = 'home';
 function homeScreen(){
   const icon = a => `<button class="app" data-app="${a.id}"><span style="background:${a.bg}">${a.ic}${a.id === 'talk' && MP.unread ? `<em>${MP.unread}</em>` : ''}</span>${a.t}</button>`;
-  return {home:true, t:'Home', body:`<div class="ios-date"><b>${fmtTime(S.min).replace(/ (AM|PM)/, '')}</b><span>Day ${S.day} · ${districtAt(S.x, S.y)}${S.rain ? ' · 🌧️ Rain' : ' · ☀️'}</span></div>
+  return {home:true, t:'Home', body:`<div class="ios-date"><b>${fmtTime(S.min).replace(/ (AM|PM)/, '')}</b><span>Day ${S.day} · ${districtAt(S.x, S.y)}${' · ' + wxIcon() + ' ' + WX_KINDS[WX.kind].t}</span></div>
     <div class="apps">${APPS.filter(a => !DOCK.includes(a.id)).map(icon).join('')}</div>
     <div class="dock">${DOCK.map(id => icon(APPS.find(a => a.id === id))).join('')}</div>`, acts:[]};
 }
@@ -1451,8 +1474,8 @@ function newDay(){
   S.day++;
   if (S.bank > 0){ const i = Math.round(S.bank * .005); S.bank += i; if (i) toast(`Bank interest: +${money(i)}`, 'good'); }
   { const cost = 150; const paid = Math.min(cost, S.money); S.money -= paid; toast(`Daily costs (phone credit, water, soap): -${money(paid)}`, 'bad'); }
-  S.rain = Math.random() < .35;
-  if (S.rain) toast('Rainy season! Heavy rain today. Deliveries pay 25% more.', 'gold');
+  S.rainDay = Math.random() < .4; WX.next = 0;
+  if (S.rainDay) toast('Rainy season day! Expect showers and storms. Deliveries pay 25% more when it rains.', 'gold');
   if (S.renting && S.day >= S.rentDue){
     if (S.money >= HOMES.room.rent){ S.money -= HOMES.room.rent; S.rentDue = S.day + 7; toast(`Paid rent: ${money(HOMES.room.rent)}`); }
     else { S.renting = false; if (S.home === 'room') S.home = 'auntie'; toast('You could not pay rent. Back to Auntie Musu\'s house.', 'bad'); }
@@ -1711,13 +1734,15 @@ function update(dt){
   for (const p of people){
     p.t += dt; const d = dist(p.x, p.y, p.tx, p.ty);
     if (d < 2){ if (Math.random() < dt * .6){ const tx = p.ax + (Math.random()-.5)*110, ty = p.ay + (Math.random()-.5)*110; if (!isWater(tx, ty) && !hitsSolid(tx, ty, 4) && pathOffRoad(p.x, p.y, tx, ty)){ p.tx = tx; p.ty = ty; } } }
-    else { p.x += (p.tx - p.x)/d * p.sp * dt; p.y += (p.ty - p.y)/d * p.sp * dt; }
+    else { const sp = p.sp * (1 + WX.level * .5); p.x += (p.tx - p.x)/d * sp * dt; p.y += (p.ty - p.y)/d * sp * dt; }
   }
   if (paused) return;
   // time: 1 real second = 1.2 game minutes
   const gm = dt * 1.2; advance(gm);
   S.food = clamp(S.food - gm * .11, 0, 100);
-  S.energy = clamp(S.energy - gm * (S.food <= 0 ? .3 : .085), 0, 100);
+  const hot = WX.kind === 'sun' && !S.inside && !S.riding && hour() > 11 && hour() < 16;
+  S.energy = clamp(S.energy - gm * (S.food <= 0 ? .3 : .085) * (hot ? 1.25 : 1), 0, 100);
+  if (hot && !S.hotTold){ S.hotTold = S.day; toast('🥵 The sun is hot! You tire faster outside at midday. Ride or rest in the shade.'); } else if (S.hotTold && S.hotTold !== S.day) S.hotTold = 0;
   if (S.food <= 0 && (warnT -= dt) < 0){ toast('You are starving! Eat at a cookshop.', 'bad'); warnT = 20; }
   if (S.energy <= 0 && !AUTO) return faint();
   autoTick(dt); mpTick();
@@ -1768,7 +1793,7 @@ function faint(){ if (S.energy <= 0 && !AUTO) ambulanceRescue(); S.energy = Math
 function hud(){
   if (!S) return;
   $('#hName').textContent = S.name;
-  $('#hClock').textContent = `Day ${S.day} · ${fmtTime(S.min)}${S.rain ? ' 🌧️' : ''}`;
+  $('#hClock').textContent = `Day ${S.day} · ${fmtTime(S.min)} ${wxIcon()}`;
   $('#hWhere').textContent = districtAt(S.x, S.y);
   $('#fEn').style.width = S.energy + '%'; $('#fHu').style.width = S.food + '%';
   $('#speedo').hidden = !S.riding; if (S.riding) $('#spdV').textContent = Math.round(Math.abs(CAR.spd) * .55);
@@ -1893,6 +1918,7 @@ function dashGeo(roads, y, dash, gap, wdt){
   }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return g;
 }
+const ROADMATS = [];
 {
   const po = (f) => ({polygonOffset:true, polygonOffsetFactor:f, polygonOffsetUnits:f});
   const dirt = new THREE.Mesh(ribbonGeo(ROADS.filter(r => r.t === 'dirt'), .2), lam('#b8683a', po(-1)));
@@ -1901,6 +1927,7 @@ function dashGeo(roads, y, dash, gap, wdt){
   const yl = new THREE.Mesh(dashGeo(ROADS.filter(r => r.main), .5, 14, 14, 1.6), new THREE.MeshBasicMaterial({color:0xe8c34a, ...po(-4)}));
   const wl = new THREE.Mesh(dashGeo(ROADS.filter(r => r.t === 'paved' && !r.main), .5, 10, 14, 1.2), new THREE.MeshBasicMaterial({color:0xdddddd, ...po(-4)}));
   [dirt, curb, asph].forEach(m => m.receiveShadow = true);
+  ROADMATS.push([asph.material, new THREE.Color('#3b3937'), new THREE.Color('#1f2226')], [dirt.material, new THREE.Color('#b8683a'), new THREE.Color('#7a4426')]);
   scene.add(dirt, curb, asph, yl, wl);
   // bridges
   for (const b of BRIDGES){
@@ -2619,13 +2646,95 @@ scene.add(beam, ring, waiting);
 const homeBeam = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 120, 12, 1, true), new THREE.MeshBasicMaterial({color:0x39c06a, transparent:true, opacity:.22, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide}));
 scene.add(homeBeam);
 
-/* ---------- rain ---------- */
-const RAIN_N = MOBILE ? 900 : 2000;
-const rainPos = new Float32Array(RAIN_N * 3);
-for (let i = 0; i < RAIN_N; i++){ rainPos[i*3] = (Math.random() - .5) * 700; rainPos[i*3+1] = Math.random() * 300; rainPos[i*3+2] = (Math.random() - .5) * 700; }
+/* ---------- weather: sun, clouds, rain, storms ---------- */
+const RAIN_N = MOBILE ? 1400 : 3200;
+const rainPos = new Float32Array(RAIN_N * 6), rainSeed = new Float32Array(RAIN_N * 3);
+for (let i = 0; i < RAIN_N; i++){ rainSeed[i*3] = (Math.random() - .5) * 700; rainSeed[i*3+1] = Math.random() * 300; rainSeed[i*3+2] = (Math.random() - .5) * 700; }
 const rainGeo = new THREE.BufferGeometry(); rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
-const rain = new THREE.Points(rainGeo, new THREE.PointsMaterial({color:0xcfe0ff, size:2.2, transparent:true, opacity:.7, depthWrite:false}));
+const rain = new THREE.LineSegments(rainGeo, new THREE.LineBasicMaterial({color:0xcfdcf0, transparent:true, opacity:.55, depthWrite:false}));
 rain.frustumCulled = false; scene.add(rain);
+// splashes on the ground around you
+const SPL_N = MOBILE ? 160 : 360, splPos = new Float32Array(SPL_N * 3);
+const splGeo = new THREE.BufferGeometry(); splGeo.setAttribute('position', new THREE.BufferAttribute(splPos, 3));
+const splash = new THREE.Points(splGeo, new THREE.PointsMaterial({color:0xe6f0ff, size:1.4, transparent:true, opacity:.7, depthWrite:false}));
+splash.frustumCulled = false; scene.add(splash);
+// sun and moon discs
+const discTex = (inner, outer) => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); const g = x.createRadialGradient(64, 64, 0, 64, 64, 64); g.addColorStop(0, inner); g.addColorStop(.22, inner); g.addColorStop(.32, outer); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 128, 128); return tex(c); };
+const sunDisc = new THREE.Sprite(new THREE.SpriteMaterial({map:discTex('#fffbe8', 'rgba(255,214,120,.55)'), transparent:true, depthWrite:false, fog:false}));
+const moonDisc = new THREE.Sprite(new THREE.SpriteMaterial({map:discTex('#f4f6ff', 'rgba(170,190,255,.25)'), transparent:true, depthWrite:false, fog:false}));
+sunDisc.scale.setScalar(420); moonDisc.scale.setScalar(200); scene.add(sunDisc, moonDisc);
+// drifting clouds
+const CLOUDS = [], cloudMat = new THREE.MeshLambertMaterial({color:0xffffff, flatShading:true, transparent:true, opacity:.92, fog:false});
+for (let i = 0; i < 26; i++){ const g = new THREE.Group(), n = 3 + (i % 4);
+  for (let k = 0; k < n; k++){ const m = new THREE.Mesh(new THREE.IcosahedronGeometry(60 + Math.random() * 45, 1), cloudMat); m.position.set(k * 80 - n * 40 + Math.random() * 20, Math.random() * 30, (Math.random() - .5) * 70); m.scale.y = .55; g.add(m); }
+  g.userData = {ox:(Math.random() - .5) * 2400, oz:(Math.random() - .5) * 2400, y:480 + Math.random() * 140}; CLOUDS.push(g); scene.add(g); }
+// rainbow after the rain
+const rainbow = new THREE.Group();
+['#ff3b30','#ff9500','#ffcc00','#34c759','#32ade6','#5856d6','#af52de'].forEach((c, i) => { const m = new THREE.Mesh(new THREE.TorusGeometry(520 - i * 9, 4.5, 4, 64, Math.PI), new THREE.MeshBasicMaterial({color:c, transparent:true, opacity:0, depthWrite:false, fog:false})); rainbow.add(m); });
+rainbow.visible = false; scene.add(rainbow);
+const WX_KINDS = {
+  sun:     {ic:'☀️', t:'Sunny', rain:0,   cloud:.12, wind:.2, msg:'☀️ The sun is out! Hot day in Monrovia.'},
+  cloudy:  {ic:'⛅', t:'Cloudy', rain:0,  cloud:.65, wind:.5, msg:'⛅ Clouds rolling in over the city.'},
+  drizzle: {ic:'🌦️', t:'Drizzle', rain:.32, cloud:.8, wind:.6, msg:'🌦️ Small small rain starting…'},
+  rain:    {ic:'🌧️', t:'Rain', rain:.72, cloud:.95, wind:1, msg:'🌧️ Heavy rain! Umbrellas out. Deliveries pay 25% more.'},
+  storm:   {ic:'⛈️', t:'Storm', rain:1, cloud:1, wind:1.8, msg:'⛈️ Thunderstorm! Lightning over Montserrado. Drive careful, the road is slippery.'}
+};
+const WX = {kind:'sun', level:0, cloud:.12, wind:.2, next:0, flash:0, boltT:4, rainbow:0, windA:Math.random() * 6};
+function rollWeather(first){
+  const wet = S && S.rainDay, h = S ? hour() : 10, r = Math.random();
+  const old = WX.kind;
+  WX.kind = wet ? (r < .12 ? 'cloudy' : r < .35 ? 'drizzle' : r < .78 ? 'rain' : 'storm') : (r < (h > 10 && h < 16 ? .55 : .4) ? 'sun' : r < .8 ? 'cloudy' : r < .93 ? 'drizzle' : 'rain');
+  if (S) WX.next = S.day * 1440 + S.min + 50 + Math.random() * 130;
+  WX.windA += (Math.random() - .5) * 1.4;
+  if (first) { const k = WX_KINDS[WX.kind]; WX.level = k.rain; WX.cloud = k.cloud; WX.wind = k.wind; return; }
+  if (old !== WX.kind && S && !S.inside){ if (WX_KINDS[old].rain > .3 && !WX_KINDS[WX.kind].rain && h > 7 && h < 18) WX.rainbow = 1; toast(WX_KINDS[WX.kind].msg, WX_KINDS[WX.kind].rain ? 'gold' : ''); }
+}
+// soft rain hiss and thunder (starts after the first tap)
+const SND = {ctx:null, hiss:null};
+function soundOn(){ try { if (SND.ctx) return; const A = window.AudioContext || window.webkitAudioContext; if (!A) return; const c = SND.ctx = new A();
+  const buf = c.createBuffer(1, c.sampleRate * 2, c.sampleRate), d = buf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  const src = c.createBufferSource(); src.buffer = buf; src.loop = true; const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = .5;
+  const g = SND.hiss = c.createGain(); g.gain.value = 0; src.connect(f).connect(g).connect(c.destination); src.start(); SND.buf = buf; } catch (e) {} }
+function thunder(near){ try { const c = SND.ctx; if (!c) return; const src = c.createBufferSource(); src.buffer = SND.buf; const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = near ? 420 : 200; const g = c.createGain(), t = c.currentTime + (near ? .15 : 1.2);
+  g.gain.setValueAtTime(0, c.currentTime); g.gain.linearRampToValueAtTime(near ? .55 : .3, t + .05); g.gain.exponentialRampToValueAtTime(.001, t + 2.6); src.connect(f).connect(g).connect(c.destination); src.start(); src.stop(t + 2.8); } catch (e) {} }
+addEventListener('pointerdown', soundOn); addEventListener('keydown', soundOn);
+const _wl = new THREE.Vector3();
+function weatherTick(dt, tx, tz, dark){
+  if (S && S.x > -500){ const now = S.day * 1440 + S.min; if (!WX.next) rollWeather(true); if (now >= WX.next) rollWeather(false); }
+  const k = WX_KINDS[WX.kind], ease = 1 - Math.exp(-dt * .25);
+  WX.level += (k.rain - WX.level) * ease; WX.cloud += (k.cloud - WX.cloud) * ease; WX.wind += (k.wind - WX.wind) * ease;
+  if (S) S.rain = WX.level > .22;
+  const lv = WX.level, wx = Math.cos(WX.windA) * WX.wind, wz = Math.sin(WX.windA) * WX.wind;
+  // rain streaks slant with the wind, more drops the harder it rains
+  const n = Math.round(RAIN_N * Math.min(1, lv * 1.1)); rain.visible = n > 20 && !(S && S.inside);
+  if (rain.visible){ const a = rainPos, sd = rainSeed, fall = (260 + lv * 260) * dt, len = 6 + lv * 9;
+    for (let i = 0; i < n; i++){ sd[i*3+1] -= fall; sd[i*3] += wx * fall * .35; sd[i*3+2] += wz * fall * .35;
+      if (sd[i*3+1] < 0){ sd[i*3+1] += 300; sd[i*3] = (Math.random() - .5) * 700; sd[i*3+2] = (Math.random() - .5) * 700; }
+      const j = i * 6; a[j] = sd[i*3]; a[j+1] = sd[i*3+1]; a[j+2] = sd[i*3+2]; a[j+3] = sd[i*3] - wx * len * .35; a[j+4] = sd[i*3+1] + len; a[j+5] = sd[i*3+2] - wz * len * .35; }
+    rainGeo.setDrawRange(0, n * 2); rainGeo.attributes.position.needsUpdate = true; rain.position.set(tx, 0, tz); rain.material.opacity = .25 + lv * .4; }
+  splash.visible = rain.visible && lv > .3;
+  if (splash.visible){ const m = Math.round(SPL_N * lv); for (let i = 0; i < m; i++) if (Math.random() < .25){ const x = tx + (Math.random() - .5) * 320, z = tz + (Math.random() - .5) * 320; splPos[i*3] = x; splPos[i*3+1] = groundY(x, z) + .8; splPos[i*3+2] = z; }
+    splGeo.setDrawRange(0, m); splGeo.attributes.position.needsUpdate = true; }
+  // lightning in storms
+  WX.flash = Math.max(0, WX.flash - dt * 3.2);
+  if (WX.kind === 'storm' && lv > .7 && (WX.boltT -= dt) < 0){ WX.boltT = 3 + Math.random() * 9; WX.flash = 1; const near = Math.random() < .35; setTimeout(() => thunder(near), near ? 80 : 900); if (near) CAR.shake = Math.max(CAR.shake, .4); }
+  if (SND.hiss) SND.hiss.gain.value = (S && S.inside ? .02 : .09) * lv;
+  // wet roads darken
+  const wetK = Math.min(1, lv * 1.4); for (const [m, dry, wetC] of ROADMATS) m.color.copy(dry).lerp(wetC, wetK);
+  // clouds drift across the sky with the wind
+  const shown = Math.round(4 + WX.cloud * (CLOUDS.length - 4)), grey = 1 - Math.min(.62, lv * .6) - dark * .55;
+  cloudMat.color.setRGB(grey, grey, grey * 1.04 + .01); cloudMat.emissive.setRGB(grey * .55, grey * .55, grey * .58); cloudMat.opacity = .75 + WX.cloud * .2;
+  CLOUDS.forEach((g, i) => { const u = g.userData; g.visible = i < shown; if (!g.visible) return; u.ox += (wx * 14 + 3) * dt; u.oz += wz * 14 * dt;
+    const rx = ((u.ox - tx) % 2400 + 3600) % 2400 - 1200, rz = ((u.oz - tz) % 2400 + 3600) % 2400 - 1200; g.position.set(tx + rx, u.y, tz + rz); });
+  // a passing cloud dims the sunshine now and then
+  WX.shade = WX.cloud * (.5 + .5 * Math.sin(T * .21 + Math.sin(T * .053) * 3));
+  // rainbow fades out over about two minutes
+  if (WX.rainbow > 0){ WX.rainbow = Math.max(0, WX.rainbow - dt / 120); rainbow.visible = true; const az = ((hour() - 6) / 12) * Math.PI;
+    rainbow.position.set(tx + Math.cos(az) * 900, -40, tz - 260 * 2.4); rainbow.lookAt(tx, -40, tz); const op = Math.min(1, WX.rainbow * 4) * .32 * (1 - lv) * (1 - dark);
+    rainbow.children.forEach(m => m.material.opacity = op); }
+  else rainbow.visible = false;
+}
+function wxIcon(){ const n = S && (hour() < 6 || hour() >= 19); return n && WX.kind === 'sun' ? '🌙' : n && WX.kind === 'cloudy' ? '☁️' : WX_KINDS[WX.kind].ic; }
 
 /* ---------- labels (HTML, projected) ---------- */
 const labelEls = LOCS.map(l => { const d = document.createElement('div'); d.className = 'lab' + (l.type === 'taxi' ? ' small' : ''); d.textContent = l.n; $('#labels').appendChild(d); return d; });
@@ -2648,7 +2757,7 @@ const orbit = {yaw: 0, pitch: .78, dist: 175, tyaw: 0};
 function faceFrom(l){ if (!l || !l.b) return; const dx = l.x - (l.b.x + l.b.w/2), dz = l.y - (l.b.y + l.b.h/2); if (Math.hypot(dx, dz) > 1) orbit.yaw = Math.atan2(dx, dz); }
 const youMark = new THREE.Mesh(new THREE.ConeGeometry(3.4, 7, 4).rotateX(Math.PI), new THREE.MeshBasicMaterial({color:0xffb21e, depthTest:false, transparent:true}));
 youMark.renderOrder = 10; scene.add(youMark);
-const SKY = {day: new THREE.Color(0x9fd0f0), dusk: new THREE.Color(0xf0a86a), night: new THREE.Color(0x0b1430), rain: new THREE.Color(0x7d8b99)};
+const SKY = {day: new THREE.Color(0x9fd0f0), dusk: new THREE.Color(0xf0a86a), night: new THREE.Color(0x0b1430), rain: new THREE.Color(0x6f7c89), noon: new THREE.Color(0x5fb4f0), cloud: new THREE.Color(0xb8c4cf), flash: new THREE.Color(0xeef2ff)};
 const _sky = new THREE.Color();
 function render(){
   T = performance.now() / 1000;
@@ -2663,15 +2772,26 @@ function render(){
   const dark = S ? darkness() / .62 : 0, h = S ? hour() : 10;
   _sky.copy(SKY.day);
   if (dark > 0) { const dusk = 1 - Math.abs(dark - .5) * 2; _sky.lerp(SKY.dusk, Math.max(0, dusk) * .7).lerp(SKY.night, dark); }
-  if (S && S.rain) _sky.lerp(SKY.rain, .55 * (1 - dark * .6));
+  const wdt = Math.min(.05, T - (render.wT || T)); render.wT = T; weatherTick(wdt, tx, tz, dark);
+  const lv = WX.level, el = Math.sin(((h - 6) / 12) * Math.PI), az = ((h - 6) / 12) * Math.PI;
+  // golden hour: warm sky near sunrise and sunset, deep blue at noon
+  const gold = Math.max(0, 1 - Math.abs(el) * 3.2) * (1 - dark);
+  if (dark <= 0) _sky.lerp(SKY.noon, Math.max(0, el - .55) * 1.2 * (1 - WX.cloud * .8)).lerp(SKY.dusk, gold * .55);
+  _sky.lerp(SKY.cloud, WX.cloud * .35 * (1 - dark * .7)).lerp(SKY.rain, lv * .7 * (1 - dark * .6));
+  if (WX.flash > 0) _sky.lerp(SKY.flash, WX.flash * .8);
   scene.background = _sky; scene.fog.color.copy(_sky);
-  scene.fog.near = S && S.rain ? 260 : 500; scene.fog.far = S && S.rain ? 1000 : 1600;
-  const el = Math.sin(((h - 6) / 12) * Math.PI), az = ((h - 6) / 12) * Math.PI;
+  scene.fog.near = 500 - lv * 300; scene.fog.far = 1600 - lv * 750;
   sun.position.set(tx - Math.cos(az) * 600, 120 + Math.max(.15, el) * 650, tz + 260);
   sun.target.position.set(tx, 0, tz);
-  sun.intensity = (1.8 * (1 - dark) + .05) * (S && S.rain ? .45 : 1);
-  sun.color.setHSL(.1, .6, .55 + .3 * Math.max(0, el));
-  hemi.intensity = .95 * (1 - dark) + .32; hemi.color.setHSL(.58, .5, .75 - dark * .35);
+  sun.intensity = (1.9 * (1 - dark) + .05) * (1 - lv * .6) * (1 - (WX.shade || 0) * .45) + WX.flash * 1.5;
+  sun.color.setHSL(.09 - gold * .04, .55 + gold * .35, .5 + .33 * Math.max(0, el));
+  hemi.intensity = .95 * (1 - dark) + .32 + WX.flash * 2.2; hemi.color.setHSL(.58, .5 - lv * .3, .75 - dark * .35);
+  // sun and moon in the sky
+  _wl.set(-Math.cos(az), Math.max(-.2, el) * .9 + .05, .35).normalize();
+  sunDisc.position.set(camera.position.x + _wl.x * 1900, camera.position.y + _wl.y * 1900, camera.position.z + _wl.z * 1900);
+  sunDisc.material.opacity = (h > 5.6 && h < 18.6 ? 1 : 0) * (1 - lv * .9) * (1 - (WX.shade || 0) * .5); sunDisc.material.color.setHSL(.1, 1, .7 + .3 * Math.max(0, el) - gold * .1);
+  moonDisc.position.set(camera.position.x + _wl.x * -1900, camera.position.y + Math.abs(_wl.y) * 1900 + 300, camera.position.z - _wl.z * 1900);
+  moonDisc.material.opacity = dark * (1 - lv * .8);
   wallMat.emissiveIntensity = dark * 1.1; for (const m of HOTEL_MATS) m.emissiveIntensity = dark * .9;
   lampGlow.material.opacity = Math.min(1, dark * 1.3);
   waterMat.color.setHSL(.57, .58, .42 - dark * .25 + Math.sin(T * .7) * .01);
@@ -2697,9 +2817,6 @@ function render(){
     const g = S.gig; beam.visible = ring.visible = !!g; waiting.visible = !!(g && g.kind === 'passenger' && g.stage === 'pick');
     if (g){ const pulse = 1 + Math.sin(T * 5) * .12; beam.position.set(g.x, 130, g.y); ring.position.set(g.x, groundY(g.x, g.y) + 1.2, g.y); ring.scale.setScalar(pulse); if (waiting.visible){ waiting.position.set(g.x + 8, 0, g.y); waiting.rotation.y = T; } }
   } else { youMark.visible = false; beam.visible = ring.visible = waiting.visible = false; if (playerMesh) playerMesh.visible = false; for (const k in myRides) myRides[k].visible = false; }
-  // rain follows the camera
-  rain.visible = !!(S && S.rain);
-  if (rain.visible){ const a = rainGeo.attributes.position.array; for (let i = 0; i < RAIN_N; i++){ a[i*3+1] -= 9; if (a[i*3+1] < 0) a[i*3+1] += 300; } rainGeo.attributes.position.needsUpdate = true; rain.position.set(tx, 0, tz); }
   syncLifeWorld(); flashLights(); syncPeers(Math.min(.05, T - (render.lastT || T))); render.lastT = T;
   for (const f of FLAGS) f.rotation.y = Math.sin(T * 2 + f.position.x) * .15;
   renderer.render(scene, camera);
@@ -2810,7 +2927,7 @@ function loop(now){
   if ((frame++ % 6) === 0) drawMini();
   requestAnimationFrame(loop);
 }
-if (location.search.includes('debug')) window.__ss = {traffic, roadPoint, get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR, get CAR(){ return CAR; }, offRoad, giveVehicle};
+if (location.search.includes('debug')) window.__ss = {traffic, roadPoint, get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR, get CAR(){ return CAR; }, offRoad, giveVehicle, nearestRoad, WX, rollWeather, get orbit(){ return orbit; }};
 showIntro(false);
 requestAnimationFrame(loop);
 addEventListener('beforeunload', save);
