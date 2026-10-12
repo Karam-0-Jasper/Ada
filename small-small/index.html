@@ -1,0 +1,1203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#14100E">
+<title>Small Small</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap">
+<style>
+/* A full-screen canvas world with glass HUD panels floating over it. Deliberately one dark look. */
+:root{
+  --ink:#FFF6EA; --muted:#C9B9A6; --panel:rgba(22,17,14,.88); --panel-2:rgba(255,255,255,.07); --line:rgba(255,255,255,.12);
+  --gold:#FFB21E; --red:#E5392C; --blue:#3157C8; --green:#39C06A; --bad:#FF6B5B;
+  --font-display:"Baloo 2","Arial Rounded MT Bold",system-ui,sans-serif;
+  --font-body:"Nunito Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0;background:#14100E;color:var(--ink);font-family:var(--font-body);overflow:hidden;-webkit-tap-highlight-color:transparent;touch-action:none;user-select:none;-webkit-user-select:none}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+#game{position:fixed;inset:0;width:100%;height:100%;display:block}
+.num{font-variant-numeric:tabular-nums}
+
+/* HUD */
+.hud{position:fixed;inset:0;pointer-events:none;padding:calc(env(safe-area-inset-top,0px) + 12px) 12px calc(env(safe-area-inset-bottom,0px) + 12px)}
+.hud > *{pointer-events:auto}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.status{position:absolute;left:12px;top:calc(env(safe-area-inset-top,0px) + 12px);padding:10px 12px;width:min(230px,calc(50vw - 18px));display:flex;flex-direction:column;gap:7px}
+.status .row{display:flex;align-items:center;justify-content:space-between;gap:2px 8px;flex-wrap:wrap}
+.status .who{font-family:var(--font-display);font-weight:800;font-size:16px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status .clock{font-weight:800;font-size:13px;white-space:nowrap}
+.status .where{font-size:11.5px;color:var(--muted);font-weight:700;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar{display:grid;grid-template-columns:52px 1fr;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--muted)}
+.bar .t{height:8px;border-radius:8px;background:rgba(255,255,255,.1);overflow:hidden}
+.bar .f{display:block;height:100%;border-radius:8px;transition:width .4s}
+.bar .f.en{background:linear-gradient(90deg,#46d37c,#9be36a)}
+.bar .f.hu{background:linear-gradient(90deg,#ff9f1c,#ffcf4d)}
+.bar.low .f{background:var(--bad)!important;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.4}}
+.right{position:absolute;right:12px;top:calc(env(safe-area-inset-top,0px) + 12px);display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.money{padding:8px 14px;font-family:var(--font-display);font-weight:800;font-size:20px;line-height:1;display:flex;align-items:center;gap:6px}
+.money small{font-size:12px;color:var(--muted);font-family:var(--font-body)}
+.money.flash{animation:flash .6s}
+@keyframes flash{30%{transform:scale(1.12);color:var(--gold)}}
+.mini{padding:6px;position:relative}
+.mini canvas{display:block;width:150px;height:96px;border-radius:12px}
+.mini button{position:absolute;right:10px;bottom:10px;font-size:11px;font-weight:800;background:rgba(0,0,0,.6);padding:3px 8px;border-radius:8px}
+.gigbox{padding:10px 12px;max-width:min(260px,60vw);font-size:13px;display:flex;flex-direction:column;gap:4px}
+.gigbox b{font-family:var(--font-display);font-size:15px;line-height:1.1}
+.gigbox .meta{color:var(--muted);font-weight:700}
+.prompt{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 104px);transform:translateX(-50%);padding:9px 16px;font-weight:800;font-size:14px;white-space:nowrap;max-width:calc(100vw - 32px);overflow:hidden;text-overflow:ellipsis;border-color:rgba(255,178,30,.5)}
+.prompt kbd{background:var(--gold);color:#1b1206;border-radius:6px;padding:1px 7px;margin-right:6px;font-family:inherit}
+.controls{position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);display:flex;align-items:flex-end;gap:10px}
+.cbtn{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:12px;line-height:1.05;text-align:center;background:var(--panel);border:1px solid var(--line);box-shadow:0 6px 18px rgba(0,0,0,.35);transition:transform .12s}
+.cbtn:active{transform:scale(.92)}
+.cbtn.big{width:76px;height:76px;background:var(--gold);color:#1b1206;font-size:15px;font-family:var(--font-display);border:0}
+.cbtn.big:disabled{opacity:.45}
+.cbtn.on{background:var(--blue);border-color:transparent}
+.cbtn svg{width:22px;height:22px;display:block;margin:0 auto 2px}
+.joy{position:absolute;left:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);width:130px;height:130px;border-radius:50%;background:rgba(0,0,0,.25);border:1px solid var(--line);display:grid;place-items:center}
+.joy i{width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.22);border:2px solid rgba(255,255,255,.35);display:block;transition:transform .05s}
+.keys{position:absolute;left:12px;bottom:12px;font-size:12px;color:var(--muted);padding:8px 12px;font-weight:700}
+.keys kbd{display:inline-block;min-width:20px;text-align:center;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 4px;margin:0 2px;color:var(--ink);font-family:inherit}
+@media (hover:hover) and (pointer:fine){ .joy{display:none} }
+@media not ((hover:hover) and (pointer:fine)){ .keys{display:none} }
+
+/* toasts */
+.toasts{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 12px);transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;z-index:40;width:min(420px,calc(100vw - 32px))}
+.toast{background:rgba(14,10,8,.94);border:1px solid var(--line);padding:9px 14px;border-radius:14px;font-weight:700;font-size:14px;animation:tin .35s cubic-bezier(.3,1.4,.5,1);text-align:center;max-width:100%}
+.toast.good{border-color:rgba(57,192,106,.6)} .toast.bad{border-color:rgba(255,107,91,.7)} .toast.gold{border-color:rgba(255,178,30,.7)}
+.toast.out{animation:tout .3s forwards}
+@keyframes tin{from{transform:translateY(-14px) scale(.96);opacity:0}}
+@keyframes tout{to{transform:translateY(-10px);opacity:0}}
+@media (max-width:700px){ .toasts{top:calc(env(safe-area-inset-top,0px) + 150px)} }
+
+/* modal */
+.scrim{position:fixed;inset:0;background:rgba(8,5,3,.5);z-index:30;display:flex;align-items:flex-end;justify-content:center;padding:16px}
+@media (min-width:700px){ .scrim{align-items:center} }
+.modal{width:min(480px,100%);max-height:min(82vh,760px);overflow:auto;padding:18px;display:flex;flex-direction:column;gap:14px;animation:min .35s cubic-bezier(.2,.9,.2,1)}
+@keyframes min{from{transform:translateY(30px);opacity:.3}}
+.modal > *{flex-shrink:0}
+.modal header{display:flex;gap:12px;align-items:flex-start}
+.modal .ic{font-size:30px;line-height:1;width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:var(--panel-2);flex:none}
+.modal h2{font-family:var(--font-display);font-size:24px;line-height:1.05;margin:2px 0 4px;text-wrap:balance}
+.modal .sub{color:var(--muted);font-size:13.5px;line-height:1.4}
+.modal .x{margin-left:auto;width:36px;height:36px;border-radius:50%;background:var(--panel-2);flex:none;font-size:18px}
+.facts{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;font-weight:800;padding:4px 10px;border-radius:999px;background:var(--panel-2);border:1px solid var(--line)}
+.chip.ok{color:var(--green);border-color:rgba(57,192,106,.4)} .chip.no{color:var(--bad);border-color:rgba(255,107,91,.4)} .chip.gold{color:var(--gold);border-color:rgba(255,178,30,.4)}
+.acts{display:flex;flex-direction:column;gap:8px}
+.act{display:flex;align-items:center;gap:12px;text-align:left;padding:12px 14px;border-radius:14px;background:var(--panel-2);border:1px solid var(--line);transition:background .15s,transform .1s}
+.act:hover:not(:disabled){background:rgba(255,255,255,.12)}
+.act:active:not(:disabled){transform:scale(.98)}
+.act:disabled{opacity:.5;cursor:not-allowed}
+.act .l{flex:1;min-width:0}
+.act b{display:block;font-weight:800;font-size:15px}
+.act small{display:block;color:var(--muted);font-size:12.5px;margin-top:1px}
+.act .p{font-family:var(--font-display);font-weight:800;font-size:16px;white-space:nowrap}
+.act .p.plus{color:var(--green)} .act .p.minus{color:var(--gold)}
+.act.primary{background:var(--gold);color:#1b1206;border-color:transparent}
+.act.primary small{color:#5a3d10}
+.prog{height:10px;border-radius:10px;background:rgba(255,255,255,.1);overflow:hidden}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--red));border-radius:10px}
+.tabs{display:flex;gap:6px;overflow-x:auto}
+.tabs button{padding:7px 12px;border-radius:999px;font-weight:800;font-size:13px;background:var(--panel-2);border:1px solid var(--line);white-space:nowrap}
+.tabs button[aria-selected="true"]{background:var(--ink);color:#1b1206}
+.list{display:flex;flex-direction:column;gap:8px}
+.goal{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--panel-2)}
+.goal .dot{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;flex:none;font-size:13px;font-weight:900}
+.goal.done .dot{background:var(--green);border-color:var(--green);color:#06210f}
+.goal.done b{text-decoration:line-through;text-decoration-color:rgba(255,255,255,.4)}
+.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{padding:10px 12px;border-radius:12px;background:var(--panel-2)}
+.stat span{display:block;font-size:11.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.stat b{font-family:var(--font-display);font-size:19px}
+
+/* busy overlay */
+.busy{position:fixed;inset:0;z-index:35;background:rgba(8,5,3,.72);display:flex;align-items:center;justify-content:center;padding:16px}
+.busy .card{width:min(380px,100%);padding:22px;text-align:center;display:flex;flex-direction:column;gap:12px}
+.busy .big{font-size:44px;animation:bob 1s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-6px) rotate(-4deg)}}
+.busy h3{font-family:var(--font-display);font-size:21px;margin:0}
+.busy .prog i{width:0;animation:fill var(--d,1.6s) linear forwards}
+@keyframes fill{to{width:100%}}
+
+/* intro */
+.intro{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;background:radial-gradient(80% 60% at 50% 30%,rgba(229,57,44,.25),transparent 70%),rgba(10,7,5,.55)}
+.intro .card{width:min(460px,100%);padding:24px;display:flex;flex-direction:column;gap:16px;max-height:calc(100vh - 32px);overflow:auto}
+.logo{font-family:var(--font-display);font-weight:800;font-size:clamp(46px,12vw,64px);line-height:.85;letter-spacing:-.02em}
+.logo span{color:var(--gold);display:inline-block;animation:wig 2.4s ease-in-out infinite}
+@keyframes wig{50%{transform:rotate(-4deg) translateY(-3px)}}
+.flag{display:flex;align-items:center;gap:8px;font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.flag i{width:28px;height:16px;border-radius:3px;background:repeating-linear-gradient(180deg,#BF0A30 0 2.3px,#fff 2.3px 4.6px);position:relative;overflow:hidden;flex:none}
+.flag i::before{content:"";position:absolute;left:0;top:0;width:11px;height:9px;background:#002868}
+.intro p{margin:0;color:var(--muted);line-height:1.5;font-size:14.5px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-weight:800;font-size:13px}
+.field input{height:46px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.06);padding:0 12px;outline:none;font-weight:700}
+.field input:focus{border-color:var(--gold)}
+.sw{display:flex;gap:8px;flex-wrap:wrap}
+.sw button{width:34px;height:34px;border-radius:50%;border:3px solid transparent;box-shadow:inset 0 0 0 2px rgba(0,0,0,.25)}
+.sw button[aria-pressed="true"]{border-color:var(--ink);transform:scale(1.08)}
+.go{height:54px;border-radius:16px;background:var(--gold);color:#1b1206;font-family:var(--font-display);font-weight:800;font-size:20px}
+.go.alt{background:var(--panel-2);color:var(--ink);font-size:16px;border:1px solid var(--line)}
+
+/* big map */
+.mapwrap{position:fixed;inset:0;z-index:32;background:rgba(8,5,3,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:10px}
+.mapwrap canvas{max-width:100%;max-height:calc(100vh - 120px);border-radius:16px;border:1px solid var(--line);background:#2f7fb8}
+.mapwrap .bar2{display:flex;gap:10px;align-items:center;justify-content:space-between;width:min(900px,100%)}
+.mapwrap h3{font-family:var(--font-display);margin:0;font-size:22px}
+.mapwrap button{padding:8px 14px;border-radius:12px;background:var(--panel-2);border:1px solid var(--line);font-weight:800}
+@media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<canvas id="game" aria-label="Small Small game world"></canvas>
+
+<div class="hud" id="hud">
+  <div class="card status">
+    <div class="row"><span class="who" id="hName">Player</span><span class="clock num" id="hClock">Day 1 · 7:00 AM</span></div>
+    <div class="where" id="hWhere">Duala</div>
+    <div class="bar" id="bEn"><span>Energy</span><span class="t"><span class="f en" id="fEn"></span></span></div>
+    <div class="bar" id="bHu"><span>Food</span><span class="t"><span class="f hu" id="fHu"></span></span></div>
+  </div>
+  <div class="right">
+    <div class="card money num" id="hMoney">L$2,500</div>
+    <div class="card mini"><canvas id="mini" width="300" height="192" aria-label="Minimap"></canvas><button id="mapBtn" aria-label="Open the full map">MAP</button></div>
+    <div class="card gigbox" id="gigBox" hidden></div>
+  </div>
+  <div class="card prompt" id="prompt" hidden></div>
+  <div class="joy" id="joy" aria-hidden="true"><i id="knob"></i></div>
+  <div class="card keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <kbd>E</kbd> enter · <kbd>R</kbd> ride · <kbd>P</kbd> phone · <kbd>M</kbd> map</div>
+  <div class="controls">
+    <button class="cbtn" id="phoneBtn" aria-label="Open phone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>Phone</button>
+    <button class="cbtn" id="rideBtn" aria-label="Ride your vehicle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="16" r="3"/><circle cx="18" cy="16" r="3"/><path d="M6 16l4-7h5l3 7M9 9l-1-3h3"/></svg>Ride</button>
+    <button class="cbtn big" id="actBtn" aria-label="Enter" disabled>ENTER</button>
+  </div>
+</div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="scrim" id="scrim" hidden><div class="card modal" id="modal" role="dialog" aria-modal="true"></div></div>
+<div class="busy" id="busy" hidden><div class="card"><div class="big" id="busyIc">⏳</div><h3 id="busyT">Working…</h3><div class="prog"><i id="busyBar"></i></div><p class="muted" id="busyS" style="margin:0;color:var(--muted);font-size:13px"></p></div></div>
+<div class="mapwrap" id="mapWrap" hidden><div class="bar2"><h3>Montserrado</h3><button id="mapClose">Close</button></div><canvas id="bigMap" aria-label="Full map of Montserrado"></canvas></div>
+
+<div class="intro" id="intro">
+  <div class="card">
+    <div class="flag"><i></i>Montserrado County, Liberia</div>
+    <div class="logo">Small<br><span>Small.</span></div>
+    <p>You just reached Duala with <b style="color:var(--ink)">L$2,500</b> and big dreams. Hustle at Waterside, ride for Hot &amp; Fresh, go to school, buy a pen-pen, then a car, then your own house. Small small, you will reach.</p>
+    <div id="introNew" style="display:flex;flex-direction:column;gap:14px">
+      <div class="field"><label for="pname">Your name</label><input id="pname" maxlength="16" placeholder="e.g. Jartu" autocomplete="off"></div>
+      <div class="field"><label>Shirt colour</label><div class="sw" id="swShirt"></div></div>
+      <div class="field"><label>Skin tone</label><div class="sw" id="swSkin"></div></div>
+      <button class="go" id="startBtn">Start my life</button>
+    </div>
+    <div id="introCont" hidden style="display:flex;flex-direction:column;gap:10px">
+      <button class="go" id="contBtn">Continue</button>
+      <button class="go alt" id="newBtn">Start a new life</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+/* =========================================================
+   WORLD DATA — a stylised Montserrado County
+   ========================================================= */
+const W = 4000, H = 1900;
+const MPP = 2.5; // metres per world pixel (for distances shown to the player)
+
+const WATER = [
+  {k:'ocean', p:[[0,0],[210,0],[220,250],[235,500],[240,800],[230,940],[200,1100],[150,1180],[130,1280],[160,1380],[260,1480],[500,1540],[900,1580],[1400,1612],[1900,1640],[2400,1668],[2900,1690],[3400,1702],[4000,1722],[4000,1900],[0,1900]]},
+  {k:'river', n:'Mesurado River', p:[[180,930],[600,900],[1000,880],[1500,860],[2000,895],[2400,930],[2620,975],[2700,1030],[2640,1085],[2200,1062],[1700,1050],[1200,1078],[900,1098],[600,1115],[180,1112]]},
+  {k:'river', n:'St. Paul River', p:[[180,240],[800,236],[1400,276],[2000,328],[2500,400],[2640,460],[2600,505],[2000,420],[1400,372],[800,344],[180,372]]},
+  {k:'river', n:'Stockton Creek', p:[[1872,372],[1958,380],[2012,905],[1928,900]]}
+];
+const ISLANDS = [[[655,958],[760,948],[792,1000],[742,1042],[668,1036]]];
+const BRIDGES = [{x:684,y:872,w:32,h:266,n:'Gabriel Tucker Bridge'},{x:1874,y:598,w:144,h:44,n:'Somalia Drive Bridge'},{x:1004,y:222,w:32,h:166,n:'St. Paul Bridge'}];
+
+const DISTRICTS = [
+  {n:'Mamba Point', x:150,y:1150,w:300,h:330, c:'#a9c98a', d:.5},
+  {n:'Central Monrovia', x:450,y:1120,w:420,h:420, c:'#c9bea9', d:.95, urban:1},
+  {n:'Capitol Hill', x:870,y:1120,w:300,h:430, c:'#9cc57e', d:.35},
+  {n:'Sinkor', x:1170,y:1100,w:850,h:520, c:'#b3c98f', d:.7},
+  {n:'Congo Town', x:2020,y:1100,w:600,h:560, c:'#a5c886', d:.5},
+  {n:'Paynesville', x:2620,y:1000,w:800,h:680, c:'#b0c48a', d:.62},
+  {n:'Red Light', x:3420,y:900,w:500,h:450, c:'#c7b99c', d:.9, urban:1},
+  {n:'Freeport', x:240,y:380,w:450,h:320, c:'#bdb7a7', d:.45, ind:1},
+  {n:'Clara Town', x:420,y:700,w:450,h:200, c:'#c4baa2', d:.95},
+  {n:'Logan Town', x:870,y:400,w:300,h:480, c:'#b6c08f', d:.75},
+  {n:'Duala', x:1170,y:380,w:700,h:500, c:'#c2b997', d:.9},
+  {n:'Gardnersville', x:2020,y:450,w:800,h:500, c:'#a8c784', d:.55},
+  {n:'Barnersville', x:2820,y:300,w:700,h:550, c:'#9dc47c', d:.32},
+  {n:'Brewerville', x:300,y:0,w:1500,h:235, c:'#92bf72', d:.22},
+  {n:'Bensonville', x:3520,y:150,w:480,h:700, c:'#8fbd6e', d:.18}
+];
+
+const ROADS = [
+  {n:'UN Drive', w:26, t:'paved', main:1, p:[[200,1290],[450,1265],[650,1240]]},
+  {n:'Broad Street', w:24, t:'paved', p:[[650,1130],[650,1520]]},
+  {n:'Carey Street', w:16, t:'paved', p:[[470,1370],[870,1380]]},
+  {n:'Tubman Boulevard', w:30, t:'paved', main:1, p:[[650,1300],[900,1320],[1200,1360],[1600,1395],[2000,1425],[2400,1445],[2800,1420],[3200,1350],[3500,1200],[3700,1060]]},
+  {n:'Capitol Bypass', w:22, t:'paved', p:[[650,1180],[900,1200],[1300,1235],[1700,1255],[2100,1270]]},
+  {n:'Bushrod Highway', w:28, t:'paved', main:1, p:[[700,1135],[700,880],[700,800],[600,650],[460,540]]},
+  {n:'Somalia Drive', w:28, t:'paved', main:1, p:[[700,800],[1000,720],[1300,610],[1600,565],[1900,620],[2100,620],[2600,700],[3100,850],[3500,1050],[3700,1060]]},
+  {n:'Brewerville Road', w:22, t:'paved', p:[[1000,720],[1020,380],[1020,120],[700,80]]},
+  {n:'Careysburg Road', w:24, t:'paved', p:[[3700,1060],[3880,800],[3950,350]]},
+  {t:'dirt', w:14, p:[[1300,1235],[1300,1560]]},
+  {t:'dirt', w:14, p:[[1650,1255],[1650,1585]]},
+  {t:'dirt', w:14, p:[[2000,1270],[2000,1620]]},
+  {t:'dirt', w:14, p:[[2350,1290],[2350,1640]]},
+  {t:'dirt', w:14, p:[[2950,1410],[2950,1660]]},
+  {t:'dirt', w:14, p:[[1300,610],[1350,800],[1600,820]]},
+  {t:'dirt', w:14, p:[[1600,565],[1650,420]]},
+  {t:'dirt', w:14, p:[[2400,660],[2420,880]]},
+  {t:'dirt', w:14, p:[[3100,850],[3050,1300],[3200,1350]]},
+  {t:'dirt', w:14, p:[[2800,780],[2900,450],[3300,400]]},
+  {t:'dirt', w:14, p:[[600,650],[850,870]]},
+  {t:'dirt', w:14, p:[[400,1200],[350,1420]]},
+  {t:'dirt', w:14, p:[[3700,1060],[3800,1300]]},
+  {t:'dirt', w:14, p:[[3880,800],[3650,600],[3600,300]]}
+];
+
+/* ---------- game rules ---------- */
+const JOBS = {
+  market:  {t:'Market seller',   wage:900,   e:28, f:22, verb:'Selling greens and pepper at Waterside', ic:'🥬'},
+  dock:    {t:'Dock worker',     wage:1400,  e:40, f:30, verb:'Offloading containers at the port', ic:'📦'},
+  mechanic:{t:'Mechanic',        wage:2500,  e:32, f:25, req:'voc', verb:'Fixing engines at the garage', ic:'🔧'},
+  clerk:   {t:'Office clerk',    wage:3500,  e:22, f:20, req:'waec', verb:'Typing invoices on Broad Street', ic:'🗂️'},
+  nurse:   {t:'Nurse',           wage:6000,  e:30, f:24, req:'nursing', verb:'Caring for patients on the ward', ic:'🩺'},
+  dev:     {t:'Software developer', wage:12000, e:24, f:20, req:'degree', verb:'Building apps at the tech hub', ic:'💻'}
+};
+const COURSES = {
+  waec:    {t:'WAEC (high school)', place:'nightschool', fee:3000,  n:5, ic:'📘'},
+  voc:     {t:'Mechanic certificate', place:'vocational', fee:4000,  n:4, ic:'🛠️'},
+  nursing: {t:'Nursing diploma', place:'polytech', fee:15000, n:6, req:'waec', ic:'🩹'},
+  degree:  {t:'University degree', place:'university', fee:25000, n:8, req:'waec', ic:'🎓'}
+};
+const VEHICLES = {
+  moto:    {t:'Pen-pen motorbike', price:25000,  sp:2.1, c:'#E5392C', kind:'moto', ic:'🏍️'},
+  corolla: {t:'Used Toyota Corolla', price:70000, sp:2.5, c:'#F2C230', kind:'car', ic:'🚕'},
+  pickup:  {t:'Pickup truck', price:160000, sp:2.6, c:'#3E6FD8', kind:'truck', ic:'🛻'},
+  cruiser: {t:'Land Cruiser', price:400000, sp:3.0, c:'#1F2A30', kind:'suv', ic:'🚙'}
+};
+const HOMES = {
+  auntie:  {t:"Auntie Musu's house", loc:'h_auntie', price:0, sleep:65, d:'Free, but you share a room with three cousins.'},
+  room:    {t:'Rented room in Duala', loc:'h_room', rent:1500, sleep:80, d:'Your own room. L$1,500 every 7 days.'},
+  paynes:  {t:'Paynesville house', loc:'h_paynes', price:120000, sleep:95, d:'Two bedrooms, zinc roof, mango tree in the yard.'},
+  congo:   {t:'Congo Town home', loc:'h_congo', price:350000, sleep:100, d:'Tiled floors, a generator and a fence.'},
+  mamba:   {t:'Mamba Point villa', loc:'h_mamba', price:900000, sleep:100, d:'Ocean view, balcony, the big-man house.'}
+};
+const FOOD = {
+  kala:  {t:'Kala & tea', p:60, f:15, ic:'🍩'},
+  rice:  {t:'Rice & potato greens', p:150, f:45, ic:'🍛'},
+  fufu:  {t:'Fufu & pepper soup', p:250, f:65, ic:'🍲'},
+  water: {t:'Cold water sachet', p:10, f:3, e:2, ic:'💧'}
+};
+
+const LOCS = [
+  {id:'h_auntie', n:"Auntie Musu's House", ic:'🏠', x:1350, y:640, type:'home', home:'auntie', roof:'#8a5a3c'},
+  {id:'h_room', n:'Duala Rooms', ic:'🛏️', x:1520, y:612, type:'home', home:'room', roof:'#6f7f8a'},
+  {id:'h_paynes', n:'Paynesville House', ic:'🏡', x:2985, y:1300, type:'home', home:'paynes', roof:'#2f6f9f'},
+  {id:'h_congo', n:'Congo Town Home', ic:'🏘️', x:2500, y:1495, type:'home', home:'congo', roof:'#a4472d'},
+  {id:'h_mamba', n:'Mamba Point Villa', ic:'🏰', x:245, y:1205, type:'home', home:'mamba', roof:'#e6e1d4'},
+  {id:'waterside', n:'Waterside Market', ic:'🥬', x:600, y:1165, type:'job', job:'market', roof:'#c0392b'},
+  {id:'freeport', n:'Freeport of Monrovia', ic:'⚓', x:480, y:505, type:'job', job:'dock', roof:'#2b5aa8', big:1},
+  {id:'garage', n:'Gardnersville Garage', ic:'🔧', x:2500, y:718, type:'job', job:'mechanic', roof:'#5f5f5f'},
+  {id:'office', n:'Lone Star Trading Co.', ic:'🗂️', x:690, y:1450, type:'job', job:'clerk', roof:'#3b4a6b'},
+  {id:'hospital', n:'Sinkor General Hospital', ic:'🏥', x:1150, y:1388, type:'job', job:'nurse', roof:'#f2f2f2', big:1, heal:1},
+  {id:'techhub', n:'Mesurado Tech Hub', ic:'💻', x:2250, y:1472, type:'job', job:'dev', roof:'#1f8a70'},
+  {id:'hotfresh', n:'Hot & Fresh Kitchen', ic:'🔥', x:1600, y:1428, type:'gig', gig:'delivery', roof:'#E03A18'},
+  {id:'penpen', n:'Red Light Pen-Pen Park', ic:'🏍️', x:3585, y:1150, type:'gig', gig:'passenger', roof:'#d4a017'},
+  {id:'nightschool', n:'Monrovia Night School', ic:'📘', x:520, y:1345, type:'school', course:'waec', roof:'#7d3c98'},
+  {id:'vocational', n:'Paynesville Vocational Institute', ic:'🛠️', x:3250, y:1383, type:'school', course:'voc', roof:'#8e6e2c'},
+  {id:'polytech', n:'Sinkor Nursing College', ic:'🩹', x:1880, y:1455, type:'school', course:'nursing', roof:'#2e86c1'},
+  {id:'university', n:'University of Liberia', ic:'🎓', x:1000, y:1180, type:'school', course:'degree', roof:'#1d3f8f', big:1},
+  {id:'dealer', n:'Somalia Drive Motors', ic:'🚗', x:2200, y:600, type:'dealer', roof:'#b03a2e'},
+  {id:'realty', n:'Mamba Point Realty', ic:'🔑', x:340, y:1250, type:'realty', roof:'#16a085'},
+  {id:'bank', n:'Broad Street Bank', ic:'🏦', x:610, y:1425, type:'bank', roof:'#7f8c8d'},
+  {id:'cook1', n:"Ma Fatu's Cookshop", ic:'🍛', x:900, y:776, type:'food', roof:'#d35400'},
+  {id:'cook2', n:'Sinkor Cookshop', ic:'🍛', x:1420, y:1412, type:'food', roof:'#d35400'},
+  {id:'cook3', n:'Red Light Cookshop', ic:'🍛', x:3460, y:1262, type:'food', roof:'#d35400'},
+  {id:'cook4', n:'Gardnersville Chop Bar', ic:'🍛', x:2700, y:760, type:'food', roof:'#d35400'},
+  {id:'beach', n:'ELWA Beach', ic:'🏖️', x:2960, y:1662, type:'beach', nob:1},
+  {id:'t_duala', n:'Duala Taxi Park', ic:'🚕', x:1240, y:662, type:'taxi', nob:1},
+  {id:'t_water', n:'Waterside Taxi Park', ic:'🚕', x:745, y:1172, type:'taxi', nob:1},
+  {id:'t_sinkor', n:'Sinkor Taxi Stop', ic:'🚕', x:1500, y:1360, type:'taxi', nob:1},
+  {id:'t_congo', n:'Congo Town Taxi Stop', ic:'🚕', x:2150, y:1462, type:'taxi', nob:1},
+  {id:'t_red', n:'Red Light Taxi Park', ic:'🚕', x:3655, y:1100, type:'taxi', nob:1},
+  {id:'t_port', n:'Freeport Taxi Stop', ic:'🚕', x:565, y:612, type:'taxi', nob:1},
+  {id:'t_mamba', n:'Mamba Point Taxi Stop', ic:'🚕', x:430, y:1240, type:'taxi', nob:1},
+  {id:'t_gard', n:'Gardnersville Taxi Stop', ic:'🚕', x:2650, y:735, type:'taxi', nob:1},
+  {id:'t_brew', n:'Brewerville Taxi Stop', ic:'🚕', x:1050, y:150, type:'taxi', nob:1}
+];
+const LOC = Object.fromEntries(LOCS.map(l => [l.id, l]));
+
+const FIRST = ['Comfort','Moses','Fatu','Jartu','Kebeh','Siafa','Mamie','Garmai','Varney','Musu','Sekou','Korto','Tenneh','Yassah','Prince','Blessing','Gbessay','Momo','Hawa','Augustine'];
+const LAST = ['Kollie','Doe','Kamara','Johnson','Tarpeh','Flomo','Kpoto','Sackor','Cooper','Gbala','Togba','Massaquoi','Dolo','Nyumah','Kiazolu','Freeman'];
+
+const GOALS = [
+  {id:'first', t:'Earn your first L$1,000', ok:s => s.stats.earned >= 1000},
+  {id:'waec', t:'Get your WAEC certificate', ok:s => s.certs.includes('waec')},
+  {id:'moto', t:'Buy a pen-pen motorbike', ok:s => s.vehicles.includes('moto')},
+  {id:'room', t:'Rent your own room', ok:s => s.renting || s.owned.some(h => h !== 'auntie')},
+  {id:'deliver', t:'Make 10 Hot & Fresh deliveries', ok:s => s.stats.deliveries >= 10},
+  {id:'car', t:'Buy a car', ok:s => s.vehicles.some(v => v !== 'moto')},
+  {id:'degree', t:'Graduate from University of Liberia', ok:s => s.certs.includes('degree')},
+  {id:'house', t:'Own a house', ok:s => s.owned.some(h => h !== 'auntie')},
+  {id:'mamba', t:'Own the Mamba Point villa', ok:s => s.owned.includes('mamba')},
+  {id:'million', t:'Reach L$1,000,000 net worth', ok:s => netWorth(s) >= 1e6}
+];
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+const $ = s => document.querySelector(s);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const dist = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
+const money = n => 'L$' + Math.round(n).toLocaleString('en-US');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function rng(seed){ let s = seed >>> 0 || 1; return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296; }
+const R = rng(20251011);
+const pick = (arr, r = Math.random) => arr[Math.floor(r() * arr.length)];
+function poly(pts){ const p = new Path2D(); pts.forEach(([x,y], i) => i ? p.lineTo(x,y) : p.moveTo(x,y)); p.closePath(); return p; }
+const hit = document.createElement('canvas').getContext('2d');
+WATER.forEach(w => w.path = poly(w.p));
+const ISLAND_PATHS = ISLANDS.map(poly);
+function onBridge(x, y){ return BRIDGES.some(b => x > b.x && x < b.x + b.w && y > b.y && y < b.y + b.h); }
+function isWater(x, y){
+  if (x < 8 || y < 8 || x > W - 8 || y > H - 8) return true;
+  if (onBridge(x, y)) return false;
+  for (const p of ISLAND_PATHS) if (hit.isPointInPath(p, x, y)) return false;
+  for (const w of WATER) if (hit.isPointInPath(w.path, x, y)) return true;
+  return false;
+}
+function segDist(px, py, ax, ay, bx, by){
+  const dx = bx - ax, dy = by - ay, L = dx*dx + dy*dy;
+  const t = L ? clamp(((px - ax)*dx + (py - ay)*dy) / L, 0, 1) : 0;
+  const cx = ax + t*dx, cy = ay + t*dy;
+  return [Math.hypot(px - cx, py - cy), cx, cy];
+}
+// road segments + lengths
+ROADS.forEach(r => {
+  r.segs = []; r.len = 0;
+  for (let i = 0; i < r.p.length - 1; i++){ const [ax,ay] = r.p[i], [bx,by] = r.p[i+1]; const l = Math.hypot(bx-ax, by-ay); r.segs.push({ax,ay,bx,by,l,s:r.len}); r.len += l; }
+});
+function nearestRoad(x, y){
+  let best = {d:1e9, x:0, y:0, r:null};
+  for (const r of ROADS) for (const s of r.segs){ const [d,cx,cy] = segDist(x,y,s.ax,s.ay,s.bx,s.by); if (d < best.d) best = {d, x:cx, y:cy, r}; }
+  return best;
+}
+function onRoad(x, y){ const n = nearestRoad(x, y); return n.d < n.r.w/2 + 3; }
+function roadPoint(r, s){
+  s = clamp(s, 0, r.len);
+  for (const g of r.segs) if (s <= g.s + g.l){ const t = (s - g.s) / g.l; return {x:g.ax + (g.bx-g.ax)*t, y:g.ay + (g.by-g.ay)*t, a:Math.atan2(g.by-g.ay, g.bx-g.ax)}; }
+  const g = r.segs[r.segs.length-1]; return {x:g.bx, y:g.by, a:Math.atan2(g.by-g.ay, g.bx-g.ax)};
+}
+function districtAt(x, y){
+  let best = null, bd = 1e9;
+  for (const d of DISTRICTS){ if (x >= d.x && x <= d.x + d.w && y >= d.y && y <= d.y + d.h){ const c = dist(x, y, d.x + d.w/2, d.y + d.h/2); if (c < bd){ bd = c; best = d; } } }
+  if (best) return best.n;
+  if (isWater(x, y)) return 'On the water';
+  return 'Montserrado';
+}
+
+/* =========================================================
+   WORLD GENERATION (seeded, so the city is the same every visit)
+   ========================================================= */
+const CELL = 200;
+const grid = new Map();
+const gkey = (cx, cy) => cx + ',' + cy;
+function addSolid(b){
+  for (let cx = Math.floor(b.x/CELL); cx <= Math.floor((b.x+b.w)/CELL); cx++)
+    for (let cy = Math.floor(b.y/CELL); cy <= Math.floor((b.y+b.h)/CELL); cy++){ const k = gkey(cx,cy); if (!grid.has(k)) grid.set(k, []); grid.get(k).push(b); }
+}
+function solidsNear(x, y){ const k = gkey(Math.floor(x/CELL), Math.floor(y/CELL)); return grid.get(k) || []; }
+function hitsSolid(x, y, r){
+  for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++){
+    const arr = grid.get(gkey(Math.floor(x/CELL)+dx, Math.floor(y/CELL)+dy)); if (!arr) continue;
+    for (const b of arr) if (x + r > b.x && x - r < b.x + b.w && y + r > b.y && y - r < b.y + b.h) return b;
+  }
+  return null;
+}
+function rectFree(x, y, w, h, pad){
+  const pts = [[x,y],[x+w,y],[x,y+h],[x+w,y+h],[x+w/2,y+h/2]];
+  if (pts.some(([px,py]) => isWater(px, py))) return false;
+  if (hitsSolid(x + w/2, y + h/2, Math.max(w, h)/2 + pad)) return false;
+  const n = nearestRoad(x + w/2, y + h/2); if (n.d < n.r.w/2 + Math.max(w,h)/2 + 6) return false;
+  for (const l of LOCS) if (dist(x + w/2, y + h/2, l.x, l.y) < 70) return false;
+  return true;
+}
+const ZINC = ['#9aa3a8','#8d969b','#a65a33','#b3683c','#3f6fb0','#4b8a5a','#7c8a91','#c2c7c9','#8b4b2f'];
+const WALLS = ['#e9dcc3','#d9c7a5','#f2e6cf','#cfd8c9','#e8c9a8','#d6dbe0'];
+const buildings = [];
+// landmark buildings first (doors sit beside the road, building set back)
+for (const l of LOCS){
+  const n = nearestRoad(l.x, l.y);
+  if (n.d < n.r.w/2 + 12){ const dx = l.x - n.x, dy = l.y - n.y, m = Math.hypot(dx, dy) || 1; l.x = n.x + dx/m*(n.r.w/2 + 14); l.y = n.y + dy/m*(n.r.w/2 + 14); }
+  if (l.nob) continue;
+  const bw = l.big ? 96 : 70, bh = l.big ? 66 : 50;
+  let dx = l.x - n.x, dy = l.y - n.y; const m = Math.hypot(dx, dy);
+  if (m < 1 || n.d > 80){ dx = 0; dy = -1; } else { dx /= m; dy /= m; }
+  // snap direction to the dominant axis so buildings stay square to the street
+  if (Math.abs(dx) > Math.abs(dy)){ dx = Math.sign(dx); dy = 0; } else { dy = Math.sign(dy) || -1; dx = 0; }
+  const cx = l.x + dx*(bh/2 + 10), cy = l.y + dy*(bh/2 + 10);
+  const b = {x:cx - bw/2, y:cy - bh/2, w:bw, h:bh, roof:l.roof, wall:'#f4ead8', loc:l};
+  l.b = b; buildings.push(b); addSolid(b);
+}
+for (const d of DISTRICTS){
+  const n = Math.round(d.w * d.h / 3600 * d.d * .55);
+  for (let i = 0, tries = 0; i < n && tries < n * 8; tries++){
+    const big = d.urban || d.ind;
+    const w = Math.round((big ? 30 : 22) + R() * (big ? 34 : 22)), h = Math.round((big ? 26 : 18) + R() * (big ? 26 : 16));
+    const x = d.x + R() * (d.w - w), y = d.y + R() * (d.h - h);
+    if (!rectFree(x, y, w, h, 4)) continue;
+    const b = {x, y, w, h, roof: d.ind ? pick(['#8f9aa0','#3f6fb0','#b9473a','#c9a227'], R) : pick(ZINC, R), wall: pick(WALLS, R), ind: d.ind};
+    buildings.push(b); addSolid(b); i++;
+  }
+}
+// trees (palms near the coast, round bush trees inland), ground patches
+const trees = [], patches = [], waves = [];
+for (let i = 0, t = 0; i < 1100 && t < 6000; t++){
+  const x = R() * W, y = R() * H; if (isWater(x, y)) continue;
+  if (hitsSolid(x, y, 10)) continue; const n = nearestRoad(x, y); if (n.d < n.r.w/2 + 10) continue;
+  const coastal = isWater(x, y + 70) || isWater(x - 70, y) || isWater(x, y - 70);
+  trees.push({x, y, r: 9 + R() * 9, palm: coastal || R() < .35, a: R() * 6.28}); i++;
+}
+for (let i = 0; i < 900; i++){ const x = R() * W, y = R() * H; if (!isWater(x, y)) patches.push({x, y, rx: 20 + R()*60, ry: 10 + R()*30, c: R() < .5 ? 'rgba(60,110,40,.18)' : 'rgba(160,90,40,.14)'}); }
+for (let i = 0; i < 700; i++){ const x = R() * W, y = R() * H; if (isWater(x, y) && !hit.isPointInPath(WATER[1].path, x, y)) waves.push({x, y, p: R() * 6.28, l: 10 + R()*16}); }
+// delivery addresses: points just off the roads, on land, not inside buildings
+const ADDR = [];
+for (const r of ROADS){
+  for (let s = 40; s < r.len; s += 110){
+    const p = roadPoint(r, s), side = R() < .5 ? -1 : 1, off = r.w/2 + 16;
+    const x = p.x + Math.cos(p.a + Math.PI/2) * off * side, y = p.y + Math.sin(p.a + Math.PI/2) * off * side;
+    if (!isWater(x, y) && !hitsSolid(x, y, 8)) ADDR.push({x, y, d: districtAt(x, y), st: r.n || 'a side street'});
+  }
+}
+// street lamps for the night
+const LAMPS = [];
+for (const r of ROADS) if (r.t === 'paved') for (let s = 0; s < r.len; s += 150){ const p = roadPoint(r, s); LAMPS.push({x:p.x, y:p.y, r:70}); }
+LOCS.forEach(l => LAMPS.push({x:l.x, y:l.y, r:l.nob ? 60 : 95}));
+
+/* ---------- traffic & people ---------- */
+const PAVED = ROADS.filter(r => r.t === 'paved');
+const totalPaved = PAVED.reduce((a, r) => a + r.len, 0);
+const CARCOL = ['#d9d9d9','#2c3e50','#8e1b1b','#ffffff','#1b4f8e','#5d6d7e','#145a32'];
+const traffic = [];
+for (let i = 0; i < 48; i++){
+  let pickLen = Math.random() * totalPaved, road = PAVED[0];
+  for (const r of PAVED){ if (pickLen < r.len){ road = r; break; } pickLen -= r.len; }
+  const kind = pick(['taxi','taxi','keke','keke','car','car','moto','moto','bus']);
+  traffic.push({road, s: Math.random() * road.len, dir: Math.random() < .5 ? 1 : -1, sp: kind === 'keke' ? 55 + Math.random()*25 : kind === 'moto' ? 90 + Math.random()*40 : 70 + Math.random()*55, kind,
+    c: kind === 'taxi' || kind === 'keke' ? '#F2C230' : kind === 'bus' ? '#e0e0e0' : kind === 'moto' ? pick(['#E5392C','#2c3e50','#1b4f8e']) : pick(CARCOL)});
+}
+const SHIRTS = ['#E5392C','#3157C8','#39C06A','#FFB21E','#8E44AD','#F2F2F2','#16A085','#E67E22'];
+const SKINS = ['#5a3825','#7a4a2c','#3e2618','#8d5a3b'];
+const people = [];
+for (let i = 0; i < 110; i++){
+  const anchor = Math.random() < .55 ? pick(LOCS.filter(l => !l.home)) : pick(ADDR);
+  const a = {x: anchor.x + (Math.random()-.5)*60, y: anchor.y + (Math.random()-.5)*60};
+  if (isWater(a.x, a.y) || hitsSolid(a.x, a.y, 5)) continue;
+  people.push({ax:a.x, ay:a.y, x:a.x, y:a.y, tx:a.x, ty:a.y, sp: 18 + Math.random()*20, shirt: pick(SHIRTS), skin: pick(SKINS), t: Math.random()*10, head: Math.random() < .25});
+}
+
+/* =========================================================
+   STATE
+   ========================================================= */
+const KEY = 'smallsmall-save-v1';
+function fresh(name, shirt, skin){
+  const h = LOC.h_auntie;
+  return {name: name || 'Player', shirt, skin, x:h.x, y:h.y, money:2500, bank:0, day:1, min:7*60, energy:90, food:70,
+    certs:[], enrolled:{}, vehicles:[], ride:null, riding:false, home:'auntie', owned:['auntie'], renting:false, rentDue:0,
+    goals:[], gig:null, rain:false, stats:{earned:0, deliveries:0, rides:0, shifts:0, classes:0}, created:Date.now()};
+}
+let S = null;
+function load(){ try { const raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) : null; } catch(e){ return null; } }
+function save(){ if (!S) return; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
+function netWorth(s){
+  return s.money + s.bank + s.vehicles.reduce((a, v) => a + VEHICLES[v].price*.8, 0) + s.owned.reduce((a, h) => a + (HOMES[h].price || 0), 0);
+}
+
+/* =========================================================
+   CANVAS + CAMERA
+   ========================================================= */
+const cv = $('#game'), ctx = cv.getContext('2d');
+const nightC = document.createElement('canvas'), nctx = nightC.getContext('2d');
+let DPR = 1, CW = 0, CH = 0, zoom = 1;
+const cam = {x: LOC.h_auntie.x, y: LOC.h_auntie.y};
+function resize(){
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  CW = Math.round(innerWidth * DPR); CH = Math.round(innerHeight * DPR);
+  cv.width = CW; cv.height = CH; nightC.width = CW; nightC.height = CH;
+  zoom = clamp(Math.min(innerWidth, innerHeight) / 620, .8, 1.45) * DPR;
+}
+addEventListener('resize', resize); resize();
+
+/* =========================================================
+   INPUT
+   ========================================================= */
+const keys = new Set();
+const joy = {on:false, id:null, ox:0, oy:0, x:0, y:0};
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  const k = e.key.toLowerCase(); keys.add(k);
+  if (!S || !$('#intro').hidden) return;
+  if (k === 'escape'){ closeModal(); closeMap(); }
+  if (!$('#scrim').hidden || !$('#busy').hidden) return;
+  if (k === 'e' || k === ' ' || k === 'enter'){ e.preventDefault(); doAction(); }
+  if (k === 'r') toggleRide();
+  if (k === 'p') openPhone();
+  if (k === 'm') $('#mapWrap').hidden ? openMap() : closeMap();
+});
+addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
+addEventListener('blur', () => keys.clear());
+const joyEl = $('#joy'), knob = $('#knob');
+joyEl.addEventListener('pointerdown', e => { joy.on = true; joy.id = e.pointerId; const r = joyEl.getBoundingClientRect(); joy.ox = r.left + r.width/2; joy.oy = r.top + r.height/2; joyEl.setPointerCapture(e.pointerId); moveJoy(e); });
+joyEl.addEventListener('pointermove', e => { if (joy.on && e.pointerId === joy.id) moveJoy(e); });
+const endJoy = e => { if (e.pointerId !== joy.id) return; joy.on = false; joy.x = joy.y = 0; knob.style.transform = ''; };
+joyEl.addEventListener('pointerup', endJoy); joyEl.addEventListener('pointercancel', endJoy);
+function moveJoy(e){ let dx = e.clientX - joy.ox, dy = e.clientY - joy.oy; const m = Math.hypot(dx, dy), max = 46; if (m > max){ dx = dx/m*max; dy = dy/m*max; } joy.x = dx/max; joy.y = dy/max; knob.style.transform = `translate(${dx}px,${dy}px)`; }
+function inputVec(){
+  let x = 0, y = 0;
+  if (keys.has('a') || keys.has('arrowleft')) x -= 1; if (keys.has('d') || keys.has('arrowright')) x += 1;
+  if (keys.has('w') || keys.has('arrowup')) y -= 1; if (keys.has('s') || keys.has('arrowdown')) y += 1;
+  if (joy.on){ x += joy.x; y += joy.y; }
+  const m = Math.hypot(x, y); if (m > 1){ x /= m; y /= m; }
+  return [x, y];
+}
+$('#actBtn').addEventListener('click', doAction);
+$('#rideBtn').addEventListener('click', toggleRide);
+$('#phoneBtn').addEventListener('click', openPhone);
+$('#mapBtn').addEventListener('click', openMap);
+$('#mapClose').addEventListener('click', closeMap);
+
+/* =========================================================
+   UI: toasts, modal, busy
+   ========================================================= */
+function toast(msg, kind = ''){
+  const t = document.createElement('div'); t.className = 'toast ' + kind; t.textContent = msg; $('#toasts').appendChild(t);
+  while ($('#toasts').children.length > 3) $('#toasts').firstChild.remove();
+  setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 320); }, 2600);
+}
+let modalActs = [], modalRender = null;
+function openModal(render){ modalRender = render; renderModal(); $('#scrim').hidden = false; keys.clear(); }
+function renderModal(){
+  if (!modalRender) return;
+  const m = modalRender(); modalActs = m.acts || [];
+  $('#modal').innerHTML = `<header><span class="ic">${m.ic || '📍'}</span><div style="min-width:0"><h2>${esc(m.t)}</h2>${m.sub ? `<div class="sub">${m.sub}</div>` : ''}</div><button class="x" data-close aria-label="Close">✕</button></header>
+    ${m.body || ''}
+    ${modalActs.length ? `<div class="acts">${modalActs.map((a, i) => `<button class="act ${a.primary ? 'primary' : ''}" data-i="${i}" ${a.dis ? 'disabled' : ''}><span class="l"><b>${a.l}</b>${a.s ? `<small>${a.s}</small>` : ''}</span>${a.p ? `<span class="p ${a.pc || ''}">${a.p}</span>` : ''}</button>`).join('')}</div>` : ''}`;
+  const first = $('#modal').querySelector('.act:not(:disabled)'); (first || $('#modal .x')).focus({preventScroll:true});
+}
+function closeModal(){ $('#scrim').hidden = true; modalRender = null; }
+$('#scrim').addEventListener('click', e => {
+  if (e.target === $('#scrim') || e.target.closest('[data-close]')) return closeModal();
+  const tab = e.target.closest('[data-tab]'); if (tab){ phoneTab = tab.dataset.tab; renderModal(); return; }
+  const b = e.target.closest('.act'); if (!b || b.disabled) return;
+  const a = modalActs[+b.dataset.i]; if (a && a.fn) a.fn();
+  hud(); if (modalRender) renderModal();
+});
+function busy(ic, title, sub, secs, then){
+  closeModal(); $('#busyIc').textContent = ic; $('#busyT').textContent = title; $('#busyS').textContent = sub || '';
+  const bar = $('#busyBar'); bar.style.animation = 'none'; void bar.offsetWidth; bar.style.animation = ''; $('#busy').style.setProperty('--d', secs + 's');
+  $('#busy').hidden = false; keys.clear();
+  setTimeout(() => { $('#busy').hidden = true; then(); hud(); save(); checkGoals(); }, secs * 1000);
+}
+
+/* =========================================================
+   TIME, NEEDS, ECONOMY
+   ========================================================= */
+const fmtTime = m => { m = Math.floor(m % 1440); const h = Math.floor(m/60), mm = m % 60; return `${(h % 12) || 12}:${String(mm).padStart(2,'0')} ${h < 12 ? 'AM' : 'PM'}`; };
+const hour = () => (S.min % 1440) / 60;
+function addMoney(n, why){
+  S.money += n; if (n > 0) S.stats.earned += n;
+  const el = $('#hMoney'); el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+function advance(mins){
+  S.min += mins;
+  while (S.min >= 1440){ S.min -= 1440; newDay(); }
+}
+function newDay(){
+  S.day++;
+  if (S.bank > 0){ const i = Math.round(S.bank * .01); S.bank += i; toast(`Bank interest: +${money(i)}`, 'good'); }
+  S.rain = Math.random() < .35;
+  if (S.rain) toast('Rainy season! Heavy rain today. Deliveries pay 25% more.', 'gold');
+  if (S.renting && S.day >= S.rentDue){
+    if (S.money >= HOMES.room.rent){ S.money -= HOMES.room.rent; S.rentDue = S.day + 7; toast(`Paid rent: ${money(HOMES.room.rent)}`); }
+    else { S.renting = false; if (S.home === 'room') S.home = 'auntie'; toast('You could not pay rent. Back to Auntie Musu\'s house.', 'bad'); }
+  }
+}
+function canWork(e, f){
+  if (S.energy < e * .8) return 'You are too tired. Sleep first.';
+  if (S.food < 12) return 'You are too hungry. Eat at a cookshop.';
+  return '';
+}
+function workShift(jobId){
+  const j = JOBS[jobId], h = hour();
+  busy(j.ic, j.verb + '…', '8 hours', 1.8, () => {
+    advance(8*60); S.energy = clamp(S.energy - j.e, 0, 100); S.food = clamp(S.food - j.f, 0, 100);
+    let pay = j.wage, extra = '';
+    if (Math.random() < .25){ const tip = Math.round(j.wage * (.1 + Math.random()*.2)); pay += tip; extra = ` (bonus ${money(tip)})`; }
+    addMoney(pay); S.stats.shifts++;
+    toast(`Shift done: +${money(pay)}${extra}`, 'good');
+  });
+}
+
+/* =========================================================
+   GIGS (open-world jobs)
+   ========================================================= */
+function farAddr(fromX, fromY, minD, maxD){
+  const opts = ADDR.filter(a => { const d = dist(a.x, a.y, fromX, fromY); return d > minD && d < maxD; });
+  return pick(opts.length ? opts : ADDR);
+}
+function startGig(kind){
+  const who = pick(FIRST) + ' ' + pick(LAST);
+  if (kind === 'delivery'){
+    const a = farAddr(S.x, S.y, 450, 1700);
+    S.gig = {kind, stage:'drop', who, x:a.x, y:a.y, d:a.d, st:a.st, start:S.min + S.day*1440, dist:dist(S.x, S.y, a.x, a.y), food:pick(['palm butter & rice','jollof & pepper chicken','fufu & pepper soup','cassava leaf','check rice & fish'])};
+    toast(`Deliver ${S.gig.food} to ${who} in ${a.d}`, 'gold');
+  } else {
+    const p = farAddr(S.x, S.y, 120, 600), d = farAddr(p.x, p.y, 400, 1400);
+    S.gig = {kind, stage:'pick', who, px:p.x, py:p.y, x:p.x, y:p.y, dx:d.x, dy:d.y, d:p.d, dd:d.d, start:0, dist:dist(p.x, p.y, d.x, d.y)};
+    toast(`${who} is waiting for a pen-pen in ${p.d}`, 'gold');
+  }
+  closeModal(); save(); hud();
+}
+function gigCheck(){
+  const g = S.gig; if (!g) return;
+  if (dist(S.x, S.y, g.x, g.y) > 42) return;
+  if (g.kind === 'passenger' && g.stage === 'pick'){
+    if (!(S.riding && S.ride === 'moto')){ return; }
+    g.stage = 'drop'; g.x = g.dx; g.y = g.dy; g.d = g.dd; g.start = S.min + S.day*1440;
+    toast(`${g.who} climbed on. Take them to ${g.dd}.`, 'gold'); hud(); return;
+  }
+  const took = (S.min + S.day*1440) - g.start;               // game minutes
+  const expect = g.dist / 120 * 1.5 / (S.riding ? 1.8 : 1) + 6;
+  let pay = Math.round((g.kind === 'delivery' ? 80 : 60) + g.dist * (g.kind === 'delivery' ? .2 : .17));
+  if (S.rain) pay = Math.round(pay * 1.25);
+  let tip = 0; if (took <= expect){ tip = Math.round(pay * .3); }
+  addMoney(pay + tip);
+  if (g.kind === 'delivery') S.stats.deliveries++; else S.stats.rides++;
+  toast(`${g.who}: "Thank you-o!" +${money(pay)}${tip ? ` + ${money(tip)} tip for speed` : ''}`, 'good');
+  S.gig = null; save(); hud(); checkGoals();
+}
+
+/* =========================================================
+   LOCATION PANELS
+   ========================================================= */
+function reqText(c){ return COURSES[c].t; }
+function panelFor(l){
+  const h = hour();
+  switch (l.type){
+    case 'job': {
+      const j = JOBS[l.job], need = j.req && !S.certs.includes(j.req);
+      const open = h >= 6 && h < 20, why = need ? `Needs a ${reqText(j.req)}` : !open ? 'Shifts start between 6 AM and 8 PM' : canWork(j.e, j.f);
+      const acts = [{l:`Work a shift as ${j.t}`, s: why || `8 hours · uses ${j.e} energy`, p:'+' + money(j.wage), pc:'plus', dis:!!why, primary:!why, fn:() => workShift(l.job)}];
+      if (l.heal) acts.push({l:'Get a check-up', s:'+30 energy, 1 hour', p:money(300), pc:'minus', dis:S.money < 300, fn:() => { S.money -= 300; advance(60); S.energy = clamp(S.energy + 30, 0, 100); toast('The doctor says you need more rest. +30 energy', 'good'); }});
+      return {ic:l.ic, t:l.n, sub:`Job: <b>${j.t}</b>. Pays ${money(j.wage)} per 8-hour shift.`,
+        body:`<div class="facts"><span class="chip ${need ? 'no' : 'ok'}">${j.req ? (need ? '✗ ' : '✓ ') + reqText(j.req) : 'No certificate needed'}</span><span class="chip">Open 6 AM – 8 PM</span></div>`, acts};
+    }
+    case 'gig': {
+      const isD = l.gig === 'delivery', active = S.gig;
+      const needMoto = !isD && !S.vehicles.includes('moto');
+      const acts = [];
+      if (active) acts.push({l:'Cancel current job', s:'You will not be paid for it', fn:() => { S.gig = null; toast('Job cancelled'); save(); }});
+      else acts.push({l: isD ? 'Pick up a delivery order' : 'Find a passenger', s: needMoto ? 'You need your own pen-pen. Buy one at Somalia Drive Motors.' : (isD ? 'Food is packed hot. Go!' : 'Ride your motorbike to the pickup point'), primary:!needMoto, dis:needMoto || (h < 6 || h >= 23), fn:() => startGig(l.gig)});
+      return {ic:l.ic, t:l.n, sub: isD ? 'Deliver Hot &amp; Fresh food across Montserrado. Faster delivery means a bigger tip. Riding a motorbike or car makes you much faster.' : 'Carry passengers on your pen-pen. Every rider pays by distance.',
+        body:`<div class="facts"><span class="chip gold">Pay by distance</span><span class="chip">+30% speed tip</span>${S.rain ? '<span class="chip ok">Rain bonus +25%</span>' : ''}<span class="chip">${isD ? S.stats.deliveries + ' delivered' : S.stats.rides + ' rides'}</span></div>`, acts};
+    }
+    case 'school': {
+      const c = COURSES[l.course], done = S.certs.includes(l.course), prog = S.enrolled[l.course];
+      const need = c.req && !S.certs.includes(c.req), open = h >= 8 && h < 18;
+      const acts = [];
+      if (done) acts.push({l:'You graduated', s:'Certificate is in your phone', dis:true});
+      else if (prog === undefined) acts.push({l:`Enroll in ${c.t}`, s: need ? `Needs ${reqText(c.req)} first` : `${c.n} classes to graduate`, p:money(c.fee), pc:'minus', primary:!need && S.money >= c.fee, dis: need || S.money < c.fee, fn:() => { S.money -= c.fee; S.enrolled[l.course] = 0; toast(`Enrolled in ${c.t}`, 'good'); save(); }});
+      else { const why = !open ? 'Classes run 8 AM – 6 PM' : S.energy < 15 ? 'Too tired for class' : S.food < 10 ? 'Too hungry for class' : '';
+        acts.push({l:`Attend class ${prog + 1} of ${c.n}`, s: why || '4 hours · -15 energy', primary:!why, dis:!!why, fn:() => attendClass(l.course)}); }
+      return {ic:c.ic, t:l.n, sub:`Study for your <b>${c.t}</b>.`,
+        body:`<div class="facts"><span class="chip">Fee ${money(c.fee)}</span><span class="chip">${c.n} classes</span>${c.req ? `<span class="chip ${need ? 'no' : 'ok'}">Needs ${reqText(c.req)}</span>` : ''}</div>${prog !== undefined && !done ? `<div class="prog"><i style="width:${prog/c.n*100}%"></i></div>` : ''}`, acts};
+    }
+    case 'food': return {ic:'🍛', t:l.n, sub:'Hot food, cooked fresh. Pay and eat.', acts:Object.entries(FOOD).map(([k, f]) => ({l:`${f.ic} ${f.t}`, s:`+${f.f} food`, p:money(f.p), pc:'minus', dis:S.money < f.p || S.food >= 100, fn:() => { S.money -= f.p; S.food = clamp(S.food + f.f, 0, 100); if (f.e) S.energy = clamp(S.energy + f.e, 0, 100); advance(20); toast(`Mmm, ${f.t}!`, 'good'); }}))};
+    case 'dealer': return {ic:'🚗', t:l.n, sub:'New and used rides. Drive faster and earn more on deliveries.',
+      acts:Object.entries(VEHICLES).map(([k, v]) => { const own = S.vehicles.includes(k);
+        return own ? {l:`${v.ic} ${v.t}`, s: S.ride === k ? 'Your active ride' : 'Owned · tap to make it your ride', p:'Owned', dis:S.ride === k, fn:() => { S.ride = k; toast(`${v.t} is now your ride. Press Ride.`); save(); }}
+                   : {l:`${v.ic} ${v.t}`, s:`${v.sp}× walking speed`, p:money(v.price), pc:'minus', dis:S.money < v.price, primary:S.money >= v.price, fn:() => { S.money -= v.price; S.vehicles.push(k); S.ride = k; toast(`You bought a ${v.t}! Press Ride to drive it.`, 'gold'); save(); checkGoals(); }}; })};
+    case 'realty': return {ic:'🔑', t:l.n, sub:'Rooms and houses across Montserrado. The home you pick is where you sleep.',
+      acts:Object.entries(HOMES).map(([k, hm]) => {
+        const own = S.owned.includes(k) || (k === 'room' && S.renting), cur = S.home === k;
+        if (own) return {l:hm.t, s: cur ? 'Your current home' : hm.d + ' Tap to move here.', p: cur ? 'Home' : 'Move in', dis:cur, fn:() => { S.home = k; toast(`You moved to ${hm.t}`, 'good'); save(); }};
+        if (hm.rent) return {l:hm.t, s:hm.d, p:money(hm.rent) + '/wk', pc:'minus', dis:S.money < hm.rent, fn:() => { S.money -= hm.rent; S.renting = true; S.rentDue = S.day + 7; S.home = 'room'; toast('You rented a room in Duala!', 'gold'); save(); checkGoals(); }};
+        return {l:hm.t, s:hm.d, p:money(hm.price), pc:'minus', dis:S.money < hm.price, fn:() => { S.money -= hm.price; S.owned.push(k); S.home = k; toast(`You bought the ${hm.t}! 🎉`, 'gold'); save(); checkGoals(); }};
+      })};
+    case 'bank': return {ic:'🏦', t:l.n, sub:`Savings grow <b>1% every day</b>. Cash in hand: ${money(S.money)}.`,
+      body:`<div class="statgrid"><div class="stat"><span>In the bank</span><b class="num">${money(S.bank)}</b></div><div class="stat"><span>Cash</span><b class="num">${money(S.money)}</b></div></div>`,
+      acts:[
+        {l:'Deposit L$1,000', dis:S.money < 1000, fn:() => { S.money -= 1000; S.bank += 1000; }},
+        {l:'Deposit all cash', dis:S.money <= 0, fn:() => { S.bank += S.money; S.money = 0; toast('Money saved'); }},
+        {l:'Withdraw L$1,000', dis:S.bank < 1000, fn:() => { S.bank -= 1000; S.money += 1000; }},
+        {l:'Withdraw everything', dis:S.bank <= 0, fn:() => { S.money += S.bank; S.bank = 0; }}
+      ]};
+    case 'taxi': return {ic:'🚕', t:l.n, sub:'Hop in a shared yellow taxi to another part of the county.',
+      acts:LOCS.filter(o => o.type === 'taxi' && o.id !== l.id).map(o => { const d = dist(l.x, l.y, o.x, o.y), fare = Math.round(25 + d * .06), mins = Math.round(d / 18);
+        return {l:o.n.replace(/ Taxi (Park|Stop)/, ''), s:`About ${mins} min`, p:money(fare), pc:'minus', dis:S.money < fare, fn:() => taxi(o, fare, mins)}; })};
+    case 'beach': return {ic:'🏖️', t:l.n, sub:'Waves, breeze and a cold coconut. Good for the mind.',
+      acts:[{l:'Relax by the sea', s:'2 hours · +15 energy', primary:true, fn:() => busy('🌊', 'Relaxing at ELWA Beach…', 'Listening to the waves', 1.2, () => { advance(120); S.energy = clamp(S.energy + 15, 0, 100); toast('You feel refreshed. +15 energy', 'good'); })},
+            {l:'Buy a fresh coconut', s:'+12 food', p:money(50), pc:'minus', dis:S.money < 50, fn:() => { S.money -= 50; S.food = clamp(S.food + 12, 0, 100); toast('Sweet coconut water!'); }}]};
+    case 'home': {
+      const hm = HOMES[l.home], mine = S.owned.includes(l.home) || (l.home === 'room' && S.renting);
+      if (!mine) return {ic:l.ic, t:l.n, sub: hm.rent ? `Room for rent: ${money(hm.rent)} every 7 days.` : `For sale: <b>${money(hm.price)}</b>. ${hm.d}`, body:'<div class="facts"><span class="chip gold">Buy or rent at Mamba Point Realty</span></div>', acts:[]};
+      const isHome = S.home === l.home;
+      return {ic:l.ic, t:l.n, sub: isHome ? 'Home sweet home.' : `You own this place. Make it your home at the realty office or here.`,
+        body:`<div class="facts"><span class="chip ok">Sleep restores up to ${hm.sleep}% energy</span></div>`,
+        acts:[ isHome ? null : {l:'Make this my home', fn:() => { S.home = l.home; toast(`${hm.t} is now your home`); }},
+          {l:'Sleep until 6 AM', s:'Restores energy, you wake up a bit hungry', primary:true, dis:!isHome, fn:() => sleep(hm)},
+          {l:'Take a nap', s:'2 hours · +20 energy', dis:!isHome, fn:() => busy('😴', 'Napping…', '', 1, () => { advance(120); S.energy = clamp(S.energy + 20, 0, hm.sleep); S.food = clamp(S.food - 5, 0, 100); })}
+        ].filter(Boolean)};
+    }
+  }
+  return {t:l.n, acts:[]};
+}
+function attendClass(cid){
+  const c = COURSES[cid];
+  busy(c.ic, `Studying ${c.t}…`, '4 hours of class', 1.4, () => {
+    advance(240); S.energy = clamp(S.energy - 15, 0, 100); S.food = clamp(S.food - 10, 0, 100);
+    S.enrolled[cid]++; S.stats.classes++;
+    if (S.enrolled[cid] >= c.n){ S.certs.push(cid); delete S.enrolled[cid]; toast(`🎓 You graduated: ${c.t}! New jobs are open.`, 'gold'); confetti(); }
+    else toast(`Class done. ${S.enrolled[cid]} of ${c.n}.`, 'good');
+  });
+}
+function sleep(hm){
+  busy('😴', 'Sleeping…', 'Good night', 1.6, () => {
+    let mins = (6*60 - S.min + 1440) % 1440; if (mins < 1) mins = 1440;
+    advance(mins); S.energy = Math.max(S.energy, hm.sleep); S.food = clamp(S.food - 15, 0, 100);
+    toast(`Good morning! Day ${S.day}.`, 'good');
+  });
+}
+function taxi(o, fare, mins){
+  S.money -= fare;
+  busy('🚕', `Riding to ${o.n.replace(/ Taxi (Park|Stop)/, '')}…`, 'Squeezed in the back seat with three people', 1.2, () => {
+    advance(mins); S.x = o.x; S.y = o.y + 4; cam.x = S.x; cam.y = S.y; S.riding = false; toast(`You reached ${districtAt(S.x, S.y)}`);
+  });
+}
+
+/* =========================================================
+   ACTIONS
+   ========================================================= */
+let near = null;
+function findNear(){
+  let best = null, bd = S.riding ? 58 : 46;
+  for (const l of LOCS){ const d = dist(S.x, S.y, l.x, l.y); if (d < bd){ bd = d; best = l; } }
+  return best;
+}
+function doAction(){ if (near) openModal(() => panelFor(near)); }
+function toggleRide(){
+  if (!S) return;
+  if (!S.vehicles.length){ toast('You don\'t own a vehicle yet. Visit Somalia Drive Motors.', 'bad'); return; }
+  if (!S.ride) S.ride = S.vehicles[0];
+  if (!S.riding && hitsSolid(S.x, S.y, 12)){ toast('Step away from the building to get on.', 'bad'); return; }
+  S.riding = !S.riding;
+  toast(S.riding ? `On your ${VEHICLES[S.ride].t}` : 'You parked and got off'); hud();
+}
+let phoneTab = 'me';
+function openPhone(){
+  openModal(() => {
+    const tabs = [['me','Me'],['goals','Goals'],['stuff','My things'],['tips','How to play']];
+    let body = `<div class="tabs" role="tablist">${tabs.map(([k, t]) => `<button role="tab" data-tab="${k}" aria-selected="${phoneTab === k}">${t}</button>`).join('')}</div>`;
+    if (phoneTab === 'me'){
+      body += `<div class="statgrid">
+        <div class="stat"><span>Cash</span><b class="num">${money(S.money)}</b></div><div class="stat"><span>Bank</span><b class="num">${money(S.bank)}</b></div>
+        <div class="stat"><span>Net worth</span><b class="num">${money(netWorth(S))}</b></div><div class="stat"><span>Day</span><b class="num">${S.day}</b></div>
+        <div class="stat"><span>Earned total</span><b class="num">${money(S.stats.earned)}</b></div><div class="stat"><span>Shifts worked</span><b class="num">${S.stats.shifts}</b></div>
+        <div class="stat"><span>Deliveries</span><b class="num">${S.stats.deliveries}</b></div><div class="stat"><span>Pen-pen rides</span><b class="num">${S.stats.rides}</b></div></div>
+        <div class="facts">${Object.entries(COURSES).map(([k, c]) => `<span class="chip ${S.certs.includes(k) ? 'ok' : ''}">${S.certs.includes(k) ? '✓' : (S.enrolled[k] !== undefined ? `${S.enrolled[k]}/${c.n}` : '–')} ${c.t}</span>`).join('')}</div>`;
+    } else if (phoneTab === 'goals'){
+      const done = GOALS.filter(g => g.ok(S)).length;
+      body += `<div class="prog"><i style="width:${done/GOALS.length*100}%"></i></div><div class="list">${GOALS.map((g, i) => `<div class="goal ${g.ok(S) ? 'done' : ''}"><span class="dot">${g.ok(S) ? '✓' : i + 1}</span><b>${g.t}</b></div>`).join('')}</div>`;
+    } else if (phoneTab === 'stuff'){
+      body += `<div class="list"><div class="goal"><span class="dot">🏠</span><span><b>${HOMES[S.home].t}</b><br><small style="color:var(--muted)">${S.renting ? `Rent due on day ${S.rentDue}` : 'Where you sleep'}</small></span></div>
+        ${S.owned.filter(h => h !== 'auntie').map(h => `<div class="goal done"><span class="dot">🔑</span><b style="text-decoration:none">${HOMES[h].t}</b></div>`).join('')}
+        ${S.vehicles.length ? S.vehicles.map(v => `<div class="goal done"><span class="dot">${VEHICLES[v].ic}</span><b style="text-decoration:none">${VEHICLES[v].t}${S.ride === v ? ' · active' : ''}</b></div>`).join('') : '<div class="goal"><span class="dot">🚶</span><b>No vehicle yet</b></div>'}</div>`;
+    } else {
+      body += `<div class="list" style="font-size:14px;line-height:1.45;color:var(--muted)">
+        <div class="goal"><span class="dot">1</span><span>Walk with <b>WASD</b> or the joystick. Walk up to a building and press <b>Enter</b>.</span></div>
+        <div class="goal"><span class="dot">2</span><span>Start at <b>Waterside Market</b> or the <b>Freeport</b> for quick money, or run <b>Hot &amp; Fresh</b> deliveries in Sinkor.</span></div>
+        <div class="goal"><span class="dot">3</span><span>Eat at cookshops and sleep at home. If your energy hits zero you faint and pay a hospital bill.</span></div>
+        <div class="goal"><span class="dot">4</span><span>Get your <b>WAEC</b> at Night School, then a degree or nursing diploma for big-pay jobs.</span></div>
+        <div class="goal"><span class="dot">5</span><span>Buy a <b>pen-pen</b> to carry passengers at Red Light, then a car, then your own house.</span></div>
+        <div class="goal"><span class="dot">6</span><span>Yellow taxi parks take you across the county fast. Put savings in the bank for 1% a day.</span></div></div>`;
+    }
+    return {ic:'📱', t:`${S.name}'s phone`, sub:`${HOMES[S.home].t} · Day ${S.day}, ${fmtTime(S.min)}`, body,
+      acts: phoneTab === 'tips' ? [{l:'Start a new life', s:'Erases this save', fn:() => { closeModal(); showIntro(true); }}] : []};
+  });
+}
+function checkGoals(){
+  for (const g of GOALS){ if (!S.goals.includes(g.id) && g.ok(S)){ S.goals.push(g.id); toast(`🏆 Goal reached: ${g.t}`, 'gold'); confetti(); } }
+  save();
+}
+
+/* =========================================================
+   UPDATE
+   ========================================================= */
+let last = performance.now(), tAcc = 0, saveT = 0, warnT = 0, frame = 0;
+const player = {a:0, moving:false, step:0};
+function update(dt){
+  if (!S) return;
+  const paused = !$('#scrim').hidden || !$('#busy').hidden || !$('#intro').hidden || !$('#mapWrap').hidden;
+  // ambient things keep moving even when paused
+  for (const c of traffic){ c.s += c.dir * c.sp * dt; if (c.s > c.road.len){ c.s = c.road.len; c.dir = -1; } if (c.s < 0){ c.s = 0; c.dir = 1; } }
+  for (const p of people){
+    p.t += dt; const d = dist(p.x, p.y, p.tx, p.ty);
+    if (d < 2){ if (Math.random() < dt * .6){ p.tx = p.ax + (Math.random()-.5)*110; p.ty = p.ay + (Math.random()-.5)*110; if (isWater(p.tx, p.ty) || hitsSolid(p.tx, p.ty, 4)){ p.tx = p.ax; p.ty = p.ay; } } }
+    else { p.x += (p.tx - p.x)/d * p.sp * dt; p.y += (p.ty - p.y)/d * p.sp * dt; }
+  }
+  if (paused) return;
+  // time: 1 real second = 1.2 game minutes
+  const gm = dt * 1.2; advance(gm);
+  S.food = clamp(S.food - gm * .11, 0, 100);
+  S.energy = clamp(S.energy - gm * (S.food <= 0 ? .3 : .085), 0, 100);
+  if (S.food <= 0 && (warnT -= dt) < 0){ toast('You are starving! Eat at a cookshop.', 'bad'); warnT = 20; }
+  if (S.energy <= 0) return faint();
+  // movement
+  const [ix, iy] = inputVec(); player.moving = Math.hypot(ix, iy) > .1;
+  const v = S.riding ? VEHICLES[S.ride] : null;
+  let sp = 115 * (S.rain && !v ? .9 : 1);
+  if (v) sp *= v.sp * (onRoad(S.x, S.y) ? 1 : .5);
+  const r = v ? (v.kind === 'moto' ? 7 : 10) : 6;
+  if (player.moving){
+    const nx = S.x + ix * sp * dt, ny = S.y + iy * sp * dt;
+    if (!isWater(nx, S.y) && !hitsSolid(nx, S.y, r)) S.x = nx;
+    if (!isWater(S.x, ny) && !hitsSolid(S.x, ny, r)) S.y = ny;
+    const ta = Math.atan2(iy, ix); let da = ta - player.a; while (da > Math.PI) da -= 2*Math.PI; while (da < -Math.PI) da += 2*Math.PI; player.a += da * Math.min(1, dt * 10);
+    player.step += dt * (v ? 0 : 9);
+  }
+  cam.x = lerp(cam.x, S.x, Math.min(1, dt * 6)); cam.y = lerp(cam.y, S.y, Math.min(1, dt * 6));
+  near = findNear(); gigCheck();
+  if ((tAcc += dt) > .25){ tAcc = 0; hud(); }
+  if ((saveT += dt) > 8){ saveT = 0; save(); }
+}
+function faint(){
+  const h = LOC.hospital, bill = Math.min(S.money, 500);
+  S.riding = false;
+  busy('🚑', 'You fainted from tiredness…', 'A kind stranger carried you to Sinkor General Hospital', 2, () => {
+    S.money -= bill; let mins = (8*60 - S.min + 1440) % 1440 || 1440; advance(mins); S.energy = 55; S.food = Math.max(S.food, 30);
+    S.x = h.x; S.y = h.y; cam.x = S.x; cam.y = S.y; toast(`Hospital bill: ${money(bill)}. Sleep more!`, 'bad');
+  });
+}
+
+/* =========================================================
+   HUD
+   ========================================================= */
+function hud(){
+  if (!S) return;
+  $('#hName').textContent = S.name;
+  $('#hClock').textContent = `Day ${S.day} · ${fmtTime(S.min)}${S.rain ? ' 🌧️' : ''}`;
+  $('#hWhere').textContent = districtAt(S.x, S.y);
+  $('#fEn').style.width = S.energy + '%'; $('#fHu').style.width = S.food + '%';
+  $('#bEn').classList.toggle('low', S.energy < 20); $('#bHu').classList.toggle('low', S.food < 20);
+  $('#hMoney').innerHTML = `${money(S.money)}${S.bank ? ` <small class="num">+${money(S.bank)} bank</small>` : ''}`;
+  const p = $('#prompt'), act = $('#actBtn');
+  if (near){ p.hidden = false; p.innerHTML = `<kbd>E</kbd>${near.ic} ${esc(near.n)}`; act.disabled = false; act.textContent = 'ENTER'; }
+  else { p.hidden = true; act.disabled = true; act.textContent = 'ENTER'; }
+  const rb = $('#rideBtn'); rb.classList.toggle('on', !!S.riding); rb.lastChild.textContent = S.riding ? 'Get off' : 'Ride';
+  const g = S.gig, gb = $('#gigBox');
+  if (g){
+    const d = Math.round(dist(S.x, S.y, g.x, g.y) * MPP);
+    const label = g.kind === 'delivery' ? `🔥 Deliver ${g.food}` : g.stage === 'pick' ? `🏍️ Pick up ${g.who}` : `🏍️ Drop ${g.who}`;
+    gb.hidden = false; gb.innerHTML = `<b>${esc(label)}</b><span>${g.kind === 'delivery' ? 'To ' + esc(g.who) + ', ' : ''}${esc(g.d)}</span><span class="meta num">${d >= 1000 ? (d/1000).toFixed(1) + ' km' : d + ' m'} away${g.kind === 'passenger' && g.stage === 'pick' && !(S.riding && S.ride === 'moto') ? ' · ride your pen-pen' : ''}</span>`;
+  } else gb.hidden = true;
+}
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+let T = 0;
+function view(){ const hw = CW / zoom / 2, hh = CH / zoom / 2; return {x0:cam.x - hw, y0:cam.y - hh, x1:cam.x + hw, y1:cam.y + hh}; }
+const inView = (v, x, y, m = 80) => x > v.x0 - m && x < v.x1 + m && y > v.y0 - m && y < v.y1 + m;
+function drawBase(c, simple, v){
+  c.fillStyle = '#9fc27a'; c.fillRect(0, 0, W, H);
+  for (const d of DISTRICTS){ c.globalAlpha = .55; c.fillStyle = d.c; c.beginPath(); c.ellipse(d.x + d.w/2, d.y + d.h/2, d.w/2 + 40, d.h/2 + 40, 0, 0, 7); c.fill(); }
+  c.globalAlpha = 1;
+  if (!simple) for (const p of patches){ if (v && !inView(v, p.x, p.y, 90)) continue; c.fillStyle = p.c; c.beginPath(); c.ellipse(p.x, p.y, p.rx, p.ry, 0, 0, 7); c.fill(); }
+  // sand along the ocean, mangrove fringe along rivers
+  c.lineJoin = 'round';
+  c.strokeStyle = '#e9d59e'; c.lineWidth = simple ? 40 : 54; c.stroke(WATER[0].path);
+  c.fillStyle = '#2f7fb8'; c.fill(WATER[0].path);
+  c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 5; c.stroke(WATER[0].path);
+  for (let i = 1; i < WATER.length; i++){ c.strokeStyle = '#4f8a3c'; c.lineWidth = 16; c.stroke(WATER[i].path); }
+  for (let i = 1; i < WATER.length; i++){ c.fillStyle = '#2c6f8a'; c.fill(WATER[i].path); }
+  for (const p of ISLAND_PATHS){ c.fillStyle = '#a7c486'; c.fill(p); }
+}
+function drawRoads(c, simple){
+  c.lineCap = 'round'; c.lineJoin = 'round';
+  for (const r of ROADS){ if (r.t !== 'dirt') continue; c.strokeStyle = '#b8683a'; c.lineWidth = r.w; c.beginPath(); r.p.forEach(([x,y], i) => i ? c.lineTo(x,y) : c.moveTo(x,y)); c.stroke(); }
+  for (const r of ROADS){ if (r.t !== 'paved') continue; c.strokeStyle = '#5a5550'; c.lineWidth = r.w + 5; c.beginPath(); r.p.forEach(([x,y], i) => i ? c.lineTo(x,y) : c.moveTo(x,y)); c.stroke(); }
+  for (const r of ROADS){ if (r.t !== 'paved') continue; c.strokeStyle = '#3d3a38'; c.lineWidth = r.w; c.beginPath(); r.p.forEach(([x,y], i) => i ? c.lineTo(x,y) : c.moveTo(x,y)); c.stroke(); }
+  if (!simple){
+    c.setLineDash([14, 14]);
+    for (const r of ROADS){ if (r.t !== 'paved') continue; c.strokeStyle = r.main ? '#e8c34a' : 'rgba(255,255,255,.55)'; c.lineWidth = 2; c.beginPath(); r.p.forEach(([x,y], i) => i ? c.lineTo(x,y) : c.moveTo(x,y)); c.stroke(); }
+    c.setLineDash([]);
+  }
+  for (const b of BRIDGES){ c.fillStyle = '#6f6a63'; c.fillRect(b.x - 3, b.y, b.w + 6, b.h); c.fillStyle = '#3d3a38'; c.fillRect(b.x, b.y, b.w, b.h); c.fillStyle = '#c9c2b5'; if (b.w < b.h){ c.fillRect(b.x - 3, b.y, 3, b.h); c.fillRect(b.x + b.w, b.y, 3, b.h); } else { c.fillRect(b.x, b.y - 3, b.w, 3); c.fillRect(b.x, b.y + b.h, b.w, 3); } }
+}
+function drawBuilding(b){
+  ctx.fillStyle = 'rgba(30,20,10,.22)'; ctx.fillRect(b.x + 5, b.y + 6, b.w, b.h);
+  ctx.fillStyle = b.wall; ctx.fillRect(b.x, b.y, b.w, b.h);
+  ctx.fillStyle = b.roof; ctx.fillRect(b.x + 2, b.y + 2, b.w - 4, b.h - 4);
+  ctx.strokeStyle = 'rgba(255,255,255,.14)'; ctx.lineWidth = 1; ctx.beginPath();
+  for (let x = b.x + 5; x < b.x + b.w - 3; x += 4){ ctx.moveTo(x, b.y + 3); ctx.lineTo(x, b.y + b.h - 3); }
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(b.x + 2, b.y + b.h/2 - 1, b.w - 4, 2);
+  if (b.loc){
+    const l = b.loc;
+    ctx.font = `${b.w > 80 ? 30 : 24}px system-ui, "Apple Color Emoji", "Segoe UI Emoji"`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(l.ic, b.x + b.w/2, b.y + b.h/2 + 1);
+  }
+}
+function drawTree(t){
+  ctx.fillStyle = 'rgba(20,40,10,.25)'; ctx.beginPath(); ctx.ellipse(t.x + 5, t.y + 6, t.r, t.r*.7, 0, 0, 7); ctx.fill();
+  if (t.palm){
+    const sway = Math.sin(T * 1.3 + t.a) * .08;
+    ctx.fillStyle = '#2f7d32';
+    for (let i = 0; i < 7; i++){ const a = t.a + i * .9 + sway; ctx.beginPath(); ctx.ellipse(t.x + Math.cos(a)*t.r*.55, t.y + Math.sin(a)*t.r*.55, t.r*.7, t.r*.22, a, 0, 7); ctx.fill(); }
+    ctx.fillStyle = '#6b4a2b'; ctx.beginPath(); ctx.arc(t.x, t.y, 2.6, 0, 7); ctx.fill();
+  } else {
+    ctx.fillStyle = '#2e6b2a'; ctx.beginPath(); ctx.arc(t.x, t.y, t.r, 0, 7); ctx.fill();
+    ctx.fillStyle = '#3f8a37'; ctx.beginPath(); ctx.arc(t.x - t.r*.3, t.y - t.r*.3, t.r*.6, 0, 7); ctx.fill();
+  }
+}
+function drawPerson(x, y, shirt, skin, step, moving, head){
+  ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(x, y + 7, 6, 2.6, 0, 0, 7); ctx.fill();
+  const sw = moving ? Math.sin(step) * 2.2 : 0;
+  ctx.fillStyle = '#2a2a2a'; ctx.fillRect(x - 4, y + 2 + sw, 3, 5); ctx.fillRect(x + 1, y + 2 - sw, 3, 5);
+  ctx.fillStyle = shirt; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - 5.5, y - 5, 11, 9, 3) : ctx.rect(x - 5.5, y - 5, 11, 9); ctx.fill();
+  ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(x, y - 8.5, 4.4, 0, 7); ctx.fill();
+  if (head){ ctx.fillStyle = '#d9b64a'; ctx.beginPath(); ctx.ellipse(x, y - 13, 6, 3, 0, 0, 7); ctx.fill(); }
+}
+function drawVehicle(x, y, a, color, kind, lights){
+  ctx.save(); ctx.translate(x, y); ctx.rotate(a);
+  const dims = {car:[26,13], taxi:[26,13], suv:[30,15], truck:[32,15], bus:[42,15], keke:[16,11], moto:[15,5]}[kind] || [26,13];
+  const [L, Wd] = dims;
+  ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(-L/2 + 3, -Wd/2 + 4, L, Wd);
+  if (kind === 'moto'){
+    ctx.fillStyle = '#222'; ctx.fillRect(-L/2, -1.5, L, 3);
+    ctx.fillStyle = color; ctx.fillRect(-3, -3, 8, 6);
+    ctx.fillStyle = '#5a3825'; ctx.beginPath(); ctx.arc(-2, 0, 3.6, 0, 7); ctx.fill();
+  } else if (kind === 'keke'){
+    ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(L/2, 0); ctx.lineTo(-L/2, -Wd/2); ctx.lineTo(-L/2, Wd/2); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#1f6b3a'; ctx.fillRect(-L/2, -Wd/2 + 1, L*.62, Wd - 2);
+  } else {
+    ctx.fillStyle = color; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-L/2, -Wd/2, L, Wd, 4) : ctx.rect(-L/2, -Wd/2, L, Wd); ctx.fill();
+    ctx.fillStyle = 'rgba(20,30,40,.8)'; ctx.fillRect(L/2 - 9, -Wd/2 + 2, 4, Wd - 4); ctx.fillRect(-L/2 + 3, -Wd/2 + 2, 3, Wd - 4);
+    if (kind === 'truck'){ ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(-L/2 + 2, -Wd/2 + 2, L*.48, Wd - 4); }
+    else { ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(-L/2 + 7, -Wd/2 + 2, L - 17, Wd - 4); }
+    if (kind === 'taxi' || kind === 'bus'){ ctx.fillStyle = kind === 'bus' ? '#1b4f8e' : '#111'; ctx.fillRect(-2, -Wd/2, 4, Wd); }
+  }
+  if (lights){ ctx.fillStyle = '#fff6c8'; ctx.fillRect(L/2 - 1, -Wd/2 + 1, 2, 3); ctx.fillRect(L/2 - 1, Wd/2 - 4, 2, 3); }
+  ctx.restore();
+}
+function label(text, x, y, color = '#fff', bg = 'rgba(14,10,8,.75)'){
+  ctx.font = '700 11px "Nunito Sans", system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const w = ctx.measureText(text).width + 12;
+  ctx.fillStyle = bg; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - w/2, y - 9, w, 18, 9) : ctx.rect(x - w/2, y - 9, w, 18); ctx.fill();
+  ctx.fillStyle = color; ctx.fillText(text, x, y + .5);
+}
+function darkness(){
+  const h = hour();
+  if (h >= 7 && h < 18) return 0;
+  if (h >= 18 && h < 20) return (h - 18) / 2 * .62;
+  if (h >= 5 && h < 7) return (7 - h) / 2 * .62;
+  return .62;
+}
+function render(){
+  T = performance.now() / 1000;
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#2f7fb8'; ctx.fillRect(0, 0, CW, CH);
+  ctx.setTransform(zoom, 0, 0, zoom, CW/2 - cam.x*zoom, CH/2 - cam.y*zoom);
+  const v = view();
+  // static ground (clipped to view for speed)
+  ctx.save(); ctx.beginPath(); ctx.rect(v.x0 - 60, v.y0 - 60, v.x1 - v.x0 + 120, v.y1 - v.y0 + 120); ctx.clip();
+  drawBase(ctx, false, v);
+  for (const w of waves){ if (!inView(v, w.x, w.y)) continue; const o = Math.sin(T * 1.4 + w.p) * 5; ctx.strokeStyle = 'rgba(255,255,255,.28)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(w.x - w.l/2 + o, w.y); ctx.quadraticCurveTo(w.x + o, w.y - 4, w.x + w.l/2 + o, w.y); ctx.stroke(); }
+  drawRoads(ctx, false);
+  ctx.restore();
+  // district names
+  ctx.font = '800 34px "Baloo 2", system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = 'rgba(30,25,15,.16)';
+  for (const d of DISTRICTS){ const cx = d.x + d.w/2, cy = d.y + d.h/2; if (inView(v, cx, cy, 300)) ctx.fillText(d.n.toUpperCase(), cx, cy); }
+  // world objects (y-sorted-ish by type)
+  const cx0 = Math.floor((v.x0 - 80)/CELL), cx1 = Math.floor((v.x1 + 80)/CELL), cy0 = Math.floor((v.y0 - 80)/CELL), cy1 = Math.floor((v.y1 + 80)/CELL);
+  const seen = new Set();
+  for (let gx = cx0; gx <= cx1; gx++) for (let gy = cy0; gy <= cy1; gy++){ const arr = grid.get(gkey(gx, gy)); if (!arr) continue; for (const b of arr){ if (seen.has(b)) continue; seen.add(b); drawBuilding(b); } }
+  // landmarks without buildings
+  for (const l of LOCS){
+    if (!inView(v, l.x, l.y)) continue;
+    if (l.type === 'taxi'){ ctx.fillStyle = '#F2C230'; ctx.fillRect(l.x - 14, l.y - 6, 28, 12); ctx.fillStyle = '#111'; ctx.font = '800 8px system-ui'; ctx.textAlign = 'center'; ctx.fillText('TAXI', l.x, l.y + .5); }
+    if (l.type === 'beach'){ for (let i = 0; i < 3; i++){ const bx = l.x - 30 + i*30, by = l.y + 6; ctx.fillStyle = ['#E5392C','#3157C8','#FFB21E'][i]; ctx.beginPath(); ctx.arc(bx, by, 10, 0, 7); ctx.fill(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(bx, by, 3, 0, 7); ctx.fill(); } }
+  }
+  for (const t of trees) if (inView(v, t.x, t.y)) drawTree(t);
+  const dark = darkness();
+  for (const c of traffic){ const p = roadPoint(c.road, c.s); if (!inView(v, p.x, p.y)) continue; const off = c.road.w/4 * c.dir; const a = p.a + (c.dir < 0 ? Math.PI : 0);
+    drawVehicle(p.x + Math.cos(p.a + Math.PI/2)*off, p.y + Math.sin(p.a + Math.PI/2)*off, a, c.c, c.kind, dark > .2); }
+  for (const p of people) if (inView(v, p.x, p.y)) drawPerson(p.x, p.y, p.shirt, p.skin, p.t * 8, dist(p.x, p.y, p.tx, p.ty) > 2, p.head);
+  // home marker & gig target
+  if (S){
+    const home = LOC[HOMES[S.home].loc];
+    if (inView(v, home.x, home.y)) label('🏠 Home', home.x, home.y - (home.b ? home.b.h + 26 : 30), '#9df0b8');
+    const g = S.gig;
+    if (g){
+      const pulse = 1 + Math.sin(T * 5) * .15;
+      ctx.strokeStyle = '#FFB21E'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(g.x, g.y, 22 * pulse, 0, 7); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,178,30,.25)'; ctx.beginPath(); ctx.arc(g.x, g.y, 30 * pulse, 0, 7); ctx.fill();
+      ctx.font = '22px system-ui, "Apple Color Emoji"'; ctx.textAlign = 'center'; ctx.fillText(g.kind === 'delivery' ? '📦' : g.stage === 'pick' ? '🙋' : '📍', g.x, g.y - 30 - Math.abs(Math.sin(T*4))*6);
+      if (g.kind === 'passenger' && g.stage === 'pick') drawPerson(g.x + 10, g.y, '#8E44AD', '#5a3825', 0, false, false);
+    }
+    // player
+    const veh = S.riding ? VEHICLES[S.ride] : null;
+    if (veh){ drawVehicle(S.x, S.y, player.a, veh.c, veh.kind, dark > .2); if (veh.kind === 'moto'){ ctx.fillStyle = S.shirt; ctx.beginPath(); ctx.arc(S.x, S.y, 4.5, 0, 7); ctx.fill(); } }
+    else drawPerson(S.x, S.y, S.shirt, S.skin, player.step, player.moving, false);
+    ctx.fillStyle = '#FFB21E'; ctx.beginPath(); ctx.moveTo(S.x, S.y - (veh ? 16 : 20)); ctx.lineTo(S.x - 4, S.y - (veh ? 22 : 26)); ctx.lineTo(S.x + 4, S.y - (veh ? 22 : 26)); ctx.closePath(); ctx.fill();
+  }
+  // labels for places
+  for (const l of LOCS){ if (!inView(v, l.x, l.y)) continue; const y = l.b ? Math.min(l.b.y, l.y) - 12 : l.y - 18; if (l.type !== 'taxi' || (near && near.id === l.id)) label(l.n, l.x, y, near && near.id === l.id ? '#FFB21E' : '#fff'); }
+  // night
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (dark > .01){
+    nctx.globalCompositeOperation = 'source-over'; nctx.clearRect(0, 0, CW, CH);
+    nctx.fillStyle = `rgba(8,12,38,${dark})`; nctx.fillRect(0, 0, CW, CH);
+    nctx.globalCompositeOperation = 'destination-out';
+    const toS = (x, y) => [(x - cam.x) * zoom + CW/2, (y - cam.y) * zoom + CH/2];
+    const glow = (x, y, r, a) => { const [sx, sy] = toS(x, y), rr = r * zoom; const g = nctx.createRadialGradient(sx, sy, 0, sx, sy, rr); g.addColorStop(0, `rgba(0,0,0,${a})`); g.addColorStop(1, 'rgba(0,0,0,0)'); nctx.fillStyle = g; nctx.fillRect(sx - rr, sy - rr, rr*2, rr*2); };
+    for (const l of LAMPS) if (inView(v, l.x, l.y, 100)) glow(l.x, l.y, l.r, .75);
+    if (S) glow(S.x, S.y, S.riding ? 130 : 90, .9);
+    for (const c of traffic){ const p = roadPoint(c.road, c.s); if (inView(v, p.x, p.y)) glow(p.x, p.y, 40, .6); }
+    ctx.drawImage(nightC, 0, 0);
+    // warm lamp tint
+    ctx.globalCompositeOperation = 'lighter';
+    for (const l of LAMPS){ if (!inView(v, l.x, l.y, 60)) continue; const [sx, sy] = toS(l.x, l.y); const rr = 26 * zoom; const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, rr); g.addColorStop(0, `rgba(255,190,90,${.25*dark})`); g.addColorStop(1, 'rgba(255,190,90,0)'); ctx.fillStyle = g; ctx.fillRect(sx - rr, sy - rr, rr*2, rr*2); }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  // rain
+  if (S && S.rain){
+    ctx.fillStyle = 'rgba(40,60,90,.16)'; ctx.fillRect(0, 0, CW, CH);
+    ctx.strokeStyle = 'rgba(200,220,255,.45)'; ctx.lineWidth = 1.2 * DPR; ctx.beginPath();
+    for (let i = 0; i < 160; i++){ const x = ((i * 97.3 + T * 90) % (CW + 40)) - 20, y = ((i * 211.7 + T * 900 * (1 + (i % 5) * .1)) % (CH + 40)) - 20; ctx.moveTo(x, y); ctx.lineTo(x - 4*DPR, y + 14*DPR); }
+    ctx.stroke();
+  }
+  // off-screen pointer to the gig target
+  if (S && S.gig){
+    const g = S.gig, sx = (g.x - cam.x) * zoom + CW/2, sy = (g.y - cam.y) * zoom + CH/2, m = 60 * DPR;
+    if (sx < m || sy < m || sx > CW - m || sy > CH - m){
+      const a = Math.atan2(sy - CH/2, sx - CW/2), rx = CW/2 - m, ry = CH/2 - m;
+      const t = Math.min(Math.abs(rx / Math.cos(a)), Math.abs(ry / Math.sin(a)));
+      const px = CW/2 + Math.cos(a) * t, py = CH/2 + Math.sin(a) * t;
+      ctx.save(); ctx.translate(px, py); ctx.rotate(a); ctx.fillStyle = '#FFB21E'; ctx.strokeStyle = '#1b1206'; ctx.lineWidth = 2 * DPR;
+      ctx.beginPath(); ctx.moveTo(18*DPR, 0); ctx.lineTo(-10*DPR, -12*DPR); ctx.lineTo(-4*DPR, 0); ctx.lineTo(-10*DPR, 12*DPR); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
+    }
+  }
+}
+
+/* ---------- maps ---------- */
+function prerender(scale){
+  const c = document.createElement('canvas'); c.width = Math.round(W * scale); c.height = Math.round(H * scale);
+  const x = c.getContext('2d'); x.scale(scale, scale); drawBase(x, true); drawRoads(x, true);
+  x.fillStyle = 'rgba(120,110,95,.55)'; for (const b of buildings) x.fillRect(b.x, b.y, b.w, b.h);
+  return c;
+}
+const miniBase = prerender(0.075);
+let bigBase = null;
+const mini = $('#mini'), mctx = mini.getContext('2d');
+function drawMini(){
+  if (!S) return;
+  const mw = mini.width, mh = mini.height, s = 0.075, span = 1.0;
+  mctx.fillStyle = '#2f7fb8'; mctx.fillRect(0, 0, mw, mh);
+  const ox = S.x * s - mw/2, oy = S.y * s - mh/2;
+  mctx.drawImage(miniBase, -ox, -oy);
+  const g = S.gig; if (g){ mctx.fillStyle = '#FFB21E'; mctx.beginPath(); mctx.arc(g.x*s - ox, g.y*s - oy, 5, 0, 7); mctx.fill(); }
+  const home = LOC[HOMES[S.home].loc]; mctx.fillStyle = '#39C06A'; mctx.fillRect(home.x*s - ox - 3, home.y*s - oy - 3, 6, 6);
+  mctx.fillStyle = '#fff'; mctx.strokeStyle = '#E5392C'; mctx.lineWidth = 3; mctx.beginPath(); mctx.arc(mw/2, mh/2, 5, 0, 7); mctx.fill(); mctx.stroke();
+}
+function openMap(){
+  if (!S) return;
+  if (!bigBase) bigBase = prerender(0.25);
+  const c = $('#bigMap'), x = c.getContext('2d'); c.width = bigBase.width; c.height = bigBase.height;
+  x.drawImage(bigBase, 0, 0); const s = .25;
+  x.font = '13px system-ui, "Apple Color Emoji"'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  for (const d of DISTRICTS){ x.fillStyle = 'rgba(20,15,10,.55)'; x.font = '800 15px "Baloo 2", system-ui'; x.fillText(d.n, (d.x + d.w/2)*s, (d.y + d.h/2)*s - 14); }
+  x.font = '16px system-ui, "Apple Color Emoji"';
+  for (const l of LOCS) x.fillText(l.ic, l.x*s, l.y*s);
+  if (S.gig){ x.strokeStyle = '#FFB21E'; x.lineWidth = 3; x.beginPath(); x.arc(S.gig.x*s, S.gig.y*s, 10, 0, 7); x.stroke(); }
+  x.fillStyle = '#fff'; x.strokeStyle = '#E5392C'; x.lineWidth = 4; x.beginPath(); x.arc(S.x*s, S.y*s, 8, 0, 7); x.fill(); x.stroke();
+  x.fillStyle = 'rgba(255,255,255,.8)'; x.font = 'italic 700 16px "Nunito Sans", system-ui'; x.fillText('Atlantic Ocean', 400*s + 80, 1800*s);
+  $('#mapWrap').hidden = false;
+}
+function closeMap(){ $('#mapWrap').hidden = true; }
+
+/* ---------- confetti ---------- */
+const confe = [];
+function confetti(){
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  for (let i = 0; i < 120; i++) confe.push({x:CW/2, y:CH*.35, vx:(Math.random()-.5)*16*DPR, vy:(-Math.random()*14-4)*DPR, s:(4+Math.random()*6)*DPR, c:pick(['#BF0A30','#ffffff','#002868','#FFB21E']), r:Math.random()*6, life:120});
+}
+function drawConfetti(){
+  if (!confe.length) return;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  for (let i = confe.length - 1; i >= 0; i--){ const p = confe[i]; p.vy += .45*DPR; p.x += p.vx; p.y += p.vy; p.r += .2; if (--p.life <= 0){ confe.splice(i, 1); continue; }
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = p.c; ctx.fillRect(-p.s/2, -p.s/4, p.s, p.s/2); ctx.restore(); }
+}
+
+/* =========================================================
+   INTRO / BOOT
+   ========================================================= */
+let pickShirt = SHIRTS[0], pickSkin = SKINS[0];
+function swatches(el, list, cur, set){
+  el.innerHTML = list.map(c => `<button style="background:${c}" aria-label="Colour ${c}" aria-pressed="${c === cur}" data-c="${c}"></button>`).join('');
+  el.onclick = e => { const b = e.target.closest('button'); if (!b) return; set(b.dataset.c); el.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); };
+}
+function showIntro(forceNew){
+  const saved = load();
+  $('#intro').hidden = false;
+  $('#introNew').hidden = !!saved && !forceNew; $('#introCont').hidden = !saved || forceNew;
+  if (saved && !forceNew) $('#contBtn').textContent = `Continue as ${saved.name} · Day ${saved.day}`;
+  swatches($('#swShirt'), SHIRTS, pickShirt, c => pickShirt = c);
+  swatches($('#swSkin'), SKINS, pickSkin, c => pickSkin = c);
+}
+$('#startBtn').addEventListener('click', () => {
+  const name = $('#pname').value.trim().slice(0, 16) || pick(FIRST);
+  S = fresh(name, pickShirt, pickSkin); cam.x = S.x; cam.y = S.y; save();
+  $('#intro').hidden = true; hud();
+  setTimeout(() => toast(`Welcome to Duala, ${S.name}! Head to Waterside Market or Freeport to start earning.`, 'gold'), 300);
+  setTimeout(() => toast('Tip: press P (or Phone) for goals and how to play.'), 3200);
+});
+$('#contBtn').addEventListener('click', () => { S = load(); if (!S) return showIntro(true); S.riding = false; cam.x = S.x; cam.y = S.y; $('#intro').hidden = true; hud(); toast(`Welcome back, ${S.name}!`, 'good'); });
+$('#newBtn').addEventListener('click', () => showIntro(true));
+$('#pname').addEventListener('keydown', e => { if (e.key === 'Enter') $('#startBtn').click(); });
+
+// a demo state so the world is alive behind the intro card
+S = null;
+const demo = fresh('', SHIRTS[0], SKINS[0]);
+function loop(now){
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  if (S) update(dt); else { // gentle camera drift over Monrovia behind the intro
+    for (const c of traffic){ c.s += c.dir * c.sp * dt; if (c.s > c.road.len || c.s < 0) c.dir *= -1; }
+    cam.x = 700 + Math.sin(now / 9000) * 250; cam.y = 1260 + Math.cos(now / 11000) * 120;
+  }
+  const savedS = S; if (!S){ S = demo; S.x = -999; S.y = -999; }
+  render(); drawConfetti();
+  if (!savedS) S = null;
+  if ((frame++ % 6) === 0) drawMini();
+  requestAnimationFrame(loop);
+}
+showIntro(false);
+requestAnimationFrame(loop);
+addEventListener('beforeunload', save);
+document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+})();
+</script>
+</body>
+</html>
