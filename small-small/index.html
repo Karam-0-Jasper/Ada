@@ -1626,7 +1626,7 @@ function skidMark(x, y, a, bike){
 }
 function driveTick(v, ix, iy, dt, r){
   const bike = v.kind === 'moto' || v.kind === 'keke', road = onRoad(S.x, S.y);
-  const top = 115 * v.sp * (road ? 1 : .5), accel = top * (bike ? 1.1 : .75) * (v.sp > 3.5 ? 1.25 : 1), brake = top * 1.6, rev = top * .3;
+  const top = 84 * v.sp * (road ? 1 : .5), accel = top * (bike ? 1.1 : .75) * (v.sp > 3.5 ? 1.25 : 1), brake = top * 1.6, rev = top * .3;
   const throttle = -iy, steer = ix, hand = keys.has(' ');
   if (throttle > .1) CAR.spd += accel * throttle * dt * (CAR.spd < 0 ? 2 : 1);
   else if (throttle < -.1){ if (CAR.spd > 4) CAR.spd -= brake * -throttle * dt; else CAR.spd = Math.max(-rev, CAR.spd + accel * .6 * throttle * dt); }
@@ -2025,15 +2025,48 @@ function checkGoals(){
    ========================================================= */
 let last = performance.now(), tAcc = 0, saveT = 0, warnT = 0, frame = 0;
 const player = {a:0, moving:false, step:0};
+/* ---------- traffic that sees what is in front of it ---------- */
+const TRAFFIC_SPEED = .62, LOOK = 58;
+let trafficHornT = 0;
+function trafficTick(dt){
+  for (const c of traffic){ const p = roadPoint(c.road, c.s), off = c.road.w/4 * c.dir, hd = p.a + (c.dir < 0 ? Math.PI : 0);
+    c.wx = p.x + Math.cos(p.a + Math.PI/2) * off; c.wy = p.y + Math.sin(p.a + Math.PI/2) * off; c.hx = Math.cos(hd); c.hy = Math.sin(hd); c.len = (VDIM[c.kind] || VDIM.car)[0]; if (c.v === undefined) c.v = c.sp * TRAFFIC_SPEED; }
+  const crossers = people.filter(q => q.cross);
+  const playerOn = S && S.x > -500 && !S.inside && !FLIGHT && !(AUTO && AUTO.phase === 'trip');
+  trafficHornT -= dt;
+  for (const c of traffic){
+    let gap = 1e9, who = null;
+    const ahead = (x, y, len, wide) => { const dx = x - c.wx, dy = y - c.wy, fwd = dx * c.hx + dy * c.hy; if (fwd <= 0 || fwd > LOOK + len) return; const lat = Math.abs(-dx * c.hy + dy * c.hx); if (lat > (wide || 8)) return; const g = fwd - c.len / 2 - len / 2; if (g < gap){ gap = g; return true; } };
+    if (!(c.ghost > 0)) for (const o of traffic){ if (o === c || Math.abs(o.wx - c.wx) > 90 || Math.abs(o.wy - c.wy) > 90) continue; if (ahead(o.wx, o.wy, o.len, 8)) who = 'car'; }
+    for (const q of crossers){ if (Math.abs(q.x - c.wx) > 80 || Math.abs(q.y - c.wy) > 80) continue; if (ahead(q.x, q.y, 3, 11)) who = 'person'; }
+    if (playerOn && Math.abs(S.x - c.wx) < 90 && Math.abs(S.y - c.wy) < 90){ if (ahead(S.x, S.y, S.riding ? 26 : 3, S.riding ? 10 : 11)) who = 'you'; }
+    if (AUTO && AUTO.x !== undefined && ahead(AUTO.x, AUTO.y, 26, 9)) who = 'car';
+    const want = c.sp * TRAFFIC_SPEED * (WX.level > .5 ? .8 : 1), target = gap < 5 ? 0 : Math.min(want, (gap - 5) * 2.4);
+    c.v = c.v > target ? Math.max(target, c.v - 150 * dt) : Math.min(target, c.v + 34 * dt);
+    c.braking = c.v < want * .7 && target < c.v + 1;
+    // stuck behind something: honk at you, or squeeze past a car that is not moving
+    if (c.v < 2 && gap < 30){ c.wait = (c.wait || 0) + dt;
+      if (who === 'you' && c.wait > 1.6 && trafficHornT < 0 && SND.ctx){ trafficHornT = 2.5; horn(.16, c.kind, c.wx, c.wy); if (Math.random() < .3) toast(pick(['📯 "Move from the road, my friend!"', '📯 Beep beep! The car wants to pass.', '📯 "Ay! You want me to wait all day?"'])); }
+      if (who === 'car' && c.wait > 4){ c.ghost = 1.6; c.wait = 0; } }
+    else c.wait = 0;
+    if (c.ghost > 0) c.ghost -= dt;
+    c.s += c.dir * c.v * dt; if (c.s > c.road.len){ c.s = c.road.len; c.dir = -1; } if (c.s < 0){ c.s = 0; c.dir = 1; }
+  }
+}
+function brakeLights(){
+  for (const c of traffic){ if (!c.mesh) continue;
+    if (!c.brakes){ c.brakes = []; c.mesh.traverse(m => { if (m.material && m.material.color && m.material.color.getHex() === 0xc0392b) c.brakes.push(m.material); }); }
+    const on = !!c.braking; if (c.brakeOn !== on){ c.brakeOn = on; for (const m of c.brakes) m.color.setHex(on ? 0xff2020 : 0xc0392b); } }
+}
 function update(dt){
   if (!S) return;
   const paused = !$('#scrim').hidden || !$('#busy').hidden || !$('#intro').hidden || !$('#mapWrap').hidden;
   // ambient things keep moving even when paused
-  for (const c of traffic){ c.s += c.dir * c.sp * dt; if (c.s > c.road.len){ c.s = c.road.len; c.dir = -1; } if (c.s < 0){ c.s = 0; c.dir = 1; } }
+  trafficTick(dt);
   for (const p of people){
     p.t += dt; const d = dist(p.x, p.y, p.tx, p.ty);
-    if (d < 2){ if (Math.random() < dt * .6){ const tx = p.ax + (Math.random()-.5)*110, ty = p.ay + (Math.random()-.5)*110; if (!isWater(tx, ty) && !hitsSolid(tx, ty, 4) && (pathOffRoad(p.x, p.y, tx, ty) || (CROSSINGS.length && Math.random() < .5 && crossOK(p.x, p.y, tx, ty)))){ p.tx = tx; p.ty = ty; } } }
-    else { const sp = p.sp * (1 + WX.level * .5); p.x += (p.tx - p.x)/d * sp * dt; p.y += (p.ty - p.y)/d * sp * dt; }
+    if (d < 2){ if (Math.random() < dt * .6){ const tx = p.ax + (Math.random()-.5)*110, ty = p.ay + (Math.random()-.5)*110; if (!isWater(tx, ty) && !hitsSolid(tx, ty, 4) ){ if (pathOffRoad(p.x, p.y, tx, ty)){ p.tx = tx; p.ty = ty; p.cross = false; } else if (CROSSINGS.length && Math.random() < .5 && crossOK(p.x, p.y, tx, ty)){ p.tx = tx; p.ty = ty; p.cross = true; } } } else if (p.cross) p.cross = false; }
+    else { const sp = p.sp * (1 + WX.level * .5) * (p.cross ? 1.35 : 1); p.x += (p.tx - p.x)/d * sp * dt; p.y += (p.ty - p.y)/d * sp * dt; }
   }
   if (paused) return;
   // time: 1 real second = 1.2 game minutes
@@ -3833,7 +3866,7 @@ function syncPeers(dt){
   }
 }
 
-for (const c of traffic){ c.mesh = vehicleMesh(c.kind, c.c); if (c.kind === 'moto'){ const rd = personMesh(randomLook()); rd.position.set(-1, 4, 0); rd.scale.setScalar(.85); c.mesh.add(rd); } scene.add(c.mesh); }
+for (const c of traffic){ c.mesh = vehicleMesh(c.kind, c.c); if (c.kind === 'moto'){ const rd = personMesh(randomLook()); rd.position.set(-1, 4, 0); rd.scale.multiplyScalar(.95); c.mesh.add(rd); } scene.add(c.mesh); }
 function buildLots(){ for (const l of LOCS){ if (l.type !== 'carlot') continue;
     const n = nearestRoad(l.x, l.y); const seg = n.r.segs.find(sg => segDist(n.x, n.y, sg.ax, sg.ay, sg.bx, sg.by)[0] < 1) || n.r.segs[0];
     const ux = (seg.bx - seg.ax) / seg.l, uz = (seg.by - seg.ay) / seg.l; let dx = l.x - n.x, dz = l.y - n.y; const m = Math.hypot(dx, dz) || 1; dx /= m; dz /= m;
@@ -4132,7 +4165,7 @@ function render(){
   // traffic
   for (const c of traffic){ const p = roadPoint(c.road, c.s), off = c.road.w/4 * c.dir; const x = p.x + Math.cos(p.a + Math.PI/2) * off, z = p.y + Math.sin(p.a + Math.PI/2) * off;
     c.mesh.position.set(x, groundY(x, z), z); c.mesh.rotation.y = -(p.a + (c.dir < 0 ? Math.PI : 0)); }
-  syncPeople();
+  syncPeople(); brakeLights();
   // player
   if (S && S.x > -500){
     ensurePlayer();
@@ -4269,7 +4302,7 @@ function loop(now){
   if ((frame++ % 6) === 0) drawMini();
   requestAnimationFrame(loop);
 }
-if (location.search.includes('debug')) window.__ss = {traffic, roadPoint, get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR, get CAR(){ return CAR; }, offRoad, giveVehicle, nearestRoad, WX, rollWeather, get orbit(){ return orbit; }, goInside, deliverFurn, designCmd, get DES(){ return DES; }, SND, SFX, fly, LOC, panelFor, get FLIGHT(){ return FLIGHT; }, MP, tourHome, useStairs, cookAt, takeBath, HOME_DISHES, invOf, sellItem, deliverFurn, cam};
+if (location.search.includes('debug')) window.__ss = {traffic, roadPoint, get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR, get CAR(){ return CAR; }, offRoad, giveVehicle, nearestRoad, WX, rollWeather, get orbit(){ return orbit; }, goInside, deliverFurn, designCmd, get DES(){ return DES; }, SND, SFX, fly, LOC, panelFor, get FLIGHT(){ return FLIGHT; }, MP, tourHome, useStairs, cookAt, takeBath, HOME_DISHES, invOf, sellItem, deliverFurn, cam, people};
 showIntro(false);
 requestAnimationFrame(loop);
 addEventListener('beforeunload', save);
