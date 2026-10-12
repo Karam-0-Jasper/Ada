@@ -39,6 +39,39 @@ button{cursor:pointer;border:0;background:none;padding:0}
 .app:active span{transform:scale(.9)}
 .pback{align-self:flex-start;font-weight:800;font-size:14px;color:var(--gold);padding:2px 0}
 .pmap{width:100%;border-radius:14px;border:1px solid var(--line);cursor:crosshair}
+.lab.player{background:#1565c0;color:#fff}
+.skip{margin-top:6px;align-self:flex-start;background:var(--gold);color:#1b1206;font-weight:800;border-radius:10px;padding:5px 10px;font-size:12.5px}
+.modal.phone{width:min(392px,100%);height:min(820px,calc(100vh - 24px));padding:0;border-radius:56px;border:11px solid #0b0b0c;box-shadow:0 0 0 2px #3a3a3c,0 40px 80px rgba(0,0,0,.7);background:#000;overflow:hidden;gap:0}
+.ios{position:relative;height:100%;display:flex;flex-direction:column;background:radial-gradient(120% 80% at 20% 0%,#2b5bd7 0%,transparent 55%),radial-gradient(100% 70% at 100% 100%,#c8102e 0%,transparent 55%),linear-gradient(180deg,#0d1b3d,#1b0b18);color:#fff}
+.ios-top{display:flex;align-items:center;justify-content:space-between;padding:12px 26px 6px;font-size:14px;font-weight:800;position:relative;min-height:44px}
+.ios-top .island{position:absolute;left:50%;top:10px;transform:translateX(-50%);width:112px;height:32px;border-radius:20px;background:#000}
+.batt{display:inline-block;width:24px;height:12px;border:1.5px solid #fff;border-radius:4px;vertical-align:-1px;margin-left:4px;padding:1px}
+.batt i{display:block;height:100%;background:#fff;border-radius:2px}
+.ios-nav{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:2px 10px 8px;background:rgba(0,0,0,.35);backdrop-filter:blur(14px)}
+.ios-nav button{font-size:30px;line-height:1;color:#5ab0ff;font-weight:300}
+.ios-nav b{text-align:center;font-size:17px}
+.ios-body{flex:1;overflow:auto;padding:10px 16px 34px;display:flex;flex-direction:column;gap:12px}
+.ios-nav ~ .ios-body{background:rgba(14,12,14,.92)}
+.ios-home{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:134px;height:5px;border-radius:5px;background:rgba(255,255,255,.85)}
+.ios-date{text-align:center;padding:14px 0 6px}
+.ios-date b{display:block;font-size:64px;font-weight:300;line-height:1;letter-spacing:-.02em;font-family:system-ui,-apple-system,sans-serif}
+.ios-date span{font-size:14px;opacity:.85;font-weight:600}
+.dock{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:auto;padding:12px 10px;border-radius:30px;background:rgba(255,255,255,.18);backdrop-filter:blur(18px)}
+.dock .app{font-size:0}
+.app span{position:relative}
+.app span em{position:absolute;top:-6px;right:-6px;min-width:22px;height:22px;border-radius:11px;background:#ff3b30;color:#fff;font-style:normal;font-size:12px;font-weight:800;display:grid;place-items:center;padding:0 5px}
+.seg{display:flex;gap:4px;padding:3px;border-radius:12px;background:rgba(255,255,255,.1)}
+.seg.wrap{flex-wrap:wrap}
+.seg button{flex:1;padding:7px 8px;border-radius:9px;font-weight:800;font-size:12.5px;white-space:nowrap}
+.seg button[aria-selected="true"]{background:#fff;color:#111}
+.chat{display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow:auto;padding:4px 2px}
+.bub{max-width:82%;align-self:flex-start;background:#2c2c2e;padding:8px 12px;border-radius:18px 18px 18px 6px;font-size:14px;line-height:1.35;word-wrap:break-word}
+.bub b{display:block;font-size:12px;color:#5ab0ff;margin-bottom:2px}
+.bub small{display:block;font-size:10.5px;opacity:.6;margin-top:3px;text-align:right}
+.bub.me{align-self:flex-end;background:#0a84ff;border-radius:18px 18px 6px 18px}
+.chatform{display:flex;gap:8px;position:sticky;bottom:0}
+.chatform input{flex:1;min-width:0;height:42px;border-radius:21px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);padding:0 14px;color:#fff;outline:none}
+.chatform button{width:42px;height:42px;border-radius:50%;background:#0a84ff;font-size:16px}
 .arrow{display:inline-block;width:18px;height:18px;vertical-align:-4px;margin-right:4px;transition:transform .15s linear}
 
 .num{font-variant-numeric:tabular-nums}
@@ -183,6 +216,7 @@ button{cursor:pointer;border:0;background:none;padding:0}
   <div class="card status">
     <div class="row"><span class="who" id="hName">Tayo</span><span class="clock num" id="hClock">Day 1 · 7:00 AM</span></div>
     <div class="where" id="hWhere">Duala</div>
+    <div class="where" id="hOnline" style="text-transform:none;letter-spacing:0">⚪ Offline</div>
     <div class="bar" id="bEn"><span>Energy</span><span class="t"><span class="f en" id="fEn"></span></span></div>
     <div class="bar" id="bHu"><span>Food</span><span class="t"><span class="f hu" id="fHu"></span></span></div>
   </div>
@@ -225,6 +259,7 @@ button{cursor:pointer;border:0;background:none;padding:0}
   </div>
 </div>
 
+<script src="./supabase.min.js"></script>
 <script type="module">
 import * as THREE from './three.module.min.js';
 (() => {
@@ -349,7 +384,7 @@ const LOCS = [
   {id:'cook2', n:'Sinkor Cookshop', ic:'🍛', x:1420, y:1412, type:'food', roof:'#d35400'},
   {id:'cook3', n:'Red Light Cookshop', ic:'🍛', x:3460, y:1262, type:'food', roof:'#d35400'},
   {id:'cook4', n:'Gardnersville Chop Bar', ic:'🍛', x:2700, y:760, type:'food', roof:'#d35400'},
-  {id:'clothes1', n:'Waterside Fashion House', ic:'👕', x:780, y:1288, type:'clothes', roof:'#c2185b'},
+  {id:'clothes1', n:'Waterside Fashion House', ic:'👕', x:850, y:1290, type:'clothes', roof:'#c2185b'},
   {id:'clothes2', n:'Sinkor Boutique', ic:'👗', x:1760, y:1384, type:'clothes', roof:'#ad1457'},
   {id:'barber1', n:'Fresh Cut Barbershop', ic:'💈', x:1150, y:684, type:'barber', roof:'#1565c0'},
   {id:'barber2', n:'Red Light Fade Kings', ic:'💈', x:3330, y:1312, type:'barber', roof:'#0d47a1'},
@@ -358,10 +393,41 @@ const LOCS = [
   {id:'bar2', n:'Lappa Bar & Grill', ic:'🍻', x:2800, y:1452, type:'bar', roof:'#6a1b9a'},
   {id:'bar3', n:'Freeport Corner Bar', ic:'🍻', x:662, y:700, type:'bar', roof:'#311b92'},
   {id:'rest1', n:"Mama Jartu's Palm Butter Spot", ic:'🍲', x:625, y:1505, type:'rest', roof:'#bf360c'},
-  {id:'rest2', n:'Ducor Seafood Grill', ic:'🐟', x:300, y:1312, type:'rest', roof:'#00838f'},
+  {id:'rest2', n:'Ducor Seafood Grill', ic:'🐟', x:455, y:1250, type:'rest', roof:'#00838f'},
   {id:'rest3', n:'Congo Town Chop House', ic:'🍛', x:2560, y:1410, type:'rest', roof:'#e65100'},
   {id:'rest4', n:'Duala Jollof Corner', ic:'🍗', x:1700, y:600, type:'rest', roof:'#ef6c00'},
   {id:'furniture', n:'Home & Things Furniture', ic:'🛋️', x:3600, y:1030, type:'furniture', roof:'#5d4037', big:1},
+  // universities and colleges
+  {id:'stella', n:'Stella Maris Polytechnic', ic:'⚙️', x:880, y:1178, type:'school', course:'engineering', roof:'#283593'},
+  {id:'ameu', n:'AME University (Camp Johnson Rd)', ic:'📈', x:828, y:1400, type:'school', course:'business', roof:'#4527a0', big:1},
+  {id:'umu', n:'United Methodist University', ic:'🖥️', x:470, y:1395, type:'school', course:'it', roof:'#1a237e'},
+  {id:'medschool', n:'UL College of Medicine (Congo Town)', ic:'🩺', x:2372, y:1330, type:'school', course:'medicine', roof:'#0d47a1'},
+  {id:'cuttington', n:'Cuttington Graduate School', ic:'🎓', x:2655, y:1404, type:'school', course:'mba', roof:'#3e2723'},
+  {id:'academy', n:'National Police Training Academy', ic:'🚔', x:3120, y:1392, type:'school', course:'police', roof:'#1b2a49', big:1},
+  {id:'fendall', n:'UL Fendall Campus', ic:'🌱', x:3893, y:560, type:'school', course:'agric', roof:'#33691e', big:1},
+  // hospitals, police
+  {id:'redemption', n:'Redemption Hospital', ic:'🏥', x:726, y:836, type:'job', jobs:['cleaner','aide','nurse'], roof:'#eeeeee', heal:1, hosp:1},
+  {id:'elwa', n:'ELWA Hospital', ic:'🏥', x:2925, y:1520, type:'job', jobs:['cleaner','aide','nurse','doctor'], roof:'#eeeeee', heal:1, hosp:1},
+  {id:'lnp', n:'LNP Police Headquarters', ic:'👮🏾', x:1500, y:1270, type:'job', jobs:['police'], roof:'#1b2a49', big:1, police:1},
+  // factories and offices
+  {id:'waterf', n:'Lone Star Water Factory', ic:'💧', x:1452, y:832, type:'job', jobs:['waterw','supervisor'], roof:'#90a4ae', big:1, factory:1},
+  {id:'cement', n:'Freeport Cement Factory', ic:'🏗️', x:812, y:812, type:'job', jobs:['cementw','supervisor'], roof:'#9e9e9e', big:1, factory:1},
+  {id:'rubber', n:'Bensonville Rubber Factory', ic:'🌳', x:3628, y:612, type:'job', jobs:['rubberw','supervisor'], roof:'#5d4037', big:1, factory:1},
+  {id:'bottle', n:'Montserrado Bottling Company', ic:'🍾', x:2300, y:676, type:'job', jobs:['bottlew','supervisor'], roof:'#b71c1c', big:1, factory:1},
+  {id:'tower', n:'Mamba Point Business Tower', ic:'🏢', x:676, y:1215, type:'job', jobs:['receptionist','accountant','manager'], roof:'#37474f', big:1, office:1},
+  // clubs
+  {id:'club1', n:'Club Mesurado', ic:'🪩', x:1900, y:1288, type:'club', roof:'#880e4f', big:1},
+  {id:'club2', n:'Bushrod Vibes Night Club', ic:'🪩', x:1050, y:727, type:'club', roof:'#4a148c'},
+  // landmarks
+  {id:'exec', n:'Executive Mansion', ic:'🏛️', x:935, y:1354, type:'landmark', roof:'#f5f5f5', big:1, shape:'mansion'},
+  {id:'capitol', n:'Capitol Building', ic:'🏛️', x:1062, y:1240, type:'landmark', roof:'#f5f5f5', big:1, shape:'dome'},
+  {id:'ducor', n:'Ducor Hotel', ic:'🏨', x:330, y:1395, type:'landmark', roof:'#cfd8dc', big:1, shape:'tower'},
+  {id:'museum', n:'National Museum', ic:'🏺', x:676, y:1345, type:'landmark', roof:'#8d6e63'},
+  {id:'skd', n:'SKD Sports Complex', ic:'🏟️', x:3350, y:1250, type:'landmark', roof:'#2e7d32', big:1, shape:'stadium'},
+  {id:'ats', n:'Antoinette Tubman Stadium', ic:'🏟️', x:1300, y:1208, type:'landmark', roof:'#388e3c', big:1, shape:'stadium'},
+  {id:'ejs', n:'EJS Ministerial Complex', ic:'🏢', x:2300, y:1416, type:'landmark', roof:'#546e7a', big:1},
+  {id:'btc', n:'Barclay Training Center', ic:'🎖️', x:440, y:1294, type:'landmark', roof:'#556b2f'},
+  {id:'providence', n:'Providence Island', ic:'🗽', x:742, y:1000, type:'landmark', nob:1},
   {id:'beach', n:'ELWA Beach', ic:'🏖️', x:2960, y:1662, type:'beach', nob:1},
   {id:'t_duala', n:'Duala Taxi Park', ic:'🚕', x:1240, y:662, type:'taxi', nob:1},
   {id:'t_water', n:'Waterside Taxi Park', ic:'🚕', x:745, y:1172, type:'taxi', nob:1},
@@ -391,6 +457,8 @@ const GOALS = [
   {id:'drip', t:'Buy a new outfit', ok:s => (s.wardrobe || []).length > 1},
   {id:'furnish', t:'Put a TV in your home', ok:s => Object.values(s.furn || {}).some(f => f.includes('tv'))},
   {id:'ourride', t:'Complete 5 OurRide trips as a driver', ok:s => (s.stats.ourride || 0) >= 5},
+  {id:'explorer', t:'Visit 5 famous landmarks', ok:s => (s.visited || []).length >= 5},
+  {id:'party', t:'Dance at a night club', ok:s => (s.fun || 0) >= 1},
   {id:'million', t:'Reach L$1,000,000 net worth', ok:s => netWorth(s) >= 1e6}
 ];
 
@@ -725,11 +793,17 @@ function appScreen(){
   }
 }
 function phoneScreen(){
+  if (phoneApp === 'home') return homeScreen();
+  if (phoneApp === 'talk') return talkScreen();
+  if (phoneApp === 'shop') return shopScreen();
+  if (phoneApp === 'jobs') return jobsScreen();
+  if (phoneApp === 'ourride') return ourrideScreen();
   if (phoneApp === 'settings') return {t:'Settings', ic:'⚙️', body:`<button class="pback" data-app="home">‹ Apps</button><div class="list" style="font-size:14px;line-height:1.45;color:var(--muted)">
       <div class="goal"><span class="dot">1</span><span>Walk with <b>WASD</b> or the joystick. Drag the screen to look around.</span></div>
       <div class="goal"><span class="dot">2</span><span>Walk to a door and press <b>Enter</b>. Your own home has a <b>Go inside</b> button.</span></div>
       <div class="goal"><span class="dot">3</span><span>Delivery and OurRide pay goes to <b>MoMo</b>. Shop with cash or MoMo.</span></div>
-      <div class="goal"><span class="dot">4</span><span>Every day costs L$150. Vehicles burn fuel. Plan your money!</span></div></div>`,
+      <div class="goal"><span class="dot">4</span><span>Every day costs L$150. Vehicles burn fuel. Plan your money!</span></div>
+      <div class="goal"><span class="dot">5</span><span>Other players online appear with a blue name tag. Chat with them in <b>Let We Talk</b>.</span></div></div>`,
     acts:[{l:'Start a new life', s:'Erases this save', fn:() => { closeModal(); showIntro(true); }}]};
   return appScreen();
 }
@@ -755,6 +829,337 @@ function lifeTick(dt){
   if (S.online && !S.gig && S.riding && DRIVABLE.includes(S.ride)){ lifeTick.wait = (lifeTick.wait || 6) - dt; if (lifeTick.wait <= 0){ lifeTick.wait = 6 + Math.random() * 6; startGig('ourride'); } }
   // waypoint reached
   if (S.wp && dist(S.x, S.y, S.wp.x, S.wp.y) < 45){ toast(`📍 You reached ${S.wp.n}`, 'good'); S.wp = null; }
+}
+
+/* =========================================================
+   CITY 3: more jobs, universities, landmarks, road routing,
+   auto-driving rides, duty jobs, iPhone-style phone, multiplayer
+   ========================================================= */
+Object.assign(JOBS, {
+  cleaner:     {t:'Hospital cleaner', wage:500, e:26, f:20, verb:'Mopping the wards', ic:'🧹'},
+  aide:        {t:'Nurse aide', wage:1100, e:28, f:22, req:'waec', verb:'Helping nurses with patients', ic:'🩹'},
+  doctor:      {t:'Doctor', wage:9000, e:34, f:26, req:'medicine', verb:'Seeing patients in the clinic', ic:'👩🏾‍⚕️'},
+  waterw:      {t:'Water factory worker', wage:600, e:34, f:26, verb:'Packing water sachets', ic:'💧'},
+  cementw:     {t:'Cement factory worker', wage:750, e:42, f:30, verb:'Loading cement bags', ic:'🏗️'},
+  rubberw:     {t:'Rubber factory worker', wage:650, e:38, f:28, verb:'Processing raw rubber', ic:'🌳'},
+  bottlew:     {t:'Bottling line worker', wage:650, e:32, f:26, verb:'Watching the bottling line', ic:'🍾'},
+  supervisor:  {t:'Factory supervisor', wage:3200, e:24, f:20, req:['engineering','agric'], verb:'Running the factory floor', ic:'🦺'},
+  receptionist:{t:'Receptionist', wage:1200, e:18, f:18, req:'waec', verb:'Answering phones at the front desk', ic:'☎️'},
+  teller:      {t:'Bank teller', wage:2000, e:20, f:18, req:'waec', verb:'Counting money at the counter', ic:'💵'},
+  accountant:  {t:'Accountant', wage:3500, e:22, f:20, req:'business', verb:'Balancing the books', ic:'📊'},
+  manager:     {t:'Office manager', wage:7000, e:24, f:20, req:'mba', verb:'Running meetings', ic:'👔'},
+  police:      {t:'Police officer (desk duty)', wage:2200, e:28, f:24, req:'police', verb:'Taking reports at the station', ic:'👮🏾'}
+});
+JOBS.dev.req = ['degree','it'];
+Object.assign(COURSES, {
+  medicine:    {t:'Medical degree (MD)', place:'medschool', fee:120000, n:12, req:'degree', ic:'🩺'},
+  engineering: {t:'Engineering diploma', place:'stella', fee:40000, n:8, req:'waec', ic:'⚙️'},
+  business:    {t:'Business degree', place:'ameu', fee:45000, n:8, req:'waec', ic:'📈'},
+  it:          {t:'Computer science degree', place:'umu', fee:50000, n:9, req:'waec', ic:'🖥️'},
+  mba:         {t:'MBA', place:'cuttington', fee:80000, n:8, req:['business','degree'], ic:'🎓'},
+  police:      {t:'Police training certificate', place:'academy', fee:8000, n:5, req:'waec', ic:'🚔'},
+  agric:       {t:'BSc Agriculture', place:'fendall', fee:30000, n:8, req:'waec', ic:'🌱'}
+});
+const hasReq = req => !req || (Array.isArray(req) ? req.some(r => S.certs.includes(r)) : S.certs.includes(req));
+const reqName = req => (Array.isArray(req) ? req : [req]).map(r => COURSES[r].t).join(' or ');
+Object.assign(VEHICLES, {
+  police:    {t:'Police patrol car', price:0, sp:2.7, fuel:0, c:'#f4f4f4', kind:'police', ic:'🚓', duty:1},
+  ambulance: {t:'Ambulance', price:0, sp:2.6, fuel:0, c:'#ffffff', kind:'ambulance', ic:'🚑', duty:1}
+});
+const LANDMARK_INFO = {
+  exec:'The official office of the President of Liberia, on Capitol Hill overlooking the Atlantic.',
+  capitol:'Home of the Liberian Legislature, the Senate and House of Representatives.',
+  ducor:'Once the grandest hotel in West Africa, high on Mamba Point with the best view of Monrovia.',
+  providence:'Where the freed slaves who founded Liberia first landed in 1822.',
+  museum:'The National Museum on Broad Street, telling the story of Liberia.',
+  skd:'Samuel Kanyon Doe Sports Complex, where Lone Star play their big matches.',
+  ats:'Antoinette Tubman Stadium, the old home of Liberian football downtown.',
+  ejs:'The EJS Ministerial Complex in Congo Town, where many ministries work.',
+  btc:'Barclay Training Center, the historic army barracks on UN Drive.'
+};
+// rename and upgrade existing places
+Object.assign(LOC.hospital, {n:'JFK Medical Center', jobs:['cleaner','aide','nurse','doctor'], hosp:1});
+LOC.office.jobs = ['receptionist','clerk']; LOC.bank.jobs = ['teller','accountant']; LOC.bank.type = 'bank';
+LOC.waterside.jobs = ['market']; LOC.freeport.jobs = ['dock']; LOC.garage.jobs = ['mechanic']; LOC.techhub.jobs = ['dev'];
+
+/* ---------- road graph + routing for cars that come to you ---------- */
+const GRAPH = (() => {
+  const nodes = [], adj = [], segs = [];
+  const nodeAt = (x, y) => { for (let i = 0; i < nodes.length; i++) if (Math.abs(nodes[i].x - x) < 6 && Math.abs(nodes[i].y - y) < 6) return i; nodes.push({x, y}); adj.push([]); return nodes.length - 1; };
+  const extra = ROADS.map(r => r.segs.map(() => []));
+  const inter = (a, b) => { const d = (b.bx - b.ax) * (a.by - a.ay) - (b.by - b.ay) * (a.bx - a.ax); if (Math.abs(d) < 1e-6) return null;
+    const t = ((b.bx - b.ax) * (b.ay - a.ay) - (b.by - b.ay) * (b.ax - a.ax)) / d, u = ((a.bx - a.ax) * (b.ay - a.ay) - (a.by - a.ay) * (b.ax - a.ax)) / d;
+    return t > 0 && t < 1 && u > 0 && u < 1 ? [t, u] : null; };
+  ROADS.forEach((ra, i) => ra.segs.forEach((sa, si) => ROADS.forEach((rb, j) => { if (j <= i) return; rb.segs.forEach((sb, sj) => { const h = inter(sa, sb); if (h){ extra[i][si].push(h[0]); extra[j][sj].push(h[1]); } }); })));
+  // T-junctions: a road ending near another road
+  ROADS.forEach((ra, i) => [ra.p[0], ra.p[ra.p.length - 1]].forEach(([x, y]) => ROADS.forEach((rb, j) => { if (j === i) return;
+    rb.segs.forEach((sb, sj) => { const [d, cx, cy] = segDist(x, y, sb.ax, sb.ay, sb.bx, sb.by); if (d < 62){ const t = sb.l ? Math.hypot(cx - sb.ax, cy - sb.ay) / sb.l : 0; if (t > .001 && t < .999) extra[j][sj].push(t); ra._joins = ra._joins || []; ra._joins.push([x, y, cx, cy]); } }); })));
+  const link = (a, b) => { if (a === b) return; const w = Math.hypot(nodes[a].x - nodes[b].x, nodes[a].y - nodes[b].y); adj[a].push([b, w]); adj[b].push([a, w]); segs.push([a, b]); };
+  ROADS.forEach((r, i) => { r.segs.forEach((s, si) => {
+    const ts = [0, ...extra[i][si].sort((a, b) => a - b), 1];
+    for (let k = 0; k < ts.length - 1; k++) link(nodeAt(s.ax + (s.bx - s.ax) * ts[k], s.ay + (s.by - s.ay) * ts[k]), nodeAt(s.ax + (s.bx - s.ax) * ts[k+1], s.ay + (s.by - s.ay) * ts[k+1]));
+  }); (r._joins || []).forEach(([x, y, cx, cy]) => link(nodeAt(x, y), nodeAt(cx, cy))); });
+  return {nodes, adj, segs};
+})();
+function nearestSeg(x, y){
+  let best = null;
+  for (const [a, b] of GRAPH.segs){ const A = GRAPH.nodes[a], B = GRAPH.nodes[b]; const [d, cx, cy] = segDist(x, y, A.x, A.y, B.x, B.y); if (!best || d < best.d) best = {d, a, b, x:cx, y:cy}; }
+  return best;
+}
+function route(ax, ay, bx, by){
+  const s = nearestSeg(ax, ay), e = nearestSeg(bx, by), N = GRAPH.nodes;
+  const dist0 = new Map(), prev = new Map(), open = [];
+  for (const n of [s.a, s.b]){ const d = Math.hypot(N[n].x - s.x, N[n].y - s.y); dist0.set(n, d); prev.set(n, -1); open.push(n); }
+  const goal = new Set([e.a, e.b]); let found = null;
+  while (open.length){
+    let bi = 0; for (let i = 1; i < open.length; i++) if (dist0.get(open[i]) + Math.hypot(N[open[i]].x - bx, N[open[i]].y - by) < dist0.get(open[bi]) + Math.hypot(N[open[bi]].x - bx, N[open[bi]].y - by)) bi = i;
+    const u = open.splice(bi, 1)[0]; if (goal.has(u)){ found = u; break; }
+    for (const [v, w] of GRAPH.adj[u]){ const nd = dist0.get(u) + w; if (nd < (dist0.has(v) ? dist0.get(v) : Infinity)){ dist0.set(v, nd); prev.set(v, u); if (!open.includes(v)) open.push(v); } }
+  }
+  const pts = [{x:ax, y:ay}, {x:s.x, y:s.y}];
+  if (found !== null){ const chain = []; for (let n = found; n !== -1 && n !== undefined; n = prev.get(n)) chain.push(N[n]); pts.push(...chain.reverse()); }
+  pts.push({x:e.x, y:e.y}, {x:bx, y:by});
+  return pts.filter((p, i) => i === 0 || Math.hypot(p.x - pts[i-1].x, p.y - pts[i-1].y) > .5);
+}
+const pathLen = pts => pts.reduce((a, p, i) => i ? a + Math.hypot(p.x - pts[i-1].x, p.y - pts[i-1].y) : 0, 0);
+
+/* ---------- auto-drive: OurRide pickups, trips, ambulance ---------- */
+let AUTO = null;   // {kind, vehicle, color, path, s, sp, phase, then, label}
+function autoPoint(path, s){
+  let acc = 0;
+  for (let i = 1; i < path.length; i++){ const a = path[i-1], b = path[i], l = Math.hypot(b.x - a.x, b.y - a.y); if (acc + l >= s){ const t = l ? (s - acc) / l : 0; return {x:a.x + (b.x - a.x) * t, y:a.y + (b.y - a.y) * t, a:Math.atan2(b.y - a.y, b.x - a.x)}; } acc += l; }
+  const a = path[path.length - 2] || path[0], b = path[path.length - 1]; return {x:b.x, y:b.y, a:Math.atan2(b.y - a.y, b.x - a.x)};
+}
+function trimPath(path, keep){
+  const L = pathLen(path); if (L <= keep) return path;
+  const cut = L - keep, p0 = autoPoint(path, cut), out = [{x:p0.x, y:p0.y}]; let acc = 0;
+  for (let i = 1; i < path.length; i++){ acc += Math.hypot(path[i].x - path[i-1].x, path[i].y - path[i-1].y); if (acc > cut) out.push(path[i]); }
+  return out;
+}
+function startPickup(kindVeh, color, label, onBoard){
+  let best = null;
+  for (let k = 0; k < 6; k++){ const from = farAddr(S.x, S.y, 250, 600), path = route(from.x, from.y, S.x, S.y), L = pathLen(path); if (!best || L < best.L) best = {path, L}; }
+  const path = trimPath(best.path, 800);
+  AUTO = {phase:'coming', kind:kindVeh, color, path, s:0, len:pathLen(path), sp:280, label, onBoard};
+}
+function startTrip(toX, toY, label, onArrive){
+  const path = route(S.x, S.y, toX, toY);
+  AUTO.phase = 'trip'; AUTO.path = path; AUTO.s = 0; AUTO.len = pathLen(path); AUTO.sp = AUTO.kind === 'moto' ? 300 : 360; AUTO.label = label; AUTO.onArrive = onArrive;
+  S.riding = false; S.inCar = true;
+}
+function autoTick(dt){
+  if (!AUTO) return;
+  AUTO.s = Math.min(AUTO.len, AUTO.s + AUTO.sp * dt);
+  const p = autoPoint(AUTO.path, AUTO.s); AUTO.x = p.x; AUTO.y = p.y; AUTO.a = p.a;
+  if (AUTO.phase === 'trip'){ S.x = p.x; S.y = p.y; player.a = p.a; }
+  if (AUTO.s >= AUTO.len){
+    if (AUTO.phase === 'coming' && dist(AUTO.x, AUTO.y, S.x, S.y) > 70){ AUTO.path = route(AUTO.x, AUTO.y, S.x, S.y); AUTO.s = 0; AUTO.len = pathLen(AUTO.path); return; }
+    if (AUTO.phase === 'coming'){ const cb = AUTO.onBoard; cb && cb(); }
+    else { const cb = AUTO.onArrive; S.inCar = false; AUTO = null; cb && cb(); }
+  }
+}
+function skipAuto(){ if (AUTO && AUTO.phase === 'trip'){ AUTO.s = AUTO.len; } }
+const RIDES = {
+  penpen:{t:'Pen-pen', ic:'🏍️', base:60, rate:.07, kind:'moto', c:'#E5392C', d:'Fast and cheap, hold on tight'},
+  keke:{t:'Keke', ic:'🛺', base:90, rate:.1, kind:'keke', c:'#F2C230', d:'Three seats, breezy'},
+  economy:{t:'Economy (Corolla)', ic:'🚗', base:180, rate:.16, kind:'car', c:'#1E8E5A', d:'AC car, up to 4 people'},
+  comfort:{t:'Comfort (SUV)', ic:'🚙', base:320, rate:.26, kind:'suv', c:'#2c3e50', d:'Bigger, cooler, smoother'},
+  luxury:{t:'Luxury (Land Cruiser)', ic:'🖤', base:600, rate:.45, kind:'suv', c:'#111111', d:'Leather seats, the big-man ride'}
+};
+function bookRide2(svc, l){
+  const R = RIDES[svc], fare = Math.round(R.base + dist(S.x, S.y, l.x, l.y) * R.rate);
+  if (!canPay(fare)) return toast('Not enough money for this ride.', 'bad');
+  const driver = pick(FIRST) + ' ' + pick(LAST), plate = 'LB-' + (1000 + Math.floor(Math.random() * 8999));
+  S.booking = {svc, dest:l.id, fare, driver, plate};
+  closeModal(); toast(`${driver} accepted! ${R.ic} ${plate} is driving to you.`, 'gold');
+  startPickup(R.kind, R.c, `${R.ic} ${driver} is coming`, () => {
+    toast(`${driver} has arrived. Climb in!`, 'gold');
+    startTrip(l.x, l.y, `${R.ic} Riding with ${driver} to ${l.n}`, () => {
+      spend(fare, true); S.x = l.x; S.y = l.y; cam.x = S.x; cam.y = S.y; S.booking = null; faceFrom(l);
+      toast(`You reached ${l.n}. Paid ${money(fare)}. You rated ${driver.split(' ')[0]} ⭐⭐⭐⭐⭐`, 'good'); save();
+    });
+  });
+  save();
+}
+function nearestHospital(x, y){ return LOCS.filter(l => l.hosp).sort((a, b) => dist(x, y, a.x, a.y) - dist(x, y, b.x, b.y))[0]; }
+function ambulanceRescue(){
+  if (AUTO) return;
+  const h = nearestHospital(S.x, S.y), bill = Math.min(S.money + (S.momo || 0), 1200);
+  S.riding = false; S.inside = null; INT = null;
+  toast('🚑 You collapsed! Someone called an ambulance.', 'bad');
+  startPickup('ambulance', '#ffffff', '🚑 Ambulance is coming', () => {
+    startTrip(h.x, h.y, `🚑 Rushing to ${h.n}`, () => {
+      busy('🏥', `Treated at ${h.n}`, 'The doctors say: rest more and eat well', 1.6, () => {
+        spend(bill); let mins = (8*60 - S.min + 1440) % 1440 || 1440; advance(mins); S.energy = 55; S.food = Math.max(S.food, 30);
+        S.x = h.x; S.y = h.y; cam.x = S.x; cam.y = S.y; faceFrom(h); toast(`Hospital bill: ${money(bill)}. Sleep more!`, 'bad');
+      });
+    });
+  });
+}
+
+/* ---------- duty jobs: police patrol and ambulance shifts ---------- */
+const INCIDENTS = ['Pickpocket at the market','Car accident on the road','Noise complaint','Stolen phone report','Shop break-in','Fight outside a bar','Lost child','Traffic jam blocking the junction'];
+function startDuty(kind){
+  if (S.inside && INT) goOutside();
+  S.duty = kind; S.ride = kind; S.riding = true; S.gig = null; closeModal();
+  toast(kind === 'police' ? '🚓 Patrol started. Drive to each report.' : '🚑 Ambulance shift started. Pick up patients and bring them to a hospital.', 'gold');
+  dutyNext(); save();
+}
+function endDuty(){ if (S.duty){ toast(S.duty === 'police' ? 'Patrol ended. Good work, officer.' : 'Ambulance shift ended.'); } S.duty = null; S.gig = null; if (VEHICLES[S.ride] && VEHICLES[S.ride].duty){ S.riding = false; S.ride = S.vehicles[0] || null; } save(); hud(); }
+function dutyNext(){
+  if (!S.duty) return;
+  const a = farAddr(S.x, S.y, 300, 1300), who = pick(FIRST) + ' ' + pick(LAST);
+  if (S.duty === 'police') S.gig = {kind:'police', stage:'drop', who, x:a.x, y:a.y, d:a.d, start:S.day*1440 + S.min, dist:dist(S.x, S.y, a.x, a.y), food:pick(INCIDENTS)};
+  else { const h = nearestHospital(a.x, a.y); S.gig = {kind:'ems', stage:'pick', who, x:a.x, y:a.y, dx:h.x, dy:h.y, d:a.d, dd:h.n, start:0, dist:dist(a.x, a.y, h.x, h.y)}; }
+  toast(S.duty === 'police' ? `📻 Dispatch: ${S.gig.food} in ${a.d}` : `📻 Dispatch: patient ${who} needs help in ${a.d}`, 'gold');
+}
+
+/* ---------- landmarks ---------- */
+function panelLandmark(l){
+  S.visited = S.visited || [];
+  const seen = S.visited.includes(l.id);
+  return {ic:l.ic, t:l.n, sub:LANDMARK_INFO[l.id] || 'A famous place in Montserrado.', body:`<div class="facts"><span class="chip ${seen ? 'ok' : 'gold'}">${seen ? '✓ Visited' : 'Not visited yet'}</span><span class="chip">${S.visited.length} of ${Object.keys(LANDMARK_INFO).length} landmarks</span></div>`,
+    acts:[{l:'Take a photo here', s: seen ? 'Already in your gallery' : 'Counts toward the Explorer goal', primary:!seen, fn:() => { if (!seen){ S.visited.push(l.id); toast(`📸 Nice photo at ${l.n}!`, 'gold'); checkGoals(); } else toast('Another nice photo!'); }},
+      ...(l.shape === 'stadium' ? [{l:'Watch a Lone Star match', s:'3 hours · +15 energy', p:money(500), pc:'minus', dis:!canPay(500), fn:() => { spend(500); busy('🏟️', 'In the stands…', 'The whole stadium is singing', 1.8, () => { advance(180); S.energy = clamp(S.energy + 15, 0, 100); toast(pick(['Lone Star win 1-0! The city is celebrating.','A draw, but what a match!']), 'gold'); }); }}] : []),
+      ...(l.id === 'ducor' ? [{l:'Enjoy the view from the top', s:'1 hour · +6 energy', fn:() => busy('🌅', 'Looking over Monrovia…', 'You can see the whole city and the ocean', 1.2, () => { advance(60); S.energy = clamp(S.energy + 6, 0, 100); })}] : [])]};
+}
+function panelClub(l){
+  const h = hour(), open = h >= 20 || h < 4, paid = S.clubPaid === l.id + ':' + S.day;
+  const acts = [];
+  if (!paid) acts.push({l:'Pay entry', s: open ? 'The DJ is going hard tonight' : 'Opens at 8 PM', p:money(500), pc:'minus', primary:open, dis:!open || !canPay(500), fn:() => { spend(500); S.clubPaid = l.id + ':' + S.day; toast('You are in! Enjoy the night.', 'gold'); }});
+  else {
+    acts.push({l:'Dance all night', s:'2 hours · -10 energy, big fun', primary:true, fn:() => busy('🪩', 'Dancing at ' + l.n + '…', pick(['The DJ just dropped the hottest hipco song','Everybody is doing the latest dance','Afrobeats is on full blast']), 1.6, () => { advance(120); S.energy = clamp(S.energy - 10, 0, 100); S.fun = (S.fun || 0) + 1; toast('What a night! You danced like a star.', 'gold'); checkGoals(); })});
+    acts.push({l:'Cold drink at the bar', p:money(300), pc:'minus', dis:!canPay(300), fn:() => { spend(300); S.energy = clamp(S.energy + 3, 0, 100); toast('Ice cold!'); }});
+    acts.push({l:'Book a VIP table', s:'Bottle service with your crew', p:money(6000), pc:'minus', dis:!canPay(6000), fn:() => { spend(6000); busy('🍾', 'VIP table…', 'Sparklers, bottles, the whole club is looking', 1.4, () => { advance(90); toast('You are the big man of the night!', 'gold'); }); }});
+  }
+  return {ic:'🪩', t:l.n, sub: open ? 'Open now until 4 AM.' : 'Closed now. Opens at 8 PM.', acts};
+}
+
+/* ---------- multiplayer (Supabase Realtime, no database) ---------- */
+const MP_URL = 'https://gacwxjjnxpchmzknmcvl.supabase.co', MP_KEY = 'sb_publishable__qkP5efkrHOOIxO6OXBwMg_kZJv9Ndu';
+const MP = {id:null, ch:null, online:false, peers:new Map(), chat:[], dms:{}, unread:0, sentAt:0, lastPos:''};
+try { MP.id = localStorage.getItem('smallsmall-id'); if (!MP.id){ MP.id = 'p' + Math.random().toString(36).slice(2, 10); localStorage.setItem('smallsmall-id', MP.id); } } catch(e){ MP.id = 'p' + Math.random().toString(36).slice(2, 10); }
+try { const c = JSON.parse(localStorage.getItem('smallsmall-chat') || 'null'); if (c){ MP.chat = c.chat || []; MP.dms = c.dms || {}; } } catch(e){}
+const saveChat = () => { try { localStorage.setItem('smallsmall-chat', JSON.stringify({chat:MP.chat.slice(-60), dms:MP.dms})); } catch(e){} };
+const cleanText = t => String(t || '').replace(/[\u0000-\u001f]/g, ' ').slice(0, 200);
+function mpStart(){
+  if (MP.ch || !window.supabase || !S) return;
+  try {
+    const sb = window.supabase.createClient(MP_URL, MP_KEY, {auth:{persistSession:false}, realtime:{params:{eventsPerSecond:15}}});
+    MP.ch = sb.channel('smallsmall-world', {config:{broadcast:{self:false}, presence:{key:MP.id}}});
+    MP.ch.on('broadcast', {event:'pos'}, ({payload:p}) => { if (!p || typeof p.id !== 'string' || p.id === MP.id) return; const peer = mpPeer(p.id); Object.assign(peer.t, {x:+p.x || 0, y:+p.y || 0, a:+p.a || 0, rd:p.rd ? String(p.rd) : '', mv:!!p.mv, in:!!p.in}); peer.seen = performance.now(); });
+    MP.ch.on('broadcast', {event:'chat'}, ({payload:m}) => { if (!m || typeof m.id !== 'string') return; if (m.to && m.to !== MP.id) return; mpReceive(m); });
+    MP.ch.on('presence', {event:'sync'}, () => {
+      const st = MP.ch.presenceState(), keys = new Set(Object.keys(st));
+      for (const k of keys){ if (k === MP.id) continue; const meta = (st[k] && st[k][0]) || {}; const peer = mpPeer(k); peer.name = cleanText(meta.name).slice(0, 16) || 'Player'; if (meta.look && typeof meta.look === 'object') peer.look = meta.look; }
+      for (const k of [...MP.peers.keys()]) if (!keys.has(k)) mpDrop(k);
+      hud();
+    });
+    MP.ch.on('presence', {event:'join'}, ({key, newPresences}) => { if (key !== MP.id){ const n = cleanText(newPresences && newPresences[0] && newPresences[0].name) || 'A player'; toast(`🟢 ${n} joined Montserrado`); } });
+    MP.ch.subscribe(st => { MP.online = st === 'SUBSCRIBED'; if (MP.online) mpTrack(); hud(); });
+  } catch(e){ MP.online = false; }
+}
+function mpTrack(){ if (MP.online && S) MP.ch.track({name:S.name, look:S.look}).catch(() => {}); }
+function mpPeer(id){ if (!MP.peers.has(id)) MP.peers.set(id, {id, name:'Player', look:null, t:{x:0, y:0, a:0}, x:null, y:null, a:0, seen:0}); return MP.peers.get(id); }
+function mpDrop(id){ const p = MP.peers.get(id); if (p && p.mesh) scene.remove(p.mesh); if (p && p.car) scene.remove(p.car); if (p && p.lab) p.lab.remove(); MP.peers.delete(id); }
+function mpTick(){
+  if (!MP.online || !S) return;
+  const who = S.name + JSON.stringify(S.look); if (who !== MP.lastWho){ MP.lastWho = who; mpTrack(); }
+  const now = performance.now(); if (now - MP.sentAt < 120) return;
+  const pos = {id:MP.id, x:Math.round(S.x), y:Math.round(S.y), a:+player.a.toFixed(2), rd: S.riding ? S.ride : (S.inCar && AUTO ? AUTO.kind : ''), mv:player.moving, in:!!S.inside};
+  const key = JSON.stringify(pos); if (key === MP.lastPos && now - MP.sentAt < 2000) return;
+  MP.lastPos = key; MP.sentAt = now; MP.ch.send({type:'broadcast', event:'pos', payload:pos}).catch(() => {});
+}
+function mpSend(text, to){
+  text = cleanText(text).trim(); if (!text) return;
+  if (performance.now() - (MP.lastChat || 0) < 900) return toast('Slow down small, one message per second.');
+  MP.lastChat = performance.now();
+  const m = {id:MP.id, name:S.name, text, ts:Date.now(), to:to || null};
+  if (MP.online) MP.ch.send({type:'broadcast', event:'chat', payload:m}).catch(() => {});
+  mpStore(m, true);
+}
+function mpReceive(m){
+  const msg = {id:String(m.id), name:cleanText(m.name).slice(0, 16) || 'Player', text:cleanText(m.text), ts:+m.ts || Date.now(), to:m.to ? String(m.to) : null};
+  mpStore(msg, false);
+  MP.unread++; toast(`💬 ${msg.name}: ${msg.text.slice(0, 60)}`); if (modalRender && phoneApp === 'talk') renderModal(); hud();
+}
+function mpStore(m, mine){
+  if (m.to || (!mine && m.to === MP.id)){ const other = mine ? m.to : m.id; (MP.dms[other] = MP.dms[other] || []).push({...m, mine}); MP.dms[other] = MP.dms[other].slice(-40); }
+  else { MP.chat.push({...m, mine}); MP.chat = MP.chat.slice(-60); }
+  saveChat();
+}
+
+/* ---------- phone 2: iPhone-style apps ---------- */
+APPS.length = 0;
+APPS.push(
+  {id:'talk', t:'Let We Talk', ic:'💬', bg:'linear-gradient(160deg,#34d058,#1a9e3c)'},
+  {id:'ourride', t:'OurRide', ic:'🚘', bg:'linear-gradient(160deg,#22b573,#0b7a47)'},
+  {id:'momo', t:'MoMo', ic:'💸', bg:'linear-gradient(160deg,#ffd83a,#f5a700)'},
+  {id:'maps', t:'Maps', ic:'🗺️', bg:'linear-gradient(160deg,#5ab0ff,#1e6fd0)'},
+  {id:'shop', t:'LibMart', ic:'🛍️', bg:'linear-gradient(160deg,#ff7a59,#e0402a)'},
+  {id:'hotfresh', t:'Hot & Fresh', ic:'🔥', bg:'linear-gradient(160deg,#ff6a3d,#c2250c)'},
+  {id:'jobs', t:'Jobs', ic:'💼', bg:'linear-gradient(160deg,#8d6e63,#4e342e)'},
+  {id:'goals', t:'Goals', ic:'🏆', bg:'linear-gradient(160deg,#b37cff,#6a2fd1)'},
+  {id:'me', t:'Me', ic:'🙂', bg:'linear-gradient(160deg,#6b7f93,#34495e)'},
+  {id:'myhome', t:'My Home', ic:'🏠', bg:'linear-gradient(160deg,#2ed1b0,#11866f)'},
+  {id:'settings', t:'Settings', ic:'⚙️', bg:'linear-gradient(160deg,#9aa0a6,#5f6368)'}
+);
+const DOCK = ['talk','ourride','momo','maps'];
+let talkTab = 'room', shopTab = 'home';
+function homeScreen(){
+  const icon = a => `<button class="app" data-app="${a.id}"><span style="background:${a.bg}">${a.ic}${a.id === 'talk' && MP.unread ? `<em>${MP.unread}</em>` : ''}</span>${a.t}</button>`;
+  return {home:true, t:'Home', body:`<div class="ios-date"><b>${fmtTime(S.min).replace(/ (AM|PM)/, '')}</b><span>Day ${S.day} · ${districtAt(S.x, S.y)}${S.rain ? ' · 🌧️ Rain' : ' · ☀️'}</span></div>
+    <div class="apps">${APPS.filter(a => !DOCK.includes(a.id)).map(icon).join('')}</div>
+    <div class="dock">${DOCK.map(id => icon(APPS.find(a => a.id === id))).join('')}</div>`, acts:[]};
+}
+function talkScreen(){
+  MP.unread = 0;
+  const peers = [...MP.peers.values()];
+  const tabs = `<div class="seg"><button data-talk="room" aria-selected="${talkTab === 'room'}">Montserrado</button><button data-talk="players" aria-selected="${talkTab === 'players'}">Players (${peers.length})</button></div>`;
+  const status = MP.online ? `<div class="chip ok">🟢 Connected · ${peers.length + 1} in Montserrado</div>` : `<div class="chip no">Connecting to Montserrado… check your internet</div>`;
+  if (talkTab === 'players') return {t:'Let We Talk', body: tabs + status + `<div class="list">${peers.length ? peers.map(p => `<button class="goal" data-talk="dm:${esc(p.id)}"><span class="dot">${p.look && p.look.g === 'f' ? '👩🏾' : '👨🏾'}</span><span style="flex:1;text-align:left"><b>${esc(p.name)}</b><br><small style="color:var(--muted)">${p.seen ? districtAt(p.t.x, p.t.y) : 'Just joined'}${(MP.dms[p.id] || []).length ? ' · ' + MP.dms[p.id].length + ' messages' : ''}</small></span>›</button>`).join('') : '<div class="goal">No other players right now. Share the game link with your friends!</div>'}</div>`, acts:[]};
+  const dm = talkTab.startsWith('dm:') ? talkTab.slice(3) : null, peer = dm && MP.peers.get(dm);
+  const msgs = dm ? (MP.dms[dm] || []) : MP.chat;
+  setTimeout(() => { const box = $('#chatBox'); if (box) box.scrollTop = box.scrollHeight; const f = $('#chatForm'); if (!f) return;
+    f.onsubmit = e => { e.preventDefault(); const i = $('#chatIn'); mpSend(i.value, dm); i.value = ''; renderModal(); setTimeout(() => $('#chatIn') && $('#chatIn').focus(), 0); checkGoals(); }; }, 0);
+  return {t: dm ? (peer ? peer.name : 'Chat') : 'Let We Talk', body: (dm ? `<button class="pback" data-talk="players">‹ Players</button>` : tabs) + (dm ? '' : status) +
+    `<div class="chat" id="chatBox">${msgs.length ? msgs.map(m => `<div class="bub ${m.mine ? 'me' : ''}">${m.mine ? '' : `<b>${esc(m.name)}</b>`}${esc(m.text)}<small>${new Date(m.ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}</small></div>`).join('') : `<div class="bub">${dm ? 'Say hello!' : 'Welcome to the Montserrado chat. Be respectful. Messages go to everyone online.'}</div>`}</div>
+    <form class="chatform" id="chatForm"><input id="chatIn" maxlength="200" placeholder="${dm ? 'Message ' + esc(peer ? peer.name : '') : 'Message everybody…'}" autocomplete="off"><button type="submit" aria-label="Send">➤</button></form>`, acts:[]};
+}
+function shopScreen(){
+  const tabs = `<div class="seg"><button data-shop="home" aria-selected="${shopTab === 'home'}">For your home</button><button data-shop="clothes" aria-selected="${shopTab === 'clothes'}">Clothes</button></div>`;
+  const fee = shopTab === 'home' ? 300 : 200, home = S.home, have = (S.furn && S.furn[home]) || [], small = home === 'auntie';
+  if (shopTab === 'home') return {t:'LibMart', sub:`Delivered to ${HOMES[home].t} · delivery ${money(fee)}`, body: tabs,
+    acts:Object.entries(FURN).map(([k, f]) => { const own = have.includes(k), blocked = small && !f.small;
+      return {l:`${f.ic} ${f.t}`, s: own ? 'Already in your home' : blocked ? 'Needs your own room or house' : 'Pay with MoMo or cash, delivered today', p: own ? '✓' : money(f.p + fee), pc:'minus', dis: own || blocked || !canPay(f.p + fee),
+        fn:() => { spend(f.p + fee, true); S.furn = S.furn || {}; (S.furn[home] = S.furn[home] || []).push(k); toast(`📦 LibMart delivered your ${f.t}!`, 'gold'); save(); checkGoals(); }}; })};
+  S.wardrobe = S.wardrobe || [];
+  return {t:'LibMart', sub:`Clothes delivered to you · delivery ${money(fee)}`, body: tabs,
+    acts:Object.entries(OUTFITS).filter(([k, o]) => o.g === '*' || o.g === S.look.g).map(([k, o]) => { const own = S.wardrobe.includes(k);
+      return own ? {l:o.t, s: S.look.outfit === k ? 'Wearing now' : 'In your wardrobe · tap to wear', p:'Wear', dis:S.look.outfit === k, fn:() => { wearOutfit(k); save(); }}
+                 : {l:o.t, s:o.dress ? 'Dress' : 'Shirt & trousers', p:money(o.p + fee), pc:'minus', dis:!canPay(o.p + fee), fn:() => { spend(o.p + fee, true); S.wardrobe.push(k); wearOutfit(k); toast(`📦 Your ${o.t} arrived. Looking fresh!`, 'gold'); save(); checkGoals(); }}; })};
+}
+function jobsScreen(){
+  const rows = [];
+  for (const l of LOCS) for (const id of (l.jobs || [])){ const j = JOBS[id]; rows.push({l, id, j, ok:hasReq(j.req)}); }
+  rows.sort((a, b) => b.ok - a.ok || b.j.wage - a.j.wage);
+  return {t:'Jobs', sub:'Tap a job to set a waypoint to it.', body:'',
+    acts:rows.map(r => ({l:`${r.j.ic} ${r.j.t}`, s:`${r.l.n} · ${r.ok ? 'You qualify' : 'Needs ' + reqName(r.j.req)}`, p:money(r.j.wage), pc: r.ok ? 'plus' : '', fn:() => { S.wp = {x:r.l.x, y:r.l.y, n:r.l.n}; toast(`📍 Waypoint set: ${r.l.n}`); closeModal(); }}))};
+}
+function ourrideScreen(){
+  const tabs = `<div class="seg"><button data-rtab="ride" aria-selected="${rideTab === 'ride'}">Book a ride</button><button data-rtab="drive" aria-selected="${rideTab === 'drive'}">Drive & earn</button></div>`;
+  if (rideTab === 'drive'){
+    const car = S.vehicles.find(v => DRIVABLE.includes(v));
+    return {t:'OurRide', sub:'Drive people around Montserrado with your own car or keke. Fares go to MoMo.', body: tabs + `<div class="facts"><span class="chip ${car ? 'ok' : 'no'}">${car ? '✓ ' + VEHICLES[car].t : 'Needs a car or keke'}</span><span class="chip">${S.stats.ourride || 0} trips</span><span class="chip gold">${S.online ? 'Online' : 'Offline'}</span></div>`,
+      acts:[S.online ? {l:'Go offline', fn:() => { S.online = false; toast('You are offline'); }} : {l:'Go online', s: car ? 'Requests come while you drive' : 'Buy a car or keke at Somalia Drive Motors', primary:!!car, dis:!car, fn:() => { S.online = true; if (!DRIVABLE.includes(S.ride)) S.ride = car; toast('You are online. Press Ride to get in and wait for requests.', 'gold'); closeModal(); }}]};
+  }
+  if (AUTO) return {t:'OurRide', sub:'Your ride is on the way.', body: tabs + `<div class="goal"><span class="dot">🚘</span><span>${esc(AUTO.label)}</span></div>`, acts:[]};
+  if (S.inside) return {t:'OurRide', sub:'Go outside first so the driver can find you.', body: tabs, acts:[]};
+  const dests = LOCS.filter(l => l.type !== 'taxi' && dist(S.x, S.y, l.x, l.y) > 150).sort((a, b) => a.n.localeCompare(b.n));
+  const R = RIDES[rideSvc] || RIDES.keke;
+  return {t:'OurRide', sub:R.d, body: tabs + `<div class="seg wrap">${Object.entries(RIDES).map(([k, r]) => `<button data-svc="${k}" aria-selected="${rideSvc === k}">${r.ic} ${r.t}</button>`).join('')}</div>
+    <div class="statgrid"><div class="stat"><span>Cash</span><b class="num">${money(S.money)}</b></div><div class="stat"><span>MoMo</span><b class="num">${money(S.momo || 0)}</b></div></div>`,
+    acts: dests.map(l => { const f = Math.round(R.base + dist(S.x, S.y, l.x, l.y) * R.rate); return {l:`${l.ic} ${l.n}`, s:districtAt(l.x, l.y), p:money(f), pc:'minus', dis:!canPay(f), fn:() => bookRide2(rideSvc, l)}; })};
 }
 
 /* ---------- traffic & people ---------- */
@@ -876,6 +1281,14 @@ function renderModal(){
   if (!modalRender) return;
   const m = modalRender(); modalActs = m.acts || [];
   $('#modal').classList.toggle('phone', !!m.phone);
+  if (m.phone){
+    $('#modal').innerHTML = `<div class="ios"><div class="ios-top"><b class="num">${fmtTime(S.min).replace(/ (AM|PM)/, '')}</b><i class="island"></i><span>${MP.online ? '5G' : 'LTE'} <i class="batt"><i style="width:${Math.max(8, S.energy)}%"></i></i></span></div>
+      ${m.home ? '' : `<div class="ios-nav"><button data-app="home" aria-label="Back to home screen">‹</button><b>${esc(m.t)}</b><span></span></div>`}
+      <div class="ios-body">${m.sub ? `<div class="sub" style="margin-bottom:8px">${m.sub}</div>` : ''}${m.body || ''}${modalActs.length ? `<div class="acts">${modalActs.map((a, i) => `<button class="act ${a.primary ? 'primary' : ''}" data-i="${i}" ${a.dis ? 'disabled' : ''}><span class="l"><b>${a.l}</b>${a.s ? `<small>${a.s}</small>` : ''}</span>${a.p ? `<span class="p ${a.pc || ''}">${a.p}</span>` : ''}</button>`).join('')}</div>` : ''}</div>
+      <button class="ios-home" data-homebar aria-label="${m.home ? 'Close phone' : 'Home screen'}"></button></div>`;
+    if ($('#pmap')) drawPhoneMap();
+    return;
+  }
   $('#modal').innerHTML = `<header><span class="ic">${m.ic || '📍'}</span><div style="min-width:0"><h2>${esc(m.t)}</h2>${m.sub ? `<div class="sub">${m.sub}</div>` : ''}</div><button class="x" data-close aria-label="Close">✕</button></header>
     ${m.body || ''}
     ${modalActs.length ? `<div class="acts">${modalActs.map((a, i) => `<button class="act ${a.primary ? 'primary' : ''}" data-i="${i}" ${a.dis ? 'disabled' : ''}><span class="l"><b>${a.l}</b>${a.s ? `<small>${a.s}</small>` : ''}</span>${a.p ? `<span class="p ${a.pc || ''}">${a.p}</span>` : ''}</button>`).join('')}</div>` : ''}`;
@@ -886,11 +1299,15 @@ function closeModal(){ $('#scrim').hidden = true; modalRender = null; }
 $('#scrim').addEventListener('click', e => {
   if (e.target === $('#scrim') || e.target.closest('[data-close]')) return closeModal();
   const tab = e.target.closest('[data-tab]'); if (tab){ phoneTab = tab.dataset.tab; renderModal(); return; }
+  if (e.target.closest('[data-homebar]')){ if (phoneApp === 'home') return closeModal(); phoneApp = 'home'; renderModal(); return; }
+  const tk = e.target.closest('[data-talk]'); if (tk){ talkTab = tk.dataset.talk; renderModal(); return; }
+  const shp = e.target.closest('[data-shop]'); if (shp){ shopTab = shp.dataset.shop; renderModal(); return; }
   const app = e.target.closest('[data-app]'); if (app){ phoneApp = app.dataset.app; renaming = false; renderModal(); $('#modal').scrollTop = 0; return; }
   const rt = e.target.closest('[data-rtab]'); if (rt){ rideTab = rt.dataset.rtab; renderModal(); return; }
   const sv = e.target.closest('[data-svc]'); if (sv){ rideSvc = sv.dataset.svc; renderModal(); return; }
   const wp = e.target.closest('[data-wp]'); if (wp){ if (wp.dataset.wp === 'clear') S.wp = null; else { const l = LOC[wp.dataset.wp]; S.wp = {x:l.x, y:l.y, n:l.n}; toast(`📍 Waypoint set: ${l.n}`); } renderModal(); hud(); return; }
   if (e.target.id === 'pmap'){ const r = e.target.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * W, y = (e.clientY - r.top) / r.height * H; if (!isWater(x, y)){ S.wp = {x, y, n:districtAt(x, y)}; toast(`📍 Waypoint set in ${S.wp.n}`); renderModal(); hud(); } return; }
+  if (e.target.closest('form')) return;
   const b = e.target.closest('.act'); if (!b || b.disabled) return;
   const a = modalActs[+b.dataset.i]; if (a && a.fn) a.fn();
   hud(); if (modalRender) renderModal();
@@ -965,6 +1382,9 @@ function startGig(kind){
 function gigCheck(){
   const g = S.gig; if (!g) return;
   if (dist(S.x, S.y, g.x, g.y) > 42) return;
+  if (g.kind === 'police'){ addMoney(400); S.stats.calls = (S.stats.calls || 0) + 1; toast(`🚓 Handled: ${g.food}. +${money(400)}`, 'good'); S.gig = null; setTimeout(dutyNext, 2500); save(); hud(); return; }
+  if (g.kind === 'ems' && g.stage === 'pick'){ if (!(S.riding && S.ride === 'ambulance')) return; g.stage = 'drop'; g.x = g.dx; g.y = g.dy; g.d = g.dd; toast(`🚑 ${g.who} is in the ambulance. Rush to ${g.dd}!`, 'gold'); hud(); return; }
+  if (g.kind === 'ems'){ addMoney(500); S.stats.patients = (S.stats.patients || 0) + 1; toast(`🏥 ${g.who} is safe at the hospital. +${money(500)}`, 'good'); S.gig = null; setTimeout(dutyNext, 2500); save(); hud(); return; }
   if ((g.kind === 'passenger' || g.kind === 'ourride') && g.stage === 'pick'){
     if (!(S.riding && (g.kind === 'passenger' ? S.ride === 'moto' : DRIVABLE.includes(S.ride)))){ return; }
     g.stage = 'drop'; g.x = g.dx; g.y = g.dy; g.d = g.dd; g.start = S.min + S.day*1440;
@@ -988,16 +1408,20 @@ function gigCheck(){
    ========================================================= */
 function reqText(c){ return COURSES[c].t; }
 function panelFor(l){
+  if (l.type === 'landmark') return panelLandmark(l);
+  if (l.type === 'club') return panelClub(l);
   const ex = panelExtra(l); if (ex) return ex;
   const h = hour();
   switch (l.type){
     case 'job': {
-      const j = JOBS[l.job], need = j.req && !S.certs.includes(j.req);
-      const open = h >= 6 && h < 20, why = need ? `Needs a ${reqText(j.req)}` : !open ? 'Shifts start between 6 AM and 8 PM' : canWork(j.e, j.f);
-      const acts = [{l:`Work a shift as ${j.t}`, s: why || `8 hours · uses ${j.e} energy`, p:'+' + money(j.wage), pc:'plus', dis:!!why, primary:!why, fn:() => workShift(l.job)}];
+      const open = h >= 6 && h < 20, ids = l.jobs || [l.job];
+      const acts = ids.map(id => { const j = JOBS[id], need = !hasReq(j.req), why = need ? `Needs ${reqName(j.req)}` : !open ? 'Shifts start between 6 AM and 8 PM' : canWork(j.e, j.f);
+        return {l:`${j.ic} Work as ${j.t}`, s: why || `8 hours · uses ${j.e} energy`, p:'+' + money(j.wage), pc:'plus', dis:!!why, fn:() => workShift(id)}; });
+      const firstOk = acts.find(a => !a.dis); if (firstOk) firstOk.primary = true;
       if (l.heal) acts.push({l:'Get a check-up', s:'+30 energy, 1 hour', p:money(600), pc:'minus', dis:!canPay(600), fn:() => { spend(600); advance(60); S.energy = clamp(S.energy + 30, 0, 100); toast('The doctor says you need more rest. +30 energy', 'good'); }});
-      return {ic:l.ic, t:l.n, sub:`Job: <b>${j.t}</b>. Pays ${money(j.wage)} per 8-hour shift.`,
-        body:`<div class="facts"><span class="chip ${need ? 'no' : 'ok'}">${j.req ? (need ? '✗ ' : '✓ ') + reqText(j.req) : 'No certificate needed'}</span><span class="chip">Open 6 AM – 8 PM</span></div>`, acts};
+      if (l.hosp) acts.push(S.duty === 'ems' ? {l:'End ambulance shift', fn:endDuty} : {l:'🚑 Start an ambulance shift', s: hasReq('waec') ? 'Drive the ambulance to patients · L$500 per patient' : 'Needs WAEC', dis:!hasReq('waec') || !!S.duty, fn:() => startDuty('ems')});
+      if (l.police) acts.push(S.duty === 'police' ? {l:'End patrol', fn:endDuty} : {l:'🚓 Start a street patrol', s: hasReq('police') ? 'Drive the patrol car to reports · L$400 per call' : 'Needs Police training certificate', dis:!hasReq('police') || !!S.duty, fn:() => startDuty('police')});
+      return {ic:l.ic, t:l.n, sub:`${ids.length > 1 ? 'Jobs here' : 'Job'}: <b>${ids.map(id => JOBS[id].t).join(', ')}</b>.`, body:'<div class="facts"><span class="chip">Shifts 6 AM – 8 PM</span><span class="chip">Paid in cash after each shift</span></div>', acts};
     }
     case 'gig': {
       const isD = l.gig === 'delivery', active = S.gig;
@@ -1010,18 +1434,18 @@ function panelFor(l){
     }
     case 'school': {
       const c = COURSES[l.course], done = S.certs.includes(l.course), prog = S.enrolled[l.course];
-      const need = c.req && !S.certs.includes(c.req), open = h >= 8 && h < 18;
+      const need = !hasReq(c.req), open = h >= 8 && h < 18;
       const acts = [];
       if (done) acts.push({l:'You graduated', s:'Certificate is in your phone', dis:true});
-      else if (prog === undefined) acts.push({l:`Enroll in ${c.t}`, s: need ? `Needs ${reqText(c.req)} first` : `${c.n} classes to graduate`, p:money(c.fee), pc:'minus', primary:!need && canPay(c.fee), dis: need || !canPay(c.fee), fn:() => { spend(c.fee); S.enrolled[l.course] = 0; toast(`Enrolled in ${c.t}`, 'good'); save(); }});
+      else if (prog === undefined) acts.push({l:`Enroll in ${c.t}`, s: need ? `Needs ${reqName(c.req)} first` : `${c.n} classes to graduate`, p:money(c.fee), pc:'minus', primary:!need && canPay(c.fee), dis: need || !canPay(c.fee), fn:() => { spend(c.fee); S.enrolled[l.course] = 0; toast(`Enrolled in ${c.t}`, 'good'); save(); }});
       else { const why = !open ? 'Classes run 8 AM – 6 PM' : S.energy < 15 ? 'Too tired for class' : S.food < 10 ? 'Too hungry for class' : '';
         acts.push({l:`Attend class ${prog + 1} of ${c.n}`, s: why || '4 hours · -15 energy', primary:!why, dis:!!why, fn:() => attendClass(l.course)}); }
       return {ic:c.ic, t:l.n, sub:`Study for your <b>${c.t}</b>.`,
-        body:`<div class="facts"><span class="chip">Fee ${money(c.fee)}</span><span class="chip">${c.n} classes</span>${c.req ? `<span class="chip ${need ? 'no' : 'ok'}">Needs ${reqText(c.req)}</span>` : ''}</div>${prog !== undefined && !done ? `<div class="prog"><i style="width:${prog/c.n*100}%"></i></div>` : ''}`, acts};
+        body:`<div class="facts"><span class="chip">Fee ${money(c.fee)}</span><span class="chip">${c.n} classes</span>${c.req ? `<span class="chip ${need ? 'no' : 'ok'}">Needs ${reqName(c.req)}</span>` : ''}</div>${prog !== undefined && !done ? `<div class="prog"><i style="width:${prog/c.n*100}%"></i></div>` : ''}`, acts};
     }
     case 'food': return {ic:'🍛', t:l.n, sub:'Hot food, cooked fresh. Pay and eat.', acts:Object.entries(FOOD).map(([k, f]) => ({l:`${f.ic} ${f.t}`, s:`+${f.f} food`, p:money(f.p), pc:'minus', dis:!canPay(f.p) || S.food >= 100, fn:() => { spend(f.p); S.food = clamp(S.food + f.f, 0, 100); if (f.e) S.energy = clamp(S.energy + f.e, 0, 100); advance(20); toast(`Mmm, ${f.t}!`, 'good'); }}))};
     case 'dealer': return {ic:'🚗', t:l.n, sub:'New and used rides. Drive faster and earn more on deliveries.',
-      acts:Object.entries(VEHICLES).map(([k, v]) => { const own = S.vehicles.includes(k);
+      acts:Object.entries(VEHICLES).filter(([k, v]) => !v.duty).map(([k, v]) => { const own = S.vehicles.includes(k);
         return own ? {l:`${v.ic} ${v.t}`, s: S.ride === k ? 'Your active ride' : 'Owned · tap to make it your ride', p:'Owned', dis:S.ride === k, fn:() => { S.ride = k; toast(`${v.t} is now your ride. Press Ride.`); save(); }}
                    : {l:`${v.ic} ${v.t}`, s:`${v.sp}× walking speed · fuel about ${money(v.fuel*400)} per km`, p:money(v.price), pc:'minus', dis:!canPay(v.price), primary:canPay(v.price), fn:() => { spend(v.price); S.vehicles.push(k); S.ride = k; toast(`You bought a ${v.t}! Press Ride to drive it.`, 'gold'); save(); checkGoals(); }}; })};
     case 'realty': return {ic:'🔑', t:l.n, sub:'Rooms and houses across Montserrado. The home you pick is where you sleep.',
@@ -1037,7 +1461,8 @@ function panelFor(l){
         {l:'Deposit L$1,000', dis:S.money < 1000, fn:() => { S.money -= 1000; S.bank += 1000; }},
         {l:'Deposit all cash', dis:S.money <= 0, fn:() => { S.bank += S.money; S.money = 0; toast('Money saved'); }},
         {l:'Withdraw L$1,000', dis:S.bank < 1000, fn:() => { S.bank -= 1000; S.money += 1000; }},
-        {l:'Withdraw everything', dis:S.bank <= 0, fn:() => { S.money += S.bank; S.bank = 0; }}
+        {l:'Withdraw everything', dis:S.bank <= 0, fn:() => { S.money += S.bank; S.bank = 0; }},
+        ...(l.jobs || []).map(id => { const j = JOBS[id], why = !hasReq(j.req) ? `Needs ${reqName(j.req)}` : !(h >= 6 && h < 20) ? 'Shifts start 6 AM – 8 PM' : canWork(j.e, j.f); return {l:`${j.ic} Work as ${j.t}`, s: why || '8 hours', p:'+' + money(j.wage), pc:'plus', dis:!!why, fn:() => workShift(id)}; })
       ]};
     case 'taxi': return {ic:'🚕', t:l.n, sub:'Hop in a shared yellow taxi to another part of the county.',
       acts:LOCS.filter(o => o.type === 'taxi' && o.id !== l.id).map(o => { const d = dist(l.x, l.y, o.x, o.y), fare = Math.round(40 + d * .09), mins = Math.round(d / 18);
@@ -1093,9 +1518,15 @@ function findNear(){
   for (const l of LOCS){ const d = dist(S.x, S.y, l.x, l.y); if (d < bd){ bd = d; best = l; } }
   return best;
 }
-function doAction(){ if (!near) return; const n = near; openModal(() => n.type === 'inside' ? panelInside(n) : panelFor(n)); }
+function canEnter(l){ return l.b && l.type !== 'home' && l.shape !== 'stadium' && l.type !== 'gig' || (l.type === 'gig' && l.gig === 'delivery'); }
+function doAction(){
+  if (!near || AUTO) return; const n = near;
+  if (n.type !== 'inside' && !S.inside && canEnter(n)){ if (S.riding){ S.riding = false; toast('You parked outside.'); } return enterPlace(n); }
+  openModal(() => n.type === 'inside' ? panelInside(n) : panelFor(n));
+}
 function toggleRide(){
-  if (!S || S.inside) return;
+  if (!S || S.inside || AUTO) return;
+  if (S.duty){ S.ride = S.duty; if (!S.riding && hitsSolid(S.x, S.y, 12)) return toast('Step away from the building.', 'bad'); S.riding = !S.riding; return hud(); }
   if (!S.vehicles.length){ toast('You don\'t own a vehicle yet. Visit Somalia Drive Motors.', 'bad'); return; }
   if (!S.ride) S.ride = S.vehicles[0];
   if (!S.riding && hitsSolid(S.x, S.y, 12)){ toast('Step away from the building to get on.', 'bad'); return; }
@@ -1139,8 +1570,10 @@ function update(dt){
   S.food = clamp(S.food - gm * .11, 0, 100);
   S.energy = clamp(S.energy - gm * (S.food <= 0 ? .3 : .085), 0, 100);
   if (S.food <= 0 && (warnT -= dt) < 0){ toast('You are starving! Eat at a cookshop.', 'bad'); warnT = 20; }
-  if (S.energy <= 0) return faint();
+  if (S.energy <= 0 && !AUTO) return faint();
+  autoTick(dt); mpTick();
   lifeTick(dt);
+  if (AUTO && AUTO.phase === 'trip'){ player.moving = false; cam.x = lerp(cam.x, S.x, Math.min(1, dt * 6)); cam.y = lerp(cam.y, S.y, Math.min(1, dt * 6)); near = null; if ((tAcc += dt) > .25){ tAcc = 0; hud(); } return; }
   if (S.inside && INT){ const [jx, jy] = inputVec(); near = interiorMove(jx, jy, dt); if ((tAcc += dt) > .25){ tAcc = 0; hud(); } if ((saveT += dt) > 8){ saveT = 0; save(); } return; }
   // movement
   const [ix, iy] = inputVec(); player.moving = Math.hypot(ix, iy) > .1;
@@ -1163,14 +1596,7 @@ function update(dt){
   if ((tAcc += dt) > .25){ tAcc = 0; hud(); }
   if ((saveT += dt) > 8){ saveT = 0; save(); }
 }
-function faint(){
-  const h = LOC.hospital, bill = Math.min(S.money, 1200);
-  S.riding = false;
-  busy('🚑', 'You fainted from tiredness…', 'A kind stranger carried you to Sinkor General Hospital', 2, () => {
-    S.money -= bill; let mins = (8*60 - S.min + 1440) % 1440 || 1440; advance(mins); S.energy = 55; S.food = Math.max(S.food, 30);
-    S.x = h.x; S.y = h.y; cam.x = S.x; cam.y = S.y; faceFrom(h); toast(`Hospital bill: ${money(bill)}. Sleep more!`, 'bad');
-  });
-}
+function faint(){ if (S.energy <= 0 && !AUTO) ambulanceRescue(); S.energy = Math.max(S.energy, 1); }
 
 /* =========================================================
    HUD
@@ -1183,7 +1609,8 @@ function hud(){
   $('#fEn').style.width = S.energy + '%'; $('#fHu').style.width = S.food + '%';
   $('#bEn').classList.toggle('low', S.energy < 20); $('#bHu').classList.toggle('low', S.food < 20);
   $('#hMoney').innerHTML = `${money(S.money)}${S.momo ? ` <small class="num">MoMo ${money(S.momo)}</small>` : ''}`;
-  $('#hWhere').textContent = S.inside ? 'Inside ' + HOMES[S.inside].t : districtAt(S.x, S.y);
+  $('#hWhere').textContent = S.inside ? 'Inside ' + (INT && INT.place ? INT.loc.n : HOMES[S.inside] ? HOMES[S.inside].t : '') : districtAt(S.x, S.y);
+  $('#hOnline').textContent = MP.online ? `🟢 ${MP.peers.size + 1} online${MP.unread ? ' · 💬 ' + MP.unread : ''}` : '⚪ Offline';
   const p = $('#prompt'), act = $('#actBtn');
   if (near){ p.hidden = false; p.innerHTML = `<kbd>E</kbd>${near.ic} ${esc(near.n)}`; act.disabled = false; act.textContent = 'ENTER'; }
   else { p.hidden = true; act.disabled = true; act.textContent = 'ENTER'; }
@@ -1191,13 +1618,14 @@ function hud(){
   const g = S.gig, gb = $('#gigBox');
   if (g){
     const d = Math.round(dist(S.x, S.y, g.x, g.y) * MPP);
-    const vi = g.kind === 'ourride' ? '🚘' : '🏍️';
-    const label = g.kind === 'delivery' ? `🔥 Deliver ${g.food}` : g.stage === 'pick' ? `${vi} Pick up ${g.who}` : `${vi} Drop ${g.who}`;
+    const vi = g.kind === 'ourride' ? '🚘' : g.kind === 'ems' ? '🚑' : '🏍️';
+    const label = g.kind === 'police' ? `🚓 ${g.food}` : g.kind === 'delivery' ? `🔥 Deliver ${g.food}` : g.stage === 'pick' ? `${vi} Pick up ${g.who}` : `${vi} Drop ${g.who}`;
     const ddx = g.x - S.x, ddz = g.y - S.y, ang = Math.atan2(ddx * Math.cos(orbit.yaw) - ddz * Math.sin(orbit.yaw), -ddx * Math.sin(orbit.yaw) - ddz * Math.cos(orbit.yaw));
     gb.hidden = false; gb.innerHTML = `<b><svg class="arrow" viewBox="0 0 24 24" style="transform:rotate(${ang}rad)"><path d="M12 2l7 18-7-4-7 4z" fill="#FFB21E"/></svg>${esc(label)}</b><span>${g.kind === 'delivery' ? 'To ' + esc(g.who) + ', ' : ''}${esc(g.d)}</span><span class="meta num">${d >= 1000 ? (d/1000).toFixed(1) + ' km' : d + ' m'} away${g.kind === 'passenger' && g.stage === 'pick' && !(S.riding && S.ride === 'moto') ? ' · ride your pen-pen' : ''}${g.kind === 'ourride' && g.stage === 'pick' && !(S.riding && DRIVABLE.includes(S.ride)) ? ' · get in your car' : ''}</span>`;
-  } else if (S.booking){
-    const b = S.booking, left = Math.max(0, Math.ceil((b.wait - (performance.now() - b.t0)) / 1000));
-    gb.hidden = false; gb.innerHTML = `<b>${RIDE[b.svc].ic} OurRide · ${esc(b.driver)}</b><span>${esc(b.plate)} to ${esc(LOC[b.dest].n)}</span><span class="meta">${left ? `Arriving in ${left}s` : 'Your ride is here!'}</span>`;
+  } else if (AUTO){
+    const left = Math.max(0, Math.round((AUTO.len - AUTO.s) * MPP));
+    gb.hidden = false; gb.innerHTML = `<b>${esc(AUTO.label)}</b><span class="meta num">${AUTO.phase === 'coming' ? 'Driver is ' : ''}${left >= 1000 ? (left/1000).toFixed(1) + ' km' : left + ' m'} ${AUTO.phase === 'coming' ? 'away' : 'to go'}</span>${AUTO.phase === 'trip' ? '<button class="skip" id="skipRide">Skip ride ⏩</button>' : ''}`;
+    const sk = $('#skipRide'); if (sk) sk.onclick = skipAuto;
   } else if (S.wp && !S.inside){
     const d = Math.round(dist(S.x, S.y, S.wp.x, S.wp.y) * MPP), ddx = S.wp.x - S.x, ddz = S.wp.y - S.y, ang = Math.atan2(ddx * Math.cos(orbit.yaw) - ddz * Math.sin(orbit.yaw), -ddx * Math.sin(orbit.yaw) - ddz * Math.cos(orbit.yaw));
     gb.hidden = false; gb.innerHTML = `<b><svg class="arrow" viewBox="0 0 24 24" style="transform:rotate(${ang}rad)"><path d="M12 2l7 18-7-4-7 4z" fill="#4aa3ff"/></svg>📍 ${esc(S.wp.n)}</b><span class="meta num">${d >= 1000 ? (d/1000).toFixed(1) + ' km' : d + ' m'} away</span>`;
@@ -1205,6 +1633,7 @@ function hud(){
   else gb.hidden = true;
   if (S.inside) gb.hidden = true;
 }
+$('#gigBox').addEventListener('click', e => { if (e.target.id === 'skipRide') skipAuto(); });
 
 /* =========================================================
    3D RENDERER (Three.js). World plane: 2D x → x, 2D y → z.
@@ -1581,12 +2010,10 @@ let rideCar = null, rideCarSvc = '';
 const wpBeam = new THREE.Mesh(new THREE.CylinderGeometry(5, 5, 240, 16, 1, true), new THREE.MeshBasicMaterial({color:0x4aa3ff, transparent:true, opacity:.25, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide}));
 scene.add(wpBeam);
 function syncLifeWorld(){
-  const b = S && S.booking;
-  if (b && !b.done){
-    if (!rideCar || rideCarSvc !== b.svc){ if (rideCar) scene.remove(rideCar); rideCar = vehicleMesh(RIDE[b.svc].kind, RIDE[b.svc].c); rideCarSvc = b.svc; scene.add(rideCar); }
-    const t = clamp((performance.now() - b.t0) / b.wait, 0, 1), e = 1 - Math.pow(1 - t, 2);
-    const x = lerp(b.sx, S.x + 14, e), z = lerp(b.sy, S.y + 14, e);
-    rideCar.visible = true; rideCar.position.set(x, groundY(x, z), z); rideCar.rotation.y = -Math.atan2(S.y - b.sy, S.x - b.sx);
+  if (AUTO){
+    if (!rideCar || rideCarSvc !== AUTO.kind + AUTO.color){ if (rideCar) scene.remove(rideCar); rideCar = vehicleMesh(AUTO.kind, AUTO.color); rideCarSvc = AUTO.kind + AUTO.color; scene.add(rideCar); }
+    rideCar.visible = true; rideCar.position.set(AUTO.x || S.x, groundY(AUTO.x || S.x, AUTO.y || S.y), AUTO.y || S.y); rideCar.rotation.y = -(AUTO.a || 0);
+    if (AUTO.phase === 'trip' && playerMesh) playerMesh.visible = false;
   } else if (rideCar) rideCar.visible = false;
   wpBeam.visible = !!(S && S.wp && S.x > -500); if (wpBeam.visible) wpBeam.position.set(S.wp.x, 120, S.wp.y);
 }
@@ -1667,7 +2094,7 @@ function goInside(homeId){
   toast(`Welcome home. Buy furniture at Home & Things in Red Light.`);
 }
 function goOutside(){
-  const l = LOC[HOMES[INT.home].loc]; S.inside = null; INT = null; S.x = l.x; S.y = l.y; cam.x = S.x; cam.y = S.y; faceFrom(l); closeModal(); hud();
+  const l = INT.place ? INT.loc : LOC[HOMES[INT.home].loc]; S.inside = null; INT = null; S.x = l.x; S.y = l.y; cam.x = S.x; cam.y = S.y; faceFrom(l); closeModal(); hud();
 }
 function interiorMove(ix, iy, dt){
   const fx = -Math.sin(orbitIn.yaw), fz = -Math.cos(orbitIn.yaw), rx = Math.cos(orbitIn.yaw), rz = -Math.sin(orbitIn.yaw);
@@ -1680,9 +2107,11 @@ function interiorMove(ix, iy, dt){
   } else player.moving = false;
   let best = null, bd = 1e9;
   for (const s of INT.spots){ const d = Math.hypot(INT.x - s.x, INT.z - s.z); if (d < (s.r || 14) && d < bd){ bd = d; best = s; } }
-  return best ? {id:'in_' + best.k, k:best.k, n:SPOT[best.k].n, ic:SPOT[best.k].ic, type:'inside'} : null;
+  if (best && best.k === 'counter') return {id:'in_counter', k:'counter', n: INT.loc.type === 'school' ? "Teacher's desk" : INT.loc.type === 'club' ? 'Bar & DJ' : 'Counter · ' + INT.loc.n, ic:INT.loc.ic, type:'inside'};
+  return best ? {id:'in_' + best.k, k:best.k, n: best.k === 'door' && INT.place ? 'Exit to the street' : SPOT[best.k].n, ic:SPOT[best.k].ic, type:'inside'} : null;
 }
 function panelInside(s){
+  if (INT && INT.place){ if (s.k === 'door') return {ic:'🚪', t:INT.loc.n, sub:'Go back out to the street.', acts:[{l:'Go outside', primary:true, fn:goOutside}]}; return panelFor(INT.loc); }
   const hm = HOMES[S.inside], have = (S.furn && S.furn[S.inside]) || [];
   const bonus = have.reduce((a, k) => a + (FURN[k].sleep || 0), 0), q = Math.min(100, hm.sleep + bonus);
   switch (s.k){
@@ -1701,6 +2130,7 @@ function panelInside(s){
 }
 function renderInterior(){
   const R = INT, dark = darkness() / .62;
+  if (R.place) animatePlace();
   for (const s of INT_SPIN) s.rotation.x += .3;
   R.bulb.intensity = dark > .2 ? 1.6 : .2; R.hl.intensity = 1.05 - dark * .45;
   R.winMat.color.setHSL(.56, .6, .85 - dark * .7);
@@ -1710,6 +2140,178 @@ function renderInterior(){
   R.cam.position.set(R.x * .5 + Math.sin(orbitIn.yaw) * cp * orbitIn.dist, 8 + sp * orbitIn.dist, R.z * .5 + Math.cos(orbitIn.yaw) * cp * orbitIn.dist);
   R.cam.lookAt(R.x * .5, 6, R.z * .5);
   renderer.render(R.sc, R.cam);
+}
+
+/* ---------- emergency vehicles ---------- */
+const FLASH = [];
+function emergencyMesh(kind){
+  const g = new THREE.Group();
+  const add = (w, h, d, c, x, y, z, basic) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), basic ? new THREE.MeshBasicMaterial({color:c}) : lam(c)); m.position.set(x, y, z); m.castShadow = true; g.add(m); return m; };
+  if (kind === 'ambulance'){
+    add(30, 2.4, 15.4, '#151515', 0, 2, 0); add(32, 12, 15, '#ffffff', 0, 9, 0); add(8, 6, 14, '#1c2a33', 13, 10, 0);
+    add(32.2, 1.6, 15.2, '#E5392C', 0, 7, 0); for (const z of [-7.6, 7.6]){ add(6, 1.6, .3, '#E5392C', -4, 11, z); add(1.6, 6, .3, '#E5392C', -4, 11, z); }
+  } else {
+    add(22, 2.4, 13.6, '#151515', 0, 2, 0); add(27, 4.4, 13, '#f4f4f4', 0, 5.2, 0); add(15, 3.6, 11.4, '#1c2a33', -1, 9, 0);
+    add(27.2, 1.4, 13.2, '#1b3a8c', 0, 5, 0); add(15, .6, 11.4, '#f4f4f4', -1, 11, 0);
+  }
+  const top = kind === 'ambulance' ? 15.6 : 11.8;
+  const r = add(3, 1.6, 3.6, '#ff2a2a', 0, top, -2.6, true), b = add(3, 1.6, 3.6, '#2a5bff', 0, top, 2.6, true);
+  g.userData.lights = [r, b]; FLASH.push(g);
+  add(.8, 1.4, 2, '#fff6c8', (kind === 'ambulance' ? 16.2 : 13.7), 4.5, 4, true); add(.8, 1.4, 2, '#fff6c8', (kind === 'ambulance' ? 16.2 : 13.7), 4.5, -4, true);
+  return g;
+}
+const _vehicleMesh = vehicleMesh;
+vehicleMesh = (kind, color) => kind === 'police' || kind === 'ambulance' ? emergencyMesh(kind) : _vehicleMesh(kind, color);
+for (let i = 0; i < 7; i++){
+  const road = pick(PAVED), kind = i < 4 ? 'police' : 'ambulance';
+  const c = {road, s: Math.random() * road.len, dir: Math.random() < .5 ? 1 : -1, sp: 110 + Math.random() * 40, kind, c:'#fff'};
+  traffic.push(c);
+}
+function flashLights(){ const on = Math.floor(performance.now() / 180) % 2 === 0; for (const g of FLASH){ const [r, b] = g.userData.lights; r.visible = on; b.visible = !on; } }
+
+/* ---------- landmark shapes and flags ---------- */
+const flagTex = (() => { const c = document.createElement('canvas'); c.width = 110; c.height = 58; const x = c.getContext('2d');
+  for (let i = 0; i < 11; i++){ x.fillStyle = i % 2 ? '#ffffff' : '#BF0A30'; x.fillRect(0, i * 58/11, 110, 58/11 + .5); }
+  x.fillStyle = '#002868'; x.fillRect(0, 0, 44, 31.6); x.fillStyle = '#fff'; x.beginPath();
+  for (let i = 0; i < 10; i++){ const r = i % 2 ? 4.5 : 11, a = -Math.PI/2 + i * Math.PI/5; x.lineTo(22 + Math.cos(a) * r, 16 + Math.sin(a) * r); } x.fill(); return tex(c); })();
+function addFlag(x, z, h){
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(.5, .5, h, 6), lam('#ddd')); pole.position.set(x, h/2, z); pole.castShadow = true; scene.add(pole);
+  const f = new THREE.Mesh(new THREE.PlaneGeometry(14, 7.4), new THREE.MeshLambertMaterial({map:flagTex, side:THREE.DoubleSide})); f.position.set(x + 7, h - 4, z); scene.add(f); FLAGS.push(f);
+}
+const FLAGS = [];
+for (const l of LOCS){
+  if (l.type !== 'landmark' && !l.police) continue;
+  if (l.nob){ const ob = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 4, 40, 4), lam('#e0dccf')); ob.position.set(l.x, 20, l.y); ob.castShadow = true; scene.add(ob); addFlag(l.x + 12, l.y + 6, 34); continue; }
+  const b = l.b; if (!b) continue; const h = BH.get(b), cx = b.x + b.w/2, cz = b.y + b.h/2;
+  if (l.shape === 'dome'){ const d = new THREE.Mesh(new THREE.SphereGeometry(Math.min(b.w, b.h) * .32, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), lam('#f5f5f5')); d.position.set(cx, h + 1.6, cz); d.castShadow = true; scene.add(d);
+    const lan = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 8, 8), lam('#f5f5f5')); lan.position.set(cx, h + Math.min(b.w, b.h) * .32 + 4, cz); scene.add(lan); }
+  if (l.shape === 'mansion'){ for (let i = 0; i < 6; i++){ const col = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, h, 8), lam('#ffffff')); col.position.set(b.x + 10 + i * (b.w - 20) / 5, h/2, b.y - 3); col.castShadow = true; scene.add(col); } }
+  if (l.shape === 'tower'){ const t = new THREE.Mesh(new THREE.BoxGeometry(b.w * .7, 70, b.h * .7), wallMat); t.position.set(cx, h + 35, cz); t.castShadow = true; scene.add(t); }
+  if (l.shape === 'stadium'){ const s = new THREE.Mesh(new THREE.CylinderGeometry(b.w * .62, b.w * .5, 14, 28, 1, true), lam('#9e9e9e', {side:THREE.DoubleSide})); s.position.set(cx, h + 7, cz); s.scale.z = b.h / b.w; s.castShadow = true; scene.add(s);
+    const pitch = new THREE.Mesh(new THREE.PlaneGeometry(b.w * .8, b.h * .7), lam('#3c9a3c')); pitch.rotation.x = -Math.PI/2; pitch.position.set(cx, h + 2, cz); scene.add(pitch); }
+  addFlag(cx + b.w/2 - 6, cz + b.h/2 - 6, h + (l.shape === 'tower' ? 90 : 26));
+}
+
+/* ---------- interiors for public buildings ---------- */
+function staff(sc, x, z, a, list){ const p = personMesh(randomLook()); p.position.set(x, 0, z); p.rotation.y = a; sc.add(p); if (list) list.push(p); return p; }
+function chalkboard(text){ const c = document.createElement('canvas'); c.width = 256; c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#1f3d2b'; x.fillRect(0, 0, 256, 128); x.fillStyle = '#f2f2f2'; x.font = 'bold 22px sans-serif'; x.textAlign = 'center'; x.fillText(text.slice(0, 22), 128, 50); x.font = '16px sans-serif'; x.fillText('Lesson today: work hard!', 128, 86); return tex(c); }
+function buildPlace(l){
+  const big = !!l.big, w = big ? 150 : 112, d = big ? 96 : 76;
+  const club = l.type === 'club';
+  const R = {w, d, floor: club ? '#1a1a22' : l.hosp ? '#e8eef0' : l.factory ? '#9e9e9e' : l.type === 'bar' ? '#6d4c41' : '#cdbfa8', wall: club ? '#24182e' : l.hosp ? '#f4f8f9' : l.factory ? '#b0b7bb' : '#efe6d4'};
+  const sc = new THREE.Scene(); sc.background = new THREE.Color(club ? 0x07040a : 0x15100c);
+  const hl = new THREE.HemisphereLight(0xfff4e0, 0x4a3a2a, club ? .35 : 1.05); sc.add(hl);
+  const dl = new THREE.DirectionalLight(0xfff0dd, club ? .2 : 1); dl.position.set(w * .3, 150, d * .6); dl.castShadow = true; dl.shadow.mapSize.set(1024, 1024);
+  Object.assign(dl.shadow.camera, {left:-w, right:w, top:d, bottom:-d, near:10, far:400}); sc.add(dl, dl.target);
+  const bulb = new THREE.PointLight(0xffd9a0, 0, 0, 0); bulb.position.set(0, 32, 0); sc.add(bulb);
+  const g = new THREE.Group(); sc.add(g);
+  box(w + 4, 1, d + 4, R.floor, 0, -.5, 0, g);
+  const H = 34;
+  box(w + 4, H, 2, R.wall, 0, H/2, -d/2 - 1, g); box(2, H, d + 4, R.wall, -w/2 - 1, H/2, 0, g); box(2, H, d + 4, R.wall, w/2 + 1, H/2, 0, g);
+  box(w/2 - 9, 5, 2, R.wall, -(w/4 + 4.5), 2.5, d/2 + 1, g); box(w/2 - 9, 5, 2, R.wall, (w/4 + 4.5), 2.5, d/2 + 1, g);
+  const winMat = new THREE.MeshBasicMaterial({color:0xbfe6ff});
+  if (!club) for (const x of [-w/3, w/3]){ const win = new THREE.Mesh(new THREE.PlaneGeometry(18, 11), winMat); win.position.set(x, 21, -d/2 + .05); g.add(win); }
+  // sign on the back wall
+  const st = signTexture(l); const sg = new THREE.Mesh(new THREE.PlaneGeometry(48, 12), new THREE.MeshBasicMaterial({map:st})); sg.position.set(0, 29, -d/2 + .1); g.add(sg);
+  const solids = [], spots = [{k:'door', x:0, z:d/2 - 3}], npcs = [], anim = {tiles:[], belts:[], dancers:[], ball:null};
+  const solid = (x, z, fw, fd) => solids.push({x:x - fw/2, z:z - fd/2, w:fw, d:fd});
+  // counter where you talk to staff (every building has one)
+  const cz = -d/2 + 18;
+  if (!club){ box(42, 10, 8, '#8b5a2b', 0, 5, cz, g); box(44, 1, 10, '#a0522d', 0, 10.5, cz, g); solid(0, cz, 42, 8); staff(sc, 0, cz - 9, -Math.PI/2 + Math.PI, npcs).rotation.y = Math.PI/2; spots.push({k:'counter', x:0, z:cz + 10, r:16}); }
+  const t = l.type;
+  if (t === 'school'){
+    const bb = new THREE.Mesh(new THREE.PlaneGeometry(50, 22), new THREE.MeshBasicMaterial({map:chalkboard(COURSES[l.course] ? COURSES[l.course].t : l.n)})); bb.position.set(-w/2 + 30, 18, -d/2 + .2); g.add(bb);
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++){ const x = -w/2 + 22 + c * (w - 44) / 3, z = -4 + r * 16; box(12, 1, 7, '#a1887f', x, 7, z, g); box(1, 7, 1, '#6d4c41', x, 3.5, z, g); box(7, 1, 6, '#5d4037', x, 4, z + 6, g); solid(x, z, 12, 7);
+      if (Math.random() < .5){ const s = staff(sc, x, z + 7, Math.PI/2, npcs); s.position.y = -2; s.rotation.y = Math.PI/2; } }
+  } else if (l.hosp){
+    for (let i = 0; i < 4; i++){ const z = -d/2 + 30 + i * 16; box(26, 4, 11, '#dfe6e9', -w/2 + 16, 4, z, g); box(24, 2, 10, '#ffffff', -w/2 + 16, 7, z, g); box(6, 1.6, 8, '#ffffff', -w/2 + 6, 8.6, z, g); solid(-w/2 + 16, z, 26, 11); if (i % 2) { const p = staff(sc, -w/2 + 18, z, 0, npcs); p.rotation.z = Math.PI/2; p.position.set(-w/2 + 26, 9, z); } }
+    box(1, 12, 3, '#E5392C', w/2 - .5, 22, 0, g); box(1, 3, 12, '#E5392C', w/2 - .5, 22, 0, g);
+    for (let i = 0; i < 3; i++) staff(sc, w/4 - 10 + i * 14, d/4, Math.random() * 6, npcs);
+  } else if (l.factory){
+    for (const z of [-4, 22]){ box(w - 40, 6, 9, '#424242', 0, 3, z, g); solid(0, z, w - 40, 9); for (let i = 0; i < 7; i++){ const bx = box(5, 4, 5, l.id === 'waterf' ? '#4fc3f7' : l.id === 'cement' ? '#bdbdbd' : l.id === 'bottle' ? '#e53935' : '#6d4c41', -w/2 + 24 + i * 16, 8, z, g); anim.belts.push({m:bx, z, w:w - 40}); } }
+    for (const x of [-w/2 + 14, w/2 - 14]){ box(14, 20, 14, '#f9a825', x, 10, d/2 - 22, g); solid(x, d/2 - 22, 14, 14); }
+    for (let i = 0; i < 5; i++) staff(sc, -w/2 + 30 + i * 22, 10, -Math.PI/2, npcs);
+    box(w, .3, 3, '#fdd835', 0, .2, 36, g);
+  } else if (t === 'bar' || t === 'rest' || t === 'food' || t === 'gig'){
+    for (let i = 0; i < 9; i++){ const bt = new THREE.Mesh(new THREE.CylinderGeometry(.8, .8, 4, 6), lam(pick(['#2e7d32','#6d4c41','#f9a825','#c62828']))); bt.position.set(-16 + i * 4, 13, cz - 2); g.add(bt); }
+    for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++){ const x = -w/2 + 24 + c * (w - 48) / 2, z = 4 + r * 22; const tb = new THREE.Mesh(new THREE.CylinderGeometry(7, 7, 1, 14), lam('#8d6e63')); tb.position.set(x, 8, z); g.add(tb); box(1.4, 8, 1.4, '#5d4037', x, 4, z, g); solid(x, z, 14, 14);
+      for (const [ox, oz] of [[-10, 0], [10, 0]]){ box(5, 4, 5, '#4e342e', x + ox, 2, z + oz, g); if (Math.random() < .6) staff(sc, x + ox, z + oz, ox < 0 ? 0 : Math.PI, npcs); } }
+    if (t === 'bar'){ const c = document.createElement('canvas'); c.width = 128; c.height = 72; const x = c.getContext('2d'); x.fillStyle = '#2e8b3a'; x.fillRect(0, 0, 128, 72); x.fillStyle = '#fff'; x.font = 'bold 12px sans-serif'; x.fillText('LIB 1 - 0 SEN', 22, 40);
+      const tv = new THREE.Mesh(new THREE.PlaneGeometry(28, 16), new THREE.MeshBasicMaterial({map:tex(c)})); tv.position.set(w/2 - .2, 20, 0); tv.rotation.y = -Math.PI/2; g.add(tv); }
+  } else if (club){
+    const N = 8, tw = 9; for (let i = 0; i < N; i++) for (let j = 0; j < N - 2; j++){ const m = new THREE.Mesh(new THREE.PlaneGeometry(tw - .6, tw - .6), new THREE.MeshBasicMaterial({color:0xff00aa})); m.rotation.x = -Math.PI/2; m.position.set(-N*tw/2 + tw/2 + i * tw, .1, -14 + j * tw); g.add(m); anim.tiles.push({m, i, j}); }
+    box(30, 10, 10, '#111', 0, 5, -d/2 + 10, g); solid(0, -d/2 + 10, 30, 10); staff(sc, 0, -d/2 + 4, Math.PI/2, npcs).rotation.y = Math.PI/2;
+    for (const x of [-10, 10]){ const sp = new THREE.Mesh(new THREE.BoxGeometry(6, 16, 6), lam('#222')); sp.position.set(x * 2.4, 8, -d/2 + 8); g.add(sp); }
+    const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(4, 1), new THREE.MeshPhongMaterial({color:0xdddddd, shininess:120, flatShading:true})); ball.position.set(0, 28, 6); g.add(ball); anim.ball = ball;
+    for (const [c, x] of [[0xff2266, -30], [0x22aaff, 30], [0x66ff44, 0]]){ const pl = new THREE.PointLight(c, 2.5, 0, 0); pl.position.set(x, 24, 10); sc.add(pl); anim.lights = anim.lights || []; anim.lights.push(pl); }
+    for (let i = 0; i < 14; i++){ const p = staff(sc, -30 + Math.random() * 60, -10 + Math.random() * 40, Math.random() * 6); anim.dancers.push({m:p, ph:Math.random() * 6}); }
+    box(36, 10, 8, '#311b92', w/2 - 24, 5, d/2 - 18, g); solid(w/2 - 24, d/2 - 18, 36, 8); spots.push({k:'counter', x:w/2 - 24, z:d/2 - 30, r:18});
+  } else if (t === 'clothes'){
+    for (let r = 0; r < 3; r++){ const z = 0 + r * 16; box(1, 14, 30, '#9e9e9e', -w/2 + 30, 7, z, g); for (let i = 0; i < 6; i++) box(1.5, 8, 4, pick(BRIGHT), -w/2 + 30, 9, z - 12 + i * 5, g); solid(-w/2 + 30, z, 4, 30); }
+    for (let i = 0; i < 3; i++){ const m = personMesh(randomLook()); m.position.set(w/2 - 20, 0, -6 + i * 16); m.rotation.y = Math.PI; sc.add(m); solid(w/2 - 20, -6 + i * 16, 6, 6); }
+    const mir = new THREE.Mesh(new THREE.PlaneGeometry(12, 22), new THREE.MeshPhongMaterial({color:0xcfe8ff, shininess:150})); mir.position.set(-w/2 + .2, 14, -10); mir.rotation.y = Math.PI/2; g.add(mir);
+  } else if (t === 'barber' || t === 'salon'){
+    for (let i = 0; i < 3; i++){ const x = -w/2 + 24 + i * 26; box(8, 6, 8, '#c62828', x, 3, -d/2 + 34, g); box(8, 8, 2, '#b71c1c', x, 9, -d/2 + 37, g); solid(x, -d/2 + 34, 8, 8);
+      const mir = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.MeshPhongMaterial({color:0xcfe8ff, shininess:150})); mir.position.set(x, 18, -d/2 + .2); g.add(mir);
+      const c = staff(sc, x, -d/2 + 34, -Math.PI/2, npcs); c.position.y = 2; staff(sc, x + 8, -d/2 + 30, -Math.PI/2 + .5, npcs); }
+    for (let i = 0; i < 4; i++){ box(6, 4, 6, '#424242', w/2 - 14, 2, -4 + i * 9, g); if (i % 2) staff(sc, w/2 - 14, -4 + i * 9, Math.PI, npcs); }
+  } else if (t === 'dealer'){
+    const car = vehicleMesh('suv', '#1F2A30'); car.position.set(-w/4, 0, 6); car.rotation.y = .6; g.add(car); solid(-w/4, 6, 32, 32);
+    const car2 = vehicleMesh('car', '#F2C230'); car2.position.set(w/4, 0, 14); car2.rotation.y = -.5; g.add(car2); solid(w/4, 14, 30, 30);
+  } else if (t === 'furniture'){
+    for (const [k, x, z] of [['sofa', -40, 10], ['tv', 40, -20], ['fridge', -60, 30], ['dining', 30, 26], ['chairs', -10, 30]]){ const f = furnMesh(k, 'mamba'); f.g.position.set(x, 0, z); g.add(f.g); if (f.solid) solid(x, z, f.fw, f.fd); }
+  } else if (t === 'landmark'){
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 6; c++){ const x = -w/2 + 26 + c * (w - 52) / 5, z = 2 + r * 12; box(6, 4, 5, '#6d4c41', x, 2, z, g); box(6, 6, 1, '#5d4037', x, 5, z + 2.5, g); }
+    addInteriorFlag(g, w/2 - 12, -d/2 + 8);
+  } else {
+    // offices, police HQ, bank, realty, garage, tech hub, schools without a template
+    for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++){ const x = -w/2 + 26 + c * (w - 52) / 2, z = 6 + r * 22; box(16, 1.2, 9, '#d7ccc8', x, 8, z, g); box(1, 8, 1, '#5d4037', x - 7, 4, z, g); box(1, 8, 1, '#5d4037', x + 7, 4, z, g);
+      box(7, 5, .6, '#263238', x, 11.5, z - 2, g); const sc2 = new THREE.Mesh(new THREE.PlaneGeometry(6.2, 4.2), new THREE.MeshBasicMaterial({color:0x4fc3f7})); sc2.position.set(x, 11.5, z - 1.65); g.add(sc2);
+      solid(x, z, 16, 9); if (Math.random() < .7){ const p = staff(sc, x, z + 8, -Math.PI/2, npcs); p.position.y = -1.5; } }
+    if (l.police){ addInteriorFlag(g, -w/2 + 10, -d/2 + 8); for (let i = 0; i < 6; i++) box(.8, 26, .8, '#555', w/2 - 30 + i * 4, 13, -d/2 + 26, g); box(26, 1, .8, '#555', w/2 - 20, 26, -d/2 + 26, g); solid(w/2 - 20, -d/2 + 14, 26, 24); }
+  }
+  for (const p of [...Array(club ? 0 : 3)]){ const s = staff(sc, -w/4 + Math.random() * w/2, d/2 - 16 - Math.random() * 10, Math.random() * 6, npcs); }
+  const me = personMesh(S.look); sc.add(me);
+  const cam = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 1, 1200);
+  return {loc:l, place:true, sc, cam, w, d, solids, spots, me, bulb, winMat, hl, anim, x:0, z:d/2 - 10, a:-Math.PI/2};
+}
+function addInteriorFlag(g, x, z){ const pole = new THREE.Mesh(new THREE.CylinderGeometry(.4, .4, 26, 6), lam('#ccc')); pole.position.set(x, 13, z); g.add(pole); const f = new THREE.Mesh(new THREE.PlaneGeometry(12, 6.4), new THREE.MeshLambertMaterial({map:flagTex, side:THREE.DoubleSide})); f.position.set(x + 6, 22, z); g.add(f); }
+function enterPlace(l){
+  if (AUTO) return;
+  INT = buildPlace(l); S.inside = 'place:' + l.id; orbitIn.yaw = 0; orbitIn.dist = Math.max(110, INT.w * .85); orbitIn.pitch = .95;
+  closeModal(); labelEls.forEach(e => e.style.display = 'none'); homeLab.style.display = gigLab.style.display = 'none';
+  for (const p of MP.peers.values()) if (p.lab) p.lab.style.display = 'none';
+  toast(`You walked into ${l.n}`);
+}
+function animatePlace(){
+  const A = INT.anim, t = performance.now() / 1000; if (!A) return;
+  for (const tl of A.tiles){ const v = (Math.sin(t * 3 + tl.i * .9 + tl.j * 1.3) + 1) / 2; tl.m.material.color.setHSL((t * .1 + tl.i * .07 + tl.j * .05) % 1, .9, .25 + v * .35); }
+  for (const b of A.belts){ b.m.position.x += .5; if (b.m.position.x > b.w/2) b.m.position.x -= b.w; }
+  for (const dn of A.dancers){ dn.m.position.y = Math.abs(Math.sin(t * 6 + dn.ph)) * 2.4; dn.m.rotation.y += .03; animPerson(dn.m, t * 8 + dn.ph, true); }
+  if (A.ball) A.ball.rotation.y += .02;
+  if (A.lights) A.lights.forEach((pl, i) => pl.intensity = 1.5 + Math.sin(t * 5 + i * 2) * 1.2);
+}
+
+/* ---------- remote players ---------- */
+const peerLabs = $('#labels');
+function syncPeers(dt){
+  for (const p of MP.peers.values()){
+    if (!p.seen){ if (p.mesh) p.mesh.visible = false; continue; }
+    if (p.x === null){ p.x = p.t.x; p.y = p.t.y; }
+    const k = Math.min(1, dt * 8); p.x = lerp(p.x, p.t.x, k); p.y = lerp(p.y, p.t.y, k);
+    let da = p.t.a - p.a; while (da > Math.PI) da -= 2*Math.PI; while (da < -Math.PI) da += 2*Math.PI; p.a += da * k;
+    const lookKey = JSON.stringify(p.look || {});
+    if (!p.mesh || p.lookKey !== lookKey){ if (p.mesh) scene.remove(p.mesh); p.mesh = personMesh(p.look || randomLook()); p.lookKey = lookKey; scene.add(p.mesh); }
+    const vk = p.t.rd && VEHICLES[p.t.rd] ? VEHICLES[p.t.rd].kind : (p.t.rd || '');
+    if (p.carKind !== vk){ if (p.car) scene.remove(p.car); p.car = vk ? vehicleMesh(vk, (VEHICLES[p.t.rd] && VEHICLES[p.t.rd].c) || '#1E8E5A') : null; if (p.car) scene.add(p.car); p.carKind = vk; }
+    const gy = groundY(p.x, p.y), hide = p.t.in || (S && S.inside);
+    p.mesh.visible = !hide && (!p.car || vk === 'moto'); if (p.car) p.car.visible = !hide;
+    p.mesh.position.set(p.x, gy + (vk === 'moto' ? 4 : 0), p.y); p.mesh.rotation.y = -p.a; animPerson(p.mesh, performance.now() / 110, p.t.mv && !vk);
+    if (p.car){ p.car.position.set(p.x, gy, p.y); p.car.rotation.y = -p.a; }
+    if (!p.lab){ p.lab = document.createElement('div'); p.lab.className = 'lab player'; peerLabs.appendChild(p.lab); }
+    p.lab.textContent = '🟢 ' + p.name;
+    if (hide) p.lab.style.display = 'none'; else place(p.lab, p.x, gy + 30, p.y, 900);
+  }
 }
 
 for (const c of traffic){ c.mesh = vehicleMesh(c.kind, c.c); if (c.kind === 'moto'){ const rd = personMesh(randomLook()); rd.position.set(-1, 4, 0); rd.scale.setScalar(.85); c.mesh.add(rd); } scene.add(c.mesh); }
@@ -1799,7 +2401,8 @@ function render(){
   // rain follows the camera
   rain.visible = !!(S && S.rain);
   if (rain.visible){ const a = rainGeo.attributes.position.array; for (let i = 0; i < RAIN_N; i++){ a[i*3+1] -= 9; if (a[i*3+1] < 0) a[i*3+1] += 300; } rainGeo.attributes.position.needsUpdate = true; rain.position.set(tx, 0, tz); }
-  syncLifeWorld();
+  syncLifeWorld(); flashLights(); syncPeers(Math.min(.05, T - (render.lastT || T))); render.lastT = T;
+  for (const f of FLAGS) f.rotation.y = Math.sin(T * 2 + f.position.x) * .15;
   renderer.render(scene, camera);
   // labels
   LOCS.forEach((l, i) => { const b = l.b, y = b ? BH.get(b) + (b.loc.big ? 18 : 14) : 26; labelEls[i].classList.toggle('near', !!(near && near.id === l.id)); place(labelEls[i], b ? b.x + b.w/2 : l.x, y, b ? b.y + b.h/2 : l.y, l.type === 'taxi' ? 260 : 620); });
@@ -1882,12 +2485,12 @@ function showIntro(forceNew){
 $('#startBtn').addEventListener('click', () => {
   const name = $('#pname').value.trim().slice(0, 16) || 'Tayo';
   const look = defaultLook(pickG, pickShirt, pickSkin); look.hair = pickHair; if (pickHair === 'headtie') look.hc = pick(TIES);
-  S = fresh(name, pickShirt, pickSkin, look); cam.x = S.x; cam.y = S.y; orbit.pitch = .78; orbit.dist = 175; faceFrom(LOC.h_auntie); save();
+  S = fresh(name, pickShirt, pickSkin, look); setTimeout(mpStart, 400); cam.x = S.x; cam.y = S.y; orbit.pitch = .78; orbit.dist = 175; faceFrom(LOC.h_auntie); save();
   $('#intro').hidden = true; hud();
   setTimeout(() => toast(`Welcome to Duala, ${S.name}! Head to Waterside Market or Freeport to start earning.`, 'gold'), 300);
   setTimeout(() => toast('Tip: press P (or Phone) for goals and how to play.'), 3200);
 });
-$('#contBtn').addEventListener('click', () => { S = load(); if (!S) return showIntro(true); S.riding = false; S.inside = null; if (!S.look) S.look = defaultLook('m', S.shirt, S.skin); S.momo = S.momo || 0; S.furn = S.furn || {}; S.wardrobe = S.wardrobe || [S.look.outfit || 'tshirt']; S.tx = S.tx || []; if (S.booking) S.booking = null; cam.x = S.x; cam.y = S.y; orbit.pitch = .78; orbit.dist = 175; faceFrom(findNear()); $('#intro').hidden = true; hud(); toast(`Welcome back, ${S.name}!`, 'good'); });
+$('#contBtn').addEventListener('click', () => { S = load(); if (!S) return showIntro(true); setTimeout(mpStart, 400); S.duty = null; S.inCar = false; S.riding = false; S.inside = null; if (!S.look) S.look = defaultLook('m', S.shirt, S.skin); S.momo = S.momo || 0; S.furn = S.furn || {}; S.wardrobe = S.wardrobe || [S.look.outfit || 'tshirt']; S.tx = S.tx || []; if (S.booking) S.booking = null; cam.x = S.x; cam.y = S.y; orbit.pitch = .78; orbit.dist = 175; faceFrom(findNear()); $('#intro').hidden = true; hud(); toast(`Welcome back, ${S.name}!`, 'good'); });
 $('#newBtn').addEventListener('click', () => showIntro(true));
 $('#pname').addEventListener('keydown', e => { if (e.key === 'Enter') $('#startBtn').click(); });
 
@@ -1907,7 +2510,7 @@ function loop(now){
   if ((frame++ % 6) === 0) drawMini();
   requestAnimationFrame(loop);
 }
-if (location.search.includes('debug')) window.__ss = {LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR};
+if (location.search.includes('debug')) window.__ss = {get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR};
 showIntro(false);
 requestAnimationFrame(loop);
 addEventListener('beforeunload', save);
