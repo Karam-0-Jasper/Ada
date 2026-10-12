@@ -121,6 +121,12 @@ button{cursor:pointer;border:0;background:none;padding:0}
 .design button.go{background:var(--gold);color:#1b1206;border:0}
 .design button:disabled{opacity:.4}
 .design small{color:var(--muted);font-size:12px;text-align:center}
+.swatches{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
+.swatches button{width:34px;height:34px;border-radius:50%;border:2px solid rgba(255,255,255,.25)}
+.swatches button.on{border:3px solid var(--gold);transform:scale(1.1)}
+.homecard{display:flex;gap:10px;align-items:center;text-align:left;width:100%;padding:8px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid var(--line);color:inherit}
+.homecard img{width:110px;height:59px;border-radius:10px;object-fit:cover;flex:none}
+.homecard small{color:var(--muted)}
 .cbtn.big{width:76px;height:76px;background:var(--gold);color:#1b1206;font-size:15px;font-family:var(--font-display);border:0}
 .cbtn.big:disabled{opacity:.45}
 .cbtn.on{background:var(--blue);border-color:transparent}
@@ -232,6 +238,7 @@ button{cursor:pointer;border:0;background:none;padding:0}
     <div class="where" id="hOnline" style="text-transform:none;letter-spacing:0">⚪ Offline</div>
     <div class="bar" id="bEn"><span>Energy</span><span class="t"><span class="f en" id="fEn"></span></span></div>
     <div class="bar" id="bHu"><span>Food</span><span class="t"><span class="f hu" id="fHu"></span></span></div>
+    <div class="bar" id="bHy"><span>Clean</span><span class="t"><span class="f" id="fHy" style="background:linear-gradient(90deg,#26c6da,#80deea)"></span></span></div>
     <div class="bar" id="bFu" hidden><span>Fuel</span><span class="t"><span class="f" id="fFu" style="background:linear-gradient(90deg,#2e86c1,#5ab0ff)"></span></span></div>
   </div>
   <div class="right">
@@ -396,7 +403,10 @@ const HOMES = {
   room:    {t:'Rented room in Duala', loc:'h_room', rent:2500, sleep:80, d:'Your own room. L$2,500 every 7 days.'},
   paynes:  {t:'Paynesville house', loc:'h_paynes', price:300000, sleep:95, d:'Two bedrooms, zinc roof, mango tree in the yard.'},
   congo:   {t:'Congo Town home', loc:'h_congo', price:800000, sleep:100, d:'Tiled floors, a generator and a fence.'},
-  mamba:   {t:'Mamba Point villa', loc:'h_mamba', price:2500000, sleep:100, d:'Ocean view, balcony, the big-man house.'}
+  mamba:   {t:'Mamba Point villa', loc:'h_mamba', price:2500000, sleep:100, d:'Ocean view, balcony, the big-man house.'},
+  buch:    {t:'Buchanan beach house', loc:'h_buch', price:1200000, sleep:100, beds:2, baths:1, storeys:1, d:'Two bedrooms near Waterhouse Bay. Hear the waves at night.'},
+  duplex:  {t:'Sinkor duplex', loc:'h_duplex', price:1800000, sleep:100, beds:4, baths:2, storeys:2, d:'Two storeys, four bedrooms, two bathrooms, a big living room and a modern kitchen.'},
+  estate:  {t:'Duport Road mansion', loc:'h_estate', price:4500000, sleep:100, beds:5, baths:3, storeys:2, d:'Five bedrooms on two floors, three bathrooms, dining room, huge kitchen. The finest house in Paynesville.'}
 };
 const FOOD = {
   kala:  {t:'Kala & tea', p:80, f:15, ic:'🍩'},
@@ -416,6 +426,9 @@ const LOCS = [
   {id:'h_room', n:'Duala Rooms', ic:'🛏️', x:1520, y:612, type:'home', home:'room', roof:'#6f7f8a'},
   {id:'h_paynes', n:'Paynesville House', ic:'🏡', x:2985, y:1300, type:'home', home:'paynes', roof:'#2f6f9f'},
   {id:'h_congo', n:'Congo Town Home', ic:'🏘️', x:2500, y:1495, type:'home', home:'congo', roof:'#a4472d'},
+  {id:'h_duplex', n:'Sinkor Duplex', ic:'🏡', x:1530, y:1586, type:'home', home:'duplex', roof:'#37474f', big:1, storeys:2},
+  {id:'h_estate', n:'Duport Road Mansion', ic:'🏛️', x:3010, y:1150, type:'home', home:'estate', roof:'#1b5e20', big:1, storeys:2},
+  {id:'h_buch', n:'Buchanan Beach House', ic:'🏖️', x:5760, y:1556, type:'home', home:'buch', roof:'#00838f'},
   {id:'h_mamba', n:'Mamba Point Villa', ic:'🏰', x:245, y:1205, type:'home', home:'mamba', roof:'#e6e1d4'},
   {id:'waterside', n:'Waterside Market', ic:'🥬', x:600, y:1165, type:'job', job:'market', roof:'#c0392b'},
   {id:'freeport', n:'Freeport of Monrovia', ic:'⚓', x:480, y:505, type:'job', job:'dock', roof:'#2b5aa8', big:1},
@@ -872,12 +885,8 @@ function panelExtra(l){
         {l:'Watch the football match', s:'2 hours · +12 energy · Lone Star are playing!', p:money(300), pc:'minus', primary:true, dis:!canPay(300), fn:() => { spend(300); busy('⚽', 'Watching the match…', pick(['GOAL! The whole bar is shouting!','Penalty! Everybody is on their feet','The referee is getting plenty of advice']), 1.6, () => { advance(120); S.energy = clamp(S.energy + 12, 0, 100); toast(pick(['Lone Star won 2-1! Big celebration.','It ended 1-1. Good game.','Lone Star lost, but the vibes were nice.']), 'gold'); }); }},
         {l:'Dance to hipco music', s:'1 hour · burns energy, lifts the spirit', fn:() => busy('🕺🏾', 'Dancing…', 'The DJ is playing the latest hipco', 1, () => { advance(60); S.energy = clamp(S.energy - 6, 0, 100); toast('You danced like a star!'); })}]};
     case 'furniture': {
-      const home = S.home, hm = HOMES[home], have = (S.furn && S.furn[home]) || [];
-      const small = home === 'auntie';
-      return {ic:'🛋️', t:l.n, sub:`Furniture is delivered to your current home: <b>${hm.t}</b>.`,
-        acts:Object.entries(FURN).map(([k, f]) => { const own = have.includes(k), blocked = false;
-          return {l:`${f.ic} ${f.t}`, s: own ? 'Already in your home' : blocked ? 'Needs your own room or house' : (f.sleep ? `Sleep +${f.sleep}%` : 'Makes your home nicer'), p: own ? '✓' : money(f.p), pc:'minus', dis: own || blocked || !canPay(f.p),
-            fn:() => { spend(f.p); deliverFurn(k, `${f.t} delivered to ${hm.t}!`); }}; })};
+      const hm = HOMES[S.home], H = homeShop(0, l.n);
+      return {ic:'🛋️', t:l.n, sub: H.sub || `Beds, sofas, TVs in every size, flowers and fancy lights. Delivered free to <b>${hm.t}</b>.`, body:H.body, acts:H.acts};
     }
   }
   return null;
@@ -950,7 +959,9 @@ function appScreen(){
         acts:[{l:'Change my name', s:`Currently ${esc(S.name)}`, fn:() => { renaming = true; }}]};
     }
     case 'myhome': default: {
-      const hm = HOMES[S.home], f = (S.furn && S.furn[S.home]) || [];
+      const hm = HOMES[S.home], f = (S.furn && S.furn[S.home]) || [], inv = invOf(S.home);
+      if (inv.length) return {t:'My home', ic:'🏠', sub:`${hm.t} · ${inv.length} things inside. Sell what you don't want for half price.`, body: back,
+        acts:inv.map(it => ({l:`${(FURN[it.k] || {}).ic || '📦'} ${furnName(it)}`, s:'Tap to sell', p:'+' + money(sellPrice(it)), pc:'plus', fn:() => sellItem(it, S.home)}))};
       return {t:'My home', ic:'🏠', sub:`${hm.t}${S.renting && S.home === 'room' ? ` · rent due day ${S.rentDue}` : ''}`, body: back + `<div class="facts">${f.length ? f.map(k => `<span class="chip ok">${FURN[k].ic} ${FURN[k].t}</span>`).join('') : '<span class="chip">No furniture yet. Visit Home & Things in Red Light.</span>'}</div>
         <div class="list">${S.vehicles.map(v => `<div class="goal done"><span class="dot">${VEHICLES[v].ic}</span><b style="text-decoration:none">${VEHICLES[v].t}${S.ride === v ? ' · active' : ''}</b></div>`).join('')}</div>`, acts:[]};
     }
@@ -962,6 +973,7 @@ function phoneScreen(){
   if (phoneApp === 'shop') return shopScreen();
   if (phoneApp === 'jobs') return jobsScreen();
   if (phoneApp === 'ourride') return ourrideScreen();
+  if (phoneApp === 'homes') return homesScreen(`<button class="pback" data-app="home">‹ Apps</button>`);
   if (phoneApp === 'settings') return {t:'Settings', ic:'⚙️', body:`<button class="pback" data-app="home">‹ Apps</button><div class="list" style="font-size:14px;line-height:1.45;color:var(--muted)">
       <div class="goal"><span class="dot">1</span><span>Walk with <b>WASD</b> or the joystick. Drag the screen to look around.</span></div>
       <div class="goal"><span class="dot">2</span><span>Walk to a door and press <b>Enter</b>. Your own home has a <b>Go inside</b> button.</span></div>
@@ -1297,6 +1309,7 @@ APPS.push(
   {id:'goals', t:'Goals', ic:'🏆', bg:'linear-gradient(160deg,#b37cff,#6a2fd1)'},
   {id:'me', t:'Me', ic:'🙂', bg:'linear-gradient(160deg,#6b7f93,#34495e)'},
   {id:'myhome', t:'My Home', ic:'🏠', bg:'linear-gradient(160deg,#2ed1b0,#11866f)'},
+  {id:'homes', t:'LibHomes', ic:'🏘️', bg:'linear-gradient(160deg,#ffb74d,#e65100)'},
   {id:'settings', t:'Settings', ic:'⚙️', bg:'linear-gradient(160deg,#9aa0a6,#5f6368)'}
 );
 const DOCK = ['talk','ourride','momo','maps'];
@@ -1324,7 +1337,8 @@ function talkScreen(){
 function shopScreen(){
   const tabs = `<div class="seg"><button data-shop="home" aria-selected="${shopTab === 'home'}">For your home</button><button data-shop="clothes" aria-selected="${shopTab === 'clothes'}">Clothes</button></div>`;
   const fee = shopTab === 'home' ? (ownHomeInside() ? 0 : 300) : 200, home = S.home, have = (S.furn && S.furn[home]) || [], small = home === 'auntie';
-  if (shopTab === 'home') return {t:'LibMart', sub: ownHomeInside() ? 'You are home: it arrives right now and you place it yourself. Free delivery!' : `Delivered to ${HOMES[home].t} · delivery ${money(fee)}`, body: tabs,
+  if (shopTab === 'home'){ const H = homeShop(fee, 'LibMart'); return {t:'LibMart', sub: H.sub || (ownHomeInside() ? 'You are home: it arrives right now and you place it yourself. Free delivery!' : `Delivered to ${HOMES[home].t} · delivery ${money(fee)}`), body: tabs + H.body, acts:H.acts}; }
+  if (false) return {body: tabs,
     acts:Object.entries(FURN).map(([k, f]) => { const own = have.includes(k), blocked = false;
       return {l:`${f.ic} ${f.t}`, s: own ? 'Already in your home' : blocked ? 'Needs your own room or house' : 'Pay with MoMo or cash, delivered today', p: own ? '✓' : money(f.p + fee), pc:'minus', dis: own || blocked || !canPay(f.p + fee),
         fn:() => { spend(f.p + fee, true); deliverFurn(k, `📦 LibMart delivered your ${f.t}!`); }}; })};
@@ -1513,6 +1527,11 @@ $('#scrim').addEventListener('click', e => {
   const shp = e.target.closest('[data-shop]'); if (shp){ shopTab = shp.dataset.shop; renderModal(); return; }
   const app = e.target.closest('[data-app]'); if (app){ phoneApp = app.dataset.app; renaming = false; momoTo = null; renderModal(); $('#modal').scrollTop = 0; return; }
   const rt = e.target.closest('[data-rtab]'); if (rt){ rideTab = rt.dataset.rtab; renderModal(); return; }
+  const sc2 = e.target.closest('[data-scat]'); if (sc2){ shopCat = sc2.dataset.scat; shopSel = null; renderModal(); return; }
+  const oc = e.target.closest('[data-optc]'); if (oc && shopSel){ shopSel.c = oc.dataset.optc; renderModal(); return; }
+  const os = e.target.closest('[data-opts]'); if (os && shopSel){ shopSel.sz = +os.dataset.opts; renderModal(); return; }
+  if (e.target.closest('[data-sback]')){ shopSel = null; renderModal(); return; }
+  const hs = e.target.closest('[data-homes]'); if (hs){ homesSel = hs.dataset.homes === 'list' ? null : hs.dataset.homes; renderModal(); $('#modal').scrollTop = 0; return; }
   const mo = e.target.closest('[data-momo]'); if (mo){ momoTo = mo.dataset.momo === 'back' ? null : mo.dataset.momo; renderModal(); return; }
   const sv = e.target.closest('[data-svc]'); if (sv){ rideSvc = sv.dataset.svc; renderModal(); return; }
   const wp = e.target.closest('[data-wp]'); if (wp){ if (wp.dataset.wp === 'clear') S.wp = null; else { const l = LOC[wp.dataset.wp]; S.wp = {x:l.x, y:l.y, n:l.n}; toast(`📍 Waypoint set: ${l.n}`); } renderModal(); hud(); return; }
@@ -1916,7 +1935,7 @@ function toggleRide(){
   toast(S.riding ? `On your ${VEHICLES[S.ride].t}` : 'You parked and got off'); hud();
 }
 let phoneTab = 'me', renaming = false;
-function openPhone(app){ if (!S) return; renaming = false; momoTo = null; phoneApp = typeof app === 'string' ? app : 'home'; openModal(() => Object.assign(phoneScreen(), {phone:true})); }
+function openPhone(app){ if (!S) return; renaming = false; momoTo = null; shopSel = null; homesSel = null; phoneApp = typeof app === 'string' ? app : 'home'; openModal(() => Object.assign(phoneScreen(), {phone:true})); }
 function drawPhoneMap(){
   const c = $('#pmap'); if (!c) return; if (!bigBase) bigBase = prerender(0.25);
   c.width = bigBase.width; c.height = bigBase.height; const x = c.getContext('2d'), s = .25; x.drawImage(bigBase, 0, 0);
@@ -1950,6 +1969,8 @@ function update(dt){
   // time: 1 real second = 1.2 game minutes
   const gm = dt * 1.2; advance(gm);
   S.food = clamp(S.food - gm * .11, 0, 100);
+  S.hyg = clamp((S.hyg ?? 100) - gm * (S.inside ? .025 : .045) * (WX.kind === 'sun' ? 1.2 : 1), 0, 100);
+  if (S.hyg < 25 && T > (S.hygT || 0)){ S.hygT = T + 120; toast(S.hyg < 10 ? '🤢 People are holding their nose! Go home and take a bath.' : '🧼 You need a bath soon. Go home to the bathroom.'); }
   const hot = WX.kind === 'sun' && !S.inside && !S.riding && hour() > 11 && hour() < 16;
   S.energy = clamp(S.energy - gm * (S.food <= 0 ? .3 : .085) * (hot ? 1.25 : 1), 0, 100);
   if (hot && !S.hotTold){ S.hotTold = S.day; toast('🥵 The sun is hot! You tire faster outside at midday. Ride or rest in the shade.'); } else if (S.hotTold && S.hotTold !== S.day) S.hotTold = 0;
@@ -2009,7 +2030,7 @@ function hud(){
   $('#hName').textContent = S.name;
   $('#hClock').textContent = `Day ${S.day} · ${fmtTime(S.min)} ${wxIcon()}`;
   $('#hWhere').textContent = districtAt(S.x, S.y);
-  $('#fEn').style.width = S.energy + '%'; $('#fHu').style.width = S.food + '%';
+  $('#fEn').style.width = S.energy + '%'; $('#fHu').style.width = S.food + '%'; $('#fHy').style.width = Math.round(S.hyg ?? 100) + '%';
   $('#speedo').hidden = !S.riding; if (S.riding) $('#spdV').textContent = Math.round(Math.abs(CAR.spd) * .55);
   { const show = S.ride && VEHICLES[S.ride] && !VEHICLES[S.ride].duty && S.vehicles.includes(S.ride); $('#bFu').hidden = !show; if (show){ const f = fuelOf(S.ride) / tankOf(S.ride)[0] * 100; $('#fFu').style.width = f + '%'; $('#bFu').classList.toggle('low', f < 15); } }
   $('#bEn').classList.toggle('low', S.energy < 20); $('#bHu').classList.toggle('low', S.food < 20);
@@ -2202,7 +2223,7 @@ const BH = new Map();
   let ri = 0, fi = 0;
   buildings.forEach((b, i) => {
     const urban = !b.loc && b.w > 34 && b.h > 28 && rr() < .5;
-    const h = b.loc ? (b.loc.big ? 38 : 28) : b.ind ? 14 + rr()*10 : urban ? 22 + rr()*30 : 10 + rr()*12;
+    const h = b.loc ? (b.loc.storeys ? 24 * b.loc.storeys : b.loc.big ? 38 : 28) : b.ind ? 14 + rr()*10 : urban ? 22 + rr()*30 : 10 + rr()*12;
     BH.set(b, h);
     P.set(b.x + b.w/2, 0, b.y + b.h/2); Sc.set(b.w, h, b.h); M.compose(P, Q, Sc); walls.setMatrixAt(i, M); walls.setColorAt(i, C.set(b.wall));
     if (urban || b.ind || (b.loc && b.loc.big)){
@@ -2436,6 +2457,8 @@ function poseFor(g, act, down){
   if (!act) return;
   if (act.kind === 'eat'){ u.food.material.color.set(act.color || '#c2410c'); u.arms[0].rotation.z = -1.05; const bite = (Math.sin(t * 5) + 1) / 2; u.arms[1].rotation.z = -.6 - bite * 1.9; u.head.position.y = 16.2 - bite * .25; }
   if (act.kind === 'drink'){ const sip = (Math.sin(t * 2.4) + 1) / 2; u.arms[1].rotation.z = -1.2 - sip * 1.5; u.arms[0].rotation.z = 0; }
+  if (act.kind === 'cook'){ u.arms[0].rotation.z = -1.25; u.arms[1].rotation.z = -1.0 + Math.sin(t * 6) * .3; }
+  if (act.kind === 'bath'){ const sm = INT && INT.bathAt && INT.bathAt.small; if (sm){ u.arms[1].rotation.z = -2.6 + Math.sin(t * 3) * .5; u.arms[0].rotation.z = -.3; } else { g.position.y -= 6.5; u.legs[0].rotation.z = u.legs[1].rotation.z = 1.5; u.arms[0].rotation.z = u.arms[1].rotation.z = -.5; } }
   if (act.kind === 'class'){ u.legs[0].rotation.z = u.legs[1].rotation.z = 1.4; g.position.y -= 3; u.arms[0].rotation.z = -1.3; u.arms[1].rotation.z = -1.3 + Math.sin(t * 6) * .15; }
 }
 function animPerson(g, step, moving){
@@ -2516,22 +2539,24 @@ function syncLifeWorld(){
 
 /* ---------- home interiors ---------- */
 const ROOMS = {auntie:{w:70, d:52, floor:'#8d8a84', wall:'#e8dcc2'}, room:{w:72, d:56, floor:'#b9a58a', wall:'#d6e4e8'}, paynes:{w:120, d:84, floor:'#d9cfbf', wall:'#f1e3c8'},
-  congo:{w:140, d:96, floor:'#e9e2d6', wall:'#e3eef0'}, mamba:{w:170, d:110, floor:'#b07a4c', wall:'#f6efe2'}};
+  congo:{w:140, d:96, floor:'#e9e2d6', wall:'#e3eef0'}, mamba:{w:170, d:110, floor:'#b07a4c', wall:'#f6efe2'}, buch:{w:160, d:100, floor:'#d7c4a3', wall:'#e0f2f1'}, duplex:{w:170, d:110, floor:'#cfd8dc', wall:'#fafafa'}, estate:{w:220, d:130, floor:'#e0d6c8', wall:'#fff8e1'}};
 const SLOTS = {bed:[-.66,-.62,0], mattress:[-.66,-.62,0], sofa:[.4,.3,0], chairs:[.4,-.25,0], table:[.4,-.25,0], rug:[.4,-.2,0], tv:[.4,-.92,-Math.PI/2],
   fridge:[-.9,.42,0], dining:[-.42,.42,0], fan:[-.22,-.78,0], radio:[.86,.72,0], plant:[.9,-.86,0], art:[-.15,-.975,-Math.PI/2], shelf:[.96,.12,Math.PI], generator:[-.86,.86,0], ac:[-.66,-.97,-Math.PI/2],
   kingbed:[-.62,-.55,0], bigtv:[.4,-.94,-Math.PI/2], wardrobe:[-.96,-.05,0], lamp:[.1,-.8,0], desk:[.75,.78,Math.PI], speaker:[.78,-.88,0], dresser:[-.2,.82,Math.PI], aquarium:[.96,-.5,Math.PI], ceilfan:[0,0,0]};
 let INT = null;
 function box(w, h, d, c, x, y, z, g, basic){ const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), basic ? new THREE.MeshBasicMaterial({color:c}) : lam(c)); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; g.add(m); return m; }
-function furnMesh(k, home){
+function furnMesh(k, home, opt){
+  const C = d => (opt && opt.c) || d;
+  { const g0 = new THREE.Group(), r2 = furnMesh2(k, g0, C, opt); if (r2) return r2; }
   const g = new THREE.Group(); let fw = 10, fd = 10, solid = true;
   switch (k){
     case 'bed': if (home === 'auntie'){ box(18, 1.2, 28, '#c9a86b', 0, .6, 0, g); box(16, .8, 6, '#e74c3c', 0, 1.4, -10, g); fw = 18; fd = 28; solid = false; }
       else { box(22, 4, 32, '#6b4a2b', 0, 2, 0, g); box(20, 3, 29, '#f2f2f2', 0, 5.5, .8, g); box(16, 2, 6, '#ffffff', 0, 8, -10.5, g); fw = 22; fd = 32; } break;
-    case 'mattress': box(24, 5, 34, '#3e2a1e', 0, 2.5, 0, g); box(22, 5, 31, '#ffffff', 0, 7, .8, g); box(22, 1, 18, '#2E86C1', 0, 9.8, 6, g); box(24, 14, 2, '#3e2a1e', 0, 7, -16.5, g); box(18, 2.4, 6, '#f8f8f8', 0, 10.4, -11, g); fw = 24; fd = 34; break;
-    case 'sofa': box(34, 6, 12, '#16A085', 0, 4, 0, g); box(34, 10, 3, '#138d75', 0, 8, 5, g); box(3, 8, 12, '#138d75', -16, 6, 0, g); box(3, 8, 12, '#138d75', 16, 6, 0, g); fw = 34; fd = 12; break;
-    case 'chairs': for (const x of [-18, 18]){ box(11, 5, 11, '#8E44AD', x, 3.5, 0, g); box(2.5, 8, 11, '#7d3c98', x + (x < 0 ? -5 : 5), 7.5, 0, g); } fw = 48; fd = 12; break;
+    case 'mattress': box(24, 5, 34, '#3e2a1e', 0, 2.5, 0, g); box(22, 5, 31, '#ffffff', 0, 7, .8, g); box(22, 1, 18, C('#2E86C1'), 0, 9.8, 6, g); box(24, 14, 2, '#3e2a1e', 0, 7, -16.5, g); box(18, 2.4, 6, '#f8f8f8', 0, 10.4, -11, g); fw = 24; fd = 34; break;
+    case 'sofa': box(34, 6, 12, C('#16A085'), 0, 4, 0, g); box(34, 10, 3, C('#138d75'), 0, 8, 5, g); box(3, 8, 12, C('#138d75'), -16, 6, 0, g); box(3, 8, 12, C('#138d75'), 16, 6, 0, g); box(9, 4, 2, '#f5f5f5', -9, 9, 3, g); box(9, 4, 2, '#f5f5f5', 9, 9, 3, g); fw = 34; fd = 12; break;
+    case 'chairs': for (const x of [-18, 18]){ box(11, 5, 11, C('#8E44AD'), x, 3.5, 0, g); box(2.5, 8, 11, C('#7d3c98'), x + (x < 0 ? -5 : 5), 7.5, 0, g); } fw = 48; fd = 12; break;
     case 'table': box(16, 1.4, 10, '#8b5a2b', 0, 5, 0, g); for (const [x, z] of [[-7,-4],[7,-4],[-7,4],[7,4]]) box(1, 5, 1, '#6b4421', x, 2.5, z, g); fw = 16; fd = 10; break;
-    case 'rug': { const r = box(42, .3, 28, '#B03A2E', 0, .2, 0, g); box(36, .35, 22, '#F4D03F', 0, .25, 0, g); box(30, .4, 16, '#B03A2E', 0, .3, 0, g); solid = false; r.castShadow = false; break; }
+    case 'rug': { const r = box(42, .3, 28, C('#B03A2E'), 0, .2, 0, g); box(36, .35, 22, '#F4D03F', 0, .25, 0, g); box(30, .4, 16, C('#B03A2E'), 0, .3, 0, g); solid = false; r.castShadow = false; break; }
     case 'tv': { box(4, 9, 26, '#2b2b2b', 1, 4.5, 0, g); const c = document.createElement('canvas'); c.width = 128; c.height = 72; const x = c.getContext('2d'); x.fillStyle = '#2e8b3a'; x.fillRect(0, 0, 128, 72); x.strokeStyle = '#fff'; x.lineWidth = 2; x.strokeRect(6, 6, 116, 60); x.beginPath(); x.moveTo(64, 6); x.lineTo(64, 66); x.stroke(); x.beginPath(); x.arc(64, 36, 10, 0, 7); x.stroke(); x.fillStyle = '#C8102E'; for (let i = 0; i < 5; i++){ x.beginPath(); x.arc(30 + i * 12, 20 + (i % 2) * 22, 3, 0, 7); x.fill(); } x.fillStyle = '#fff'; x.font = 'bold 9px sans-serif'; x.fillText('LIB 2 - 1 GHA', 6, 70);
       const scr = new THREE.Mesh(new THREE.PlaneGeometry(26, 15), new THREE.MeshBasicMaterial({map: tex(c)})); scr.position.set(3.1, 17, 0); scr.rotation.y = Math.PI/2; g.add(scr); box(1, 16, 27, '#111', 2.4, 17, 0, g); fw = 6; fd = 28; break; }
     case 'fridge': box(12, 30, 12, '#f2f3f4', 0, 15, 0, g); box(.6, 8, 1, '#999', 6.2, 20, 3, g); box(.3, .3, 11, '#bbb', 6.1, 12, 0, g); fw = 12; fd = 12; break;
@@ -2544,11 +2569,12 @@ function furnMesh(k, home){
     case 'shelf': box(6, 24, 20, '#7a4a2c', 0, 12, 0, g); for (let r = 0; r < 3; r++) for (let i = 0; i < 6; i++) box(4, 5, 1.8, pick(['#C0392B','#2E86C1','#27AE60','#F4D03F','#8E44AD']), -.5, 4 + r * 7.5, -7.5 + i * 2.8 + Math.random() * .4, g); fw = 6; fd = 20; break;
     case 'generator': box(12, 9, 8, '#d35400', 0, 4.5, 0, g); box(10, 2, 6, '#2b2b2b', 0, 10, 0, g); fw = 12; fd = 8; break;
     case 'ac': box(4, 7, 20, '#f8f8f8', 0, 26, 0, g); box(.4, 1, 18, '#ccc', 2.1, 23.6, 0, g); box(.3, .8, 2, '#3ddc84', 2.1, 28, 7, g, true); solid = false; fw = 4; fd = 20; break;
-    case 'kingbed': box(32, 5, 38, '#2b1d14', 0, 2.5, 0, g); box(30, 5, 35, '#fafafa', 0, 7.5, .8, g); box(30, 1.2, 20, '#7b1fa2', 0, 10.4, 7, g); box(34, 18, 2.5, '#2b1d14', 0, 9, -19.5, g); for (const x of [-7, 7]) box(11, 2.6, 6, '#ffffff', x, 11, -13, g); for (const x of [-21, 21]){ box(7, 8, 7, '#4e342e', x, 4, -15, g); box(2, 3, 2, '#ffe082', x, 9.5, -15, g, true); } fw = 46; fd = 38; break;
+    case 'kingbed': box(32, 5, 38, '#2b1d14', 0, 2.5, 0, g); box(30, 5, 35, '#fafafa', 0, 7.5, .8, g); box(30, 1.2, 20, C('#7b1fa2'), 0, 10.4, 7, g); box(34, 18, 2.5, '#2b1d14', 0, 9, -19.5, g); for (const x of [-7, 7]) box(11, 2.6, 6, '#ffffff', x, 11, -13, g); for (const x of [-21, 21]){ box(7, 8, 7, '#4e342e', x, 4, -15, g); box(2, 3, 2, '#ffe082', x, 9.5, -15, g, true); } fw = 46; fd = 38; break;
     case 'bigtv': { box(5, 8, 36, '#1a1a1a', 1, 4, 0, g); const c = document.createElement('canvas'); c.width = 192; c.height = 108; const x = c.getContext('2d'); const gr = x.createLinearGradient(0, 0, 192, 108); gr.addColorStop(0, '#0b3d91'); gr.addColorStop(1, '#C8102E'); x.fillStyle = gr; x.fillRect(0, 0, 192, 108); x.fillStyle = '#fff'; x.font = 'bold 22px sans-serif'; x.fillText('LNTV NEWS', 14, 40); x.font = '13px sans-serif'; x.fillText('Live from Monrovia', 14, 64); x.fillStyle = '#FFD75A'; x.fillRect(0, 86, 192, 22); x.fillStyle = '#111'; x.font = 'bold 12px sans-serif'; x.fillText('BREAKING: Lone Star qualify!', 8, 101);
-      const scr = new THREE.Mesh(new THREE.PlaneGeometry(38, 21), new THREE.MeshBasicMaterial({map: tex(c)})); scr.position.set(3.4, 21, 0); scr.rotation.y = Math.PI/2; g.add(scr); box(1, 22.5, 39.5, '#0a0a0a', 2.6, 21, 0, g); fw = 6; fd = 38; break; }
-    case 'wardrobe': box(10, 30, 26, '#6d4c41', 0, 15, 0, g); box(.4, 28, .6, '#3e2723', 5.1, 15, 0, g); for (const z of [-2, 2]) box(.6, 3, .8, '#d4af37', 5.3, 16, z, g); fw = 10; fd = 26; break;
-    case 'lamp': { box(5, .8, 5, '#333', 0, .4, 0, g); box(.6, 22, .6, '#333', 0, 11, 0, g); const sh = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 4.2, 5, 12, 1, true), new THREE.MeshBasicMaterial({color:0xfff1c1, side:THREE.DoubleSide})); sh.position.y = 23; g.add(sh); fw = 5; fd = 5; break; }
+      const ts = ((opt && opt.sz) || 65) / 65, sw = 38 * ts, shh = 21 * ts, sy = 12 + shh / 2;
+      const scr = new THREE.Mesh(new THREE.PlaneGeometry(sw, shh), new THREE.MeshBasicMaterial({map: tex(c)})); scr.position.set(3.4, sy, 0); scr.rotation.y = Math.PI/2; g.add(scr); box(1, shh + 1.5, sw + 1.5, '#0a0a0a', 2.6, sy, 0, g); fw = 6; fd = Math.max(38, sw); break; }
+    case 'wardrobe': box(10, 30, 26, C('#6d4c41'), 0, 15, 0, g); box(.4, 28, .6, '#3e2723', 5.1, 15, 0, g); for (const z of [-2, 2]) box(.6, 3, .8, '#d4af37', 5.3, 16, z, g); fw = 10; fd = 26; break;
+    case 'lamp': { box(5, .8, 5, '#333', 0, .4, 0, g); box(.6, 22, .6, '#333', 0, 11, 0, g); const sh = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 4.2, 5, 12, 1, true), glowMat(C('#ffd59a'))); sh.material.side = THREE.DoubleSide; sh.position.y = 23; g.add(sh); g.userData.glow = [sh.material]; fw = 5; fd = 5; break; }
     case 'desk': { box(24, 1.2, 12, '#8d6e63', 0, 11, 0, g); for (const [x, z] of [[-11,-5],[11,-5],[-11,5],[11,5]]) box(1, 11, 1, '#5d4037', x, 5.5, z, g); box(10, .5, 7, '#9e9e9e', 0, 11.9, 1, g); const scr = box(10, 6.5, .4, '#9e9e9e', 0, 15.2, -2.4, g); const s2 = new THREE.Mesh(new THREE.PlaneGeometry(9, 5.6), new THREE.MeshBasicMaterial({color:0x4fc3f7})); s2.position.set(0, 15.2, -2.15); g.add(s2); box(7, 7, 7, '#263238', 0, 3.5, 10, g); fw = 24; fd = 12; break; }
     case 'speaker': for (const x of [-7, 7]){ box(7, 16, 7, '#151515', x, 8, 0, g); const w = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.4, .5, 14), lam('#444')); w.rotation.x = Math.PI/2; w.position.set(x, 6, 3.6); g.add(w); const t2 = w.clone(); t2.scale.setScalar(.5); t2.position.y = 12; g.add(t2); } box(8, 4, 6, '#222', 0, 2, 0, g); box(3, .4, .3, '#00e5ff', 0, 3, 3.1, g, true); fw = 22; fd = 7; break;
     case 'dresser': box(18, 10, 8, '#d7ccc8', 0, 5, 0, g); { const m = new THREE.Mesh(new THREE.PlaneGeometry(12, 14), new THREE.MeshBasicMaterial({color:0xcfe8f5})); m.position.set(0, 19, -3.6); m.rotation.y = Math.PI; g.add(m); box(13.5, 15.5, .6, '#a1887f', 0, 19, -3.95, g); } fw = 18; fd = 8; break;
@@ -2558,57 +2584,276 @@ function furnMesh(k, home){
   return {g, fw, fd, solid};
 }
 const SPOT = {fan:{n:'Standing fan', ic:'🌀'}, plant:{n:'Plant', ic:'🪴'}, rug:{n:'Rug', ic:'🧶'}, chairs:{n:'Armchairs', ic:'🪑'}, table:{n:'Coffee table', ic:'🪵'}, shelf:{n:'Bookshelf', ic:'📚'}, art:{n:'Painting', ic:'🖼️'}, generator:{n:'Generator', ic:'⚡'}, ac:{n:'Air conditioner', ic:'❄️'}, lamp:{n:'Floor lamp', ic:'💡'}, ceilfan:{n:'Ceiling fan', ic:'🌀'}, bed:{n:'Bed', ic:'🛏️'}, mattress:{n:'Bed', ic:'🛏️'}, kingbed:{n:'King-size bed', ic:'🛌'}, bigtv:{n:'Smart TV', ic:'🖥️'}, wardrobe:{n:'Wardrobe', ic:'🚪'}, desk:{n:'Desk & laptop', ic:'💻'}, speaker:{n:'Sound system', ic:'🔊'}, aquarium:{n:'Fish tank', ic:'🐠'}, dresser:{n:'Mirror', ic:'🪞'}, sofa:{n:'Sofa', ic:'🛋️'}, tv:{n:'TV', ic:'📺'}, fridge:{n:'Fridge', ic:'🧊'}, radio:{n:'Radio', ic:'📻'}, dining:{n:'Dining table', ic:'🍽️'}, door:{n:'Front door', ic:'🚪'}};
-function buildInterior(homeId){
-  const R = ROOMS[homeId], w = R.w, d = R.d, items = ((S.furn && S.furn[homeId]) || []).slice();
+// what's in the shop: categories, rooms, colours and sizes
+const COLS = {
+  fabric:[['Teal','#16A085'], ['Red','#C0392B'], ['Navy','#1b2a49'], ['Grey','#7f8c8d'], ['Cream','#e8dcc2'], ['Black','#222222'], ['Pink','#e91e63'], ['Purple','#7b1fa2'], ['Mustard','#d4a017']],
+  wood:[['Walnut','#6d4c41'], ['Oak','#a1887f'], ['White','#f5f5f5'], ['Black','#212121']],
+  light:[['Warm white','#ffd59a'], ['Cool white','#e3f2fd'], ['Blue','#2979ff'], ['Pink','#ff4fa3'], ['Purple','#b14cff'], ['Green','#2bff88'], ['Red','#ff3d3d'], ['Gold','#ffc400']],
+  flower:[['Red roses','#d50000'], ['Pink roses','#ff4081'], ['White lilies','#fafafa'], ['Sunny yellow','#ffd600'], ['Purple orchids','#9c27b0']],
+  metal:[['Gold','#d4af37'], ['Silver','#cfd8dc'], ['Black','#222222']]
+};
+Object.assign(FURN, {
+  vase:{t:'Flowers in a vase', p:1200, ic:'💐', small:1, multi:1, cat:'Flowers', colors:COLS.flower},
+  sunflower:{t:'Sunflower pot', p:900, ic:'🌻', small:1, multi:1, cat:'Flowers'},
+  orchid:{t:'Orchid', p:2500, ic:'🌸', small:1, multi:1, cat:'Flowers', colors:COLS.flower},
+  cactus:{t:'Cactus', p:600, ic:'🌵', small:1, multi:1, cat:'Flowers'},
+  bonsai:{t:'Bonsai tree', p:3500, ic:'🌳', small:1, multi:1, cat:'Flowers'},
+  bigpalm:{t:'Indoor palm tree', p:4000, ic:'🌴', multi:1, cat:'Flowers'},
+  flowerbox:{t:'Wall flower box', p:1500, ic:'🌺', multi:1, cat:'Flowers', colors:COLS.flower},
+  lsofa:{t:'L-shaped sofa', p:22000, ic:'🛋️', cat:'Living', room:'living', colors:COLS.fabric},
+  armchair:{t:'Armchair', p:5000, ic:'🪑', multi:1, cat:'Living', room:'living', colors:COLS.fabric},
+  beanbag:{t:'Bean bag', p:2500, ic:'🫘', multi:1, small:1, cat:'Comfort', colors:COLS.fabric},
+  curtains:{t:'Curtains', p:3000, ic:'🪟', multi:1, cat:'Decor', colors:COLS.fabric},
+  mirror:{t:'Big wall mirror', p:2500, ic:'🪞', multi:1, cat:'Decor', colors:COLS.metal},
+  photos:{t:'Family photos', p:1200, ic:'🖼️', multi:1, small:1, cat:'Decor'},
+  wallclock:{t:'Wall clock', p:900, ic:'🕰️', multi:1, small:1, cat:'Decor'},
+  sideboard:{t:'Sideboard', p:7000, ic:'🗄️', cat:'Living', room:'living', colors:COLS.wood},
+  piano:{t:'Piano', p:40000, ic:'🎹', cat:'Comfort', room:'living', colors:COLS.wood},
+  treadmill:{t:'Treadmill', p:30000, ic:'🏃🏾', cat:'Comfort'},
+  console:{t:'Game console & TV stand', p:18000, ic:'🎮', cat:'TVs', room:'living'},
+  microwave:{t:'Microwave', p:6000, ic:'🍲', cat:'Kitchen', room:'kitchen'},
+  chandelier:{t:'Crystal chandelier', p:25000, ic:'✨', multi:1, cat:'Lights', colors:COLS.metal},
+  pendant:{t:'Hanging pendant light', p:6000, ic:'💡', multi:1, cat:'Lights', colors:COLS.light},
+  ledstrip:{t:'LED light strip', p:3500, ic:'🌈', multi:1, cat:'Lights', colors:COLS.light},
+  neon:{t:'Neon heart sign', p:7000, ic:'💖', multi:1, cat:'Lights', colors:COLS.light},
+  fairy:{t:'Fairy lights', p:2000, ic:'🎇', multi:1, small:1, cat:'Lights', colors:COLS.light},
+  lavalamp:{t:'Lava lamp', p:1800, ic:'🫧', multi:1, small:1, cat:'Lights', colors:COLS.light}
+});
+const CAT_OF = {mattress:'Beds', kingbed:'Beds', wardrobe:'Beds', dresser:'Beds', ac:'Comfort', fan:'Comfort', ceilfan:'Comfort', generator:'Comfort', radio:'TVs', tv:'TVs', bigtv:'TVs', speaker:'TVs', aquarium:'Decor', plant:'Flowers', rug:'Decor', art:'Decor', shelf:'Decor',
+  sofa:'Living', chairs:'Living', table:'Living', desk:'Comfort', fridge:'Kitchen', dining:'Kitchen', lamp:'Lights'};
+for (const [k, c] of Object.entries(CAT_OF)) FURN[k].cat = c;
+Object.assign(FURN.mattress, {room:'bed', colors:COLS.fabric}); Object.assign(FURN.kingbed, {room:'bed', colors:COLS.fabric}); Object.assign(FURN.wardrobe, {room:'bed', colors:COLS.wood}); Object.assign(FURN.dresser, {room:'bed'});
+Object.assign(FURN.sofa, {room:'living', colors:COLS.fabric}); Object.assign(FURN.chairs, {room:'living', colors:COLS.fabric}); Object.assign(FURN.rug, {colors:COLS.fabric, multi:1}); Object.assign(FURN.table, {room:'living'});
+Object.assign(FURN.tv, {t:'Flat-screen TV (32-inch)', room:'living'}); Object.assign(FURN.bigtv, {t:'Smart TV', room:'living', sizes:[43, 55, 65, 75, 85], sz0:65});
+Object.assign(FURN.fridge, {room:'kitchen'}); Object.assign(FURN.dining, {room:'kitchen'}); Object.assign(FURN.desk, {room:'bed'}); Object.assign(FURN.plant, {multi:1}); Object.assign(FURN.art, {multi:1}); Object.assign(FURN.lamp, {multi:1, colors:COLS.light});
+Object.assign(FURN.ac, {multi:1});
+WALL_ITEMS.push('curtains', 'mirror', 'photos', 'wallclock', 'ledstrip', 'neon', 'fairy', 'flowerbox');
+for (const k of Object.keys(FURN)) if (!SLOTS[k]) SLOTS[k] = [0, 0, 0];
+for (const k of ['piano', 'treadmill', 'console', 'microwave', 'mirror']) SPOT[k] = {n:FURN[k].t, ic:FURN[k].ic};
+for (const k of Object.keys(FURN)) if (!SPOT[k]) SPOT[k] = {n:FURN[k].t, ic:FURN[k].ic};
+// glowing material for lights: brighter at night
+function glowMat(c){ return new THREE.MeshLambertMaterial({color:c, emissive:c, emissiveIntensity:.6}); }
+function furnMesh2(k, g, C, opt){
+  let fw = 10, fd = 10, solid = true; const glow = [], u = g.userData;
+  const flowers = (x, y, z, n, col, r) => { for (let i = 0; i < n; i++){ const a = i / n * 6.28, f = new THREE.Mesh(new THREE.SphereGeometry(r || 1.1, 7, 5), lam(col)); f.position.set(x + Math.cos(a) * 1.6, y + Math.random() * 1.2, z + Math.sin(a) * 1.6); g.add(f); const st = new THREE.Mesh(new THREE.CylinderGeometry(.12, .12, y - 4, 4), lam('#2e7d32')); st.position.set(x + Math.cos(a) * 1.2, (y + 4) / 2, z + Math.sin(a) * 1.2); g.add(st); } };
+  switch (k){
+    case 'vase': { const v = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 2.4, 6, 12), lam('#eceff1')); v.position.y = 3; g.add(v); flowers(0, 10, 0, 7, C('#d50000')); for (let i = 0; i < 4; i++){ const lf = new THREE.Mesh(new THREE.ConeGeometry(.8, 4, 4), lam('#388e3c')); lf.position.set(Math.cos(i * 1.6) * 1.6, 8, Math.sin(i * 1.6) * 1.6); lf.rotation.z = Math.cos(i) * .6; g.add(lf); } fw = fd = 5; break; }
+    case 'sunflower': { const p = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2, 4.4, 10), lam('#b0582c')); p.position.y = 2.2; g.add(p); for (let i = 0; i < 3; i++){ const st = new THREE.Mesh(new THREE.CylinderGeometry(.2, .2, 12 + i * 2, 5), lam('#2e7d32')); st.position.set(-1 + i, 6 + i, 0); g.add(st); const hd = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, .5, 12).rotateX(Math.PI/2.4), lam('#ffd600')); hd.position.set(-1 + i, 12 + i * 2, .6); g.add(hd); const c = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, .7, 10).rotateX(Math.PI/2.4), lam('#5d4037')); c.position.set(-1 + i, 12 + i * 2, .9); g.add(c); } fw = fd = 6; break; }
+    case 'orchid': { const p = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.5, 4, 10), lam('#fafafa')); p.position.y = 2; g.add(p); const st = new THREE.Mesh(new THREE.CylinderGeometry(.15, .15, 10, 4), lam('#558b2f')); st.position.y = 8; st.rotation.z = .2; g.add(st); for (let i = 0; i < 6; i++){ const f = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 4), lam(C('#9c27b0'))); f.scale.y = .5; f.position.set(.4 + i * .5, 8 + i * 1.2, 0); g.add(f); } fw = fd = 4; break; }
+    case 'cactus': { const p = new THREE.Mesh(new THREE.CylinderGeometry(2, 1.6, 3, 10), lam('#e0a96d')); p.position.y = 1.5; g.add(p); const c = new THREE.Mesh(new THREE.CapsuleGeometry(1.4, 6, 4, 8), lam('#43a047')); c.position.y = 7; g.add(c); const a = new THREE.Mesh(new THREE.CapsuleGeometry(.7, 2.4, 3, 6), lam('#43a047')); a.position.set(1.8, 7.4, 0); g.add(a); fw = fd = 4; break; }
+    case 'bonsai': { const p = new THREE.Mesh(new THREE.BoxGeometry(7, 2, 4), lam('#4e342e')); p.position.y = 1; g.add(p); const tr = new THREE.Mesh(new THREE.CylinderGeometry(.5, .9, 5, 6), lam('#6d4c41')); tr.position.set(0, 4.4, 0); tr.rotation.z = .4; g.add(tr); for (const [x, y] of [[-2, 7.6], [1.6, 8.4], [0, 9.4]]){ const c = new THREE.Mesh(new THREE.IcosahedronGeometry(2, 0), lam('#2e7d32', {flatShading:true})); c.scale.y = .6; c.position.set(x, y, 0); g.add(c); } fw = 7; fd = 4; break; }
+    case 'bigpalm': { const p = new THREE.Mesh(new THREE.CylinderGeometry(4, 3, 6, 12), lam('#8d6e63')); p.position.y = 3; g.add(p); const tr = new THREE.Mesh(new THREE.CylinderGeometry(.8, 1.1, 18, 7), lam('#795548')); tr.position.y = 14; g.add(tr); for (let i = 0; i < 7; i++){ const lf = new THREE.Mesh(new THREE.ConeGeometry(1.6, 12, 4), lam('#2e7d32', {flatShading:true})); const a = i / 7 * 6.28; lf.position.set(Math.cos(a) * 4, 23, Math.sin(a) * 4); lf.rotation.set(Math.sin(a) * 1.2, 0, -Math.cos(a) * 1.2); g.add(lf); } fw = fd = 8; break; }
+    case 'flowerbox': box(2.5, 3, 16, '#6d4c41', 1.2, 14, 0, g); flowers(2, 18, -5, 3, C('#ff4081'), .9); flowers(2, 18, 0, 3, C('#ff4081'), .9); flowers(2, 18, 5, 3, C('#ff4081'), .9); solid = false; fw = 3; fd = 16; break;
+    case 'lsofa': box(44, 6, 12, C('#16A085'), 0, 4, 0, g); box(44, 10, 3, C('#16A085'), 0, 8, 5.5, g); box(12, 6, 26, C('#16A085'), -16, 4, -13, g); box(3, 10, 26, C('#16A085'), -20.5, 8, -13, g); for (let i = 0; i < 3; i++) box(7, 5, 2, '#f5f5f5', -12 + i * 12, 9, 3.5, g); fw = 44; fd = 38; break;
+    case 'armchair': box(13, 5, 12, C('#7b1fa2'), 0, 3.5, 0, g); box(13, 10, 2.5, C('#7b1fa2'), 0, 8, 5, g); for (const x of [-6, 6]) box(2, 7, 12, C('#7b1fa2'), x, 5.5, 0, g); fw = 13; fd = 12; break;
+    case 'beanbag': { const b = new THREE.Mesh(new THREE.SphereGeometry(5, 12, 8), lam(C('#d4a017'))); b.scale.y = .62; b.position.y = 3; g.add(b); fw = fd = 9; break; }
+    case 'curtains': for (const z of [-6, 6]){ const c = new THREE.Mesh(new THREE.BoxGeometry(1, 22, 7), lam(C('#C0392B'))); c.position.set(.8, 15, z); g.add(c); } box(.6, .6, 22, '#d4af37', .6, 26.5, 0, g); solid = false; fw = 2; fd = 22; break;
+    case 'mirror': { const m = new THREE.Mesh(new THREE.PlaneGeometry(14, 20), new THREE.MeshPhongMaterial({color:0xdff2ff, shininess:160})); m.position.set(.7, 16, 0); m.rotation.y = Math.PI/2; g.add(m); box(.6, 22, 16, C('#d4af37'), .3, 16, 0, g); solid = false; fw = 2; fd = 16; break; }
+    case 'photos': for (const [z, y, s] of [[-5, 18, 5], [2, 20, 6], [7, 16, 4]]){ box(.5, s + 1, s * 1.3 + 1, '#3e2723', .3, y, z, g); const p = new THREE.Mesh(new THREE.PlaneGeometry(s * 1.3, s), new THREE.MeshBasicMaterial({map:canvasTex(64, 48, (x2) => { x2.fillStyle = '#a7c7e7'; x2.fillRect(0, 0, 64, 48); x2.fillStyle = '#6d4c41'; for (let i = 0; i < 3; i++){ x2.beginPath(); x2.arc(16 + i * 16, 24, 6, 0, 7); x2.fill(); x2.fillRect(10 + i * 16, 30, 12, 18); } })})); p.position.set(.6, y, z); p.rotation.y = Math.PI/2; g.add(p); } solid = false; fw = 2; fd = 18; break;
+    case 'wallclock': { const f = new THREE.Mesh(new THREE.CylinderGeometry(4, 4, .6, 20).rotateZ(Math.PI/2), lam('#fafafa')); f.position.set(.5, 22, 0); g.add(f); const r = new THREE.Mesh(new THREE.TorusGeometry(4, .4, 6, 20).rotateY(Math.PI/2), lam('#5d4037')); r.position.set(.6, 22, 0); g.add(r); box(.3, 2.6, .4, '#111', .9, 23, 0, g); box(.3, .4, 3, '#111', .9, 22, 1.2, g); solid = false; fw = 2; fd = 9; break; }
+    case 'sideboard': box(30, 10, 8, C('#6d4c41'), 0, 5, 0, g); for (const x of [-10, 0, 10]) box(8, 7, .3, '#00000022', x, 5.5, 4.1, g); { const v = new THREE.Mesh(new THREE.CylinderGeometry(1, 1.6, 4, 10), lam('#26a69a')); v.position.set(-9, 12, 0); g.add(v); } fw = 30; fd = 8; break;
+    case 'piano': box(26, 18, 9, C('#212121'), 0, 9, 0, g); box(26, 1, 5, '#fafafa', 0, 12, 6.5, g); for (let i = 0; i < 9; i++) box(1, .6, 3, '#111', -11 + i * 2.8, 12.7, 5.6, g); box(10, 5, 4, C('#212121'), 0, 2.5, 12, g); fw = 26; fd = 16; break;
+    case 'treadmill': box(10, 2, 26, '#263238', 0, 1, 0, g); box(8, .3, 22, '#111', 0, 2.2, 0, g); for (const x of [-4.5, 4.5]) box(.8, 14, .8, '#90a4ae', x, 8, -11, g); box(10, 3, 4, '#37474f', 0, 15, -11, g); box(4, 2, .3, '#4fc3f7', 0, 15.5, -9, g, true); fw = 10; fd = 26; break;
+    case 'console': box(28, 7, 9, '#37474f', 0, 3.5, 0, g); box(8, 1.6, 5, '#111', -6, 7.8, 0, g); box(.3, .3, .3, '#2979ff', -2.2, 8.2, 2.6, g, true); for (const x of [4, 9]){ const pad = new THREE.Mesh(new THREE.CapsuleGeometry(.9, 2.4, 3, 6).rotateZ(Math.PI/2), lam('#212121')); pad.position.set(x, 7.6, 1); g.add(pad); } fw = 28; fd = 9; break;
+    case 'microwave': box(10, 6, 7, '#e0e0e0', 0, 3, 0, g); box(6.5, 4.2, .2, '#263238', -1, 3, 3.6, g, true); box(2, 4.2, .2, '#9e9e9e', 3.6, 3, 3.6, g); fw = 10; fd = 7; break;
+    case 'chandelier': { const top = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 6, 6), lam(C('#d4af37'))); top.position.y = 30; g.add(top); const ring = new THREE.Mesh(new THREE.TorusGeometry(6, .5, 6, 24).rotateX(Math.PI/2), lam(C('#d4af37'))); ring.position.y = 26; g.add(ring);
+      for (let i = 0; i < 10; i++){ const a = i / 10 * 6.28, m = glowMat('#fff3c4'); const cr = new THREE.Mesh(new THREE.OctahedronGeometry(1.1, 0), m); cr.position.set(Math.cos(a) * 6, 24, Math.sin(a) * 6); g.add(cr); glow.push(m); } const c2 = glowMat('#fff3c4'); const cen = new THREE.Mesh(new THREE.OctahedronGeometry(2, 0), c2); cen.position.y = 22; g.add(cen); glow.push(c2); solid = false; fw = fd = 14; u.lamp = 0xffe0a0; u.lampY = 22; break; }
+    case 'pendant': { const m = glowMat(C('#ffd59a')); box(.2, 8, .2, '#222', 0, 28, 0, g); const sh = new THREE.Mesh(new THREE.ConeGeometry(3, 3, 14, 1, true), new THREE.MeshLambertMaterial({color:0x222222, side:THREE.DoubleSide})); sh.position.y = 23.5; g.add(sh); const b = new THREE.Mesh(new THREE.SphereGeometry(1.3, 10, 8), m); b.position.y = 22.4; g.add(b); glow.push(m); solid = false; fw = fd = 6; u.lamp = new THREE.Color(C('#ffd59a')).getHex(); u.lampY = 21; break; }
+    case 'ledstrip': { const m = glowMat(C('#b14cff')); const s = new THREE.Mesh(new THREE.BoxGeometry(.6, .8, 40), m); s.position.set(.5, 30, 0); g.add(s); const s2 = new THREE.Mesh(new THREE.BoxGeometry(.6, .8, 40), m); s2.position.set(.5, 2, 0); g.add(s2); glow.push(m); solid = false; fw = 2; fd = 40; u.lamp = new THREE.Color(C('#b14cff')).getHex(); u.lampY = 16; break; }
+    case 'neon': { const m = glowMat(C('#ff4fa3')); const heart = new THREE.Shape(); heart.moveTo(0, -4); heart.bezierCurveTo(-6, 0, -4, 5, 0, 2.4); heart.bezierCurveTo(4, 5, 6, 0, 0, -4); const geo = new THREE.ShapeGeometry(heart); const h = new THREE.Mesh(geo, m); h.rotation.y = Math.PI/2; h.position.set(.8, 21, 0); g.add(h); glow.push(m); solid = false; fw = 2; fd = 12; u.lamp = new THREE.Color(C('#ff4fa3')).getHex(); u.lampY = 20; break; }
+    case 'fairy': { box(.2, .2, 30, '#333', .5, 26, 0, g); for (let i = 0; i < 12; i++){ const m = glowMat(C('#ffd59a')); const b = new THREE.Mesh(new THREE.SphereGeometry(.6, 6, 5), m); b.position.set(.7, 26 - Math.sin(i / 11 * Math.PI) * 4, -14 + i * 2.5); g.add(b); glow.push(m); } solid = false; fw = 2; fd = 30; break; }
+    case 'lavalamp': { box(3, 2, 3, '#455a64', 0, 1, 0, g); const m = glowMat(C('#ff3d3d')); const gl = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.6, 7, 12), new THREE.MeshLambertMaterial({color:0x111111, emissive:new THREE.Color(C('#ff3d3d')), emissiveIntensity:.3, transparent:true, opacity:.8})); gl.position.y = 5.5; g.add(gl); const blob = new THREE.Mesh(new THREE.SphereGeometry(.8, 8, 6), m); blob.position.y = 5; g.add(blob); glow.push(m); u.lava = blob; fw = fd = 4; break; }
+    default: return null;
+  }
+  if (glow.length) u.glow = glow;
+  return {g, fw, fd, solid};
+}
+
+/* ---------- houses: real rooms, a working kitchen, a bathroom, stairs ---------- */
+// rooms are in floor units: x to the right, z towards the front door (+z)
+const PLANS = {
+  auntie:{floors:[{W:84, D:60, rooms:[{t:'room', x:-42, z:-30, w:62, d:60}, {t:'bath', x:20, z:-30, w:22, d:24, small:1}, {t:'kitchen', x:20, z:-6, w:22, d:36, small:1}]}]},
+  room:{floors:[{W:84, D:60, rooms:[{t:'room', x:-42, z:-30, w:62, d:60}, {t:'bath', x:20, z:-30, w:22, d:24, small:1}, {t:'kitchen', x:20, z:-6, w:22, d:36, small:1}]}]},
+  paynes:{floors:[{W:150, D:100, rooms:[{t:'living', x:-75, z:0, w:80, d:50}, {t:'kitchen', x:5, z:0, w:70, d:50}, {t:'bed', x:-75, z:-50, w:60, d:50}, {t:'bath', x:-15, z:-50, w:30, d:50}, {t:'bed', x:15, z:-50, w:60, d:50}]}]},
+  congo:{floors:[{W:180, D:110, rooms:[{t:'living', x:-90, z:0, w:100, d:55}, {t:'kitchen', x:10, z:0, w:80, d:55}, {t:'bed', x:-90, z:-55, w:60, d:55}, {t:'bath', x:-30, z:-55, w:30, d:55}, {t:'bed', x:0, z:-55, w:45, d:55}, {t:'bed', x:45, z:-55, w:45, d:55}]}]},
+  mamba:{floors:[{W:210, D:120, rooms:[{t:'living', x:-105, z:0, w:120, d:60}, {t:'kitchen', x:15, z:0, w:90, d:60}, {t:'bed', x:-105, z:-60, w:60, d:60}, {t:'bath', x:-45, z:-60, w:35, d:60}, {t:'bed', x:-10, z:-60, w:55, d:60}, {t:'bed', x:45, z:-60, w:60, d:60}]}]},
+  buch:{floors:[{W:160, D:100, rooms:[{t:'living', x:-80, z:0, w:90, d:50}, {t:'kitchen', x:10, z:0, w:70, d:50}, {t:'bed', x:-80, z:-50, w:60, d:50}, {t:'bath', x:-20, z:-50, w:40, d:50}, {t:'bed', x:20, z:-50, w:60, d:50}]}]},
+  duplex:{floors:[
+    {W:170, D:110, rooms:[{t:'living', x:-85, z:0, w:100, d:55}, {t:'kitchen', x:15, z:0, w:70, d:55}, {t:'bath', x:-85, z:-55, w:40, d:55}, {t:'bed', x:-45, z:-55, w:70, d:55}, {t:'hall', x:25, z:-55, w:60, d:55, stairs:1}]},
+    {W:170, D:110, rooms:[{t:'bed', x:-85, z:0, w:85, d:55}, {t:'bed', x:0, z:0, w:85, d:55}, {t:'bed', x:-85, z:-55, w:85, d:55}, {t:'bath', x:0, z:-55, w:45, d:55}, {t:'hall', x:45, z:-55, w:40, d:55, stairs:1}]}]},
+  estate:{floors:[
+    {W:220, D:130, rooms:[{t:'living', x:-110, z:0, w:130, d:65}, {t:'kitchen', x:20, z:0, w:90, d:65}, {t:'living', n:'Dining room', x:-110, z:-65, w:70, d:65}, {t:'bed', x:-40, z:-65, w:70, d:65}, {t:'bath', x:30, z:-65, w:40, d:65}, {t:'hall', x:70, z:-65, w:40, d:65, stairs:1}]},
+    {W:220, D:130, rooms:[{t:'bed', x:-110, z:0, w:75, d:65}, {t:'bed', x:-35, z:0, w:75, d:65}, {t:'bed', x:40, z:0, w:70, d:65}, {t:'bed', x:-110, z:-65, w:90, d:65}, {t:'bath', x:-20, z:-65, w:50, d:65}, {t:'bath', x:30, z:-65, w:40, d:65}, {t:'hall', x:70, z:-65, w:40, d:65, stairs:1}]}]}
+};
+const ROOM_NAME = {room:'Main room', living:'Living room', kitchen:'Kitchen', bed:'Bedroom', bath:'Bathroom', hall:'Hall & stairs'};
+const ROOM_FLOOR = {living:'#c8a27a', kitchen:'#d9d4c7', bed:'#b08968', bath:'#b3d4e0', hall:'#d7ccc8'};
+const planOf = id => PLANS[id] || PLANS.paynes;
+const IWALL = 28;   // inside walls are a bit lower than the outside ones so the camera can see over
+function tileTex(a, b, n){ return canvasTex(128, 128, (x2) => { const s = 128 / n; for (let i = 0; i < n; i++) for (let j = 0; j < n; j++){ x2.fillStyle = (i + j) % 2 ? a : b; x2.fillRect(i * s, j * s, s, s); } }); }
+function houseFixtures(R, r, F, fi, ox, fg){
+  const cx = ox + r.x + r.w/2, top = r.z, solids = R.staticSolids, spots = R.staticSpots;
+  const S2 = (x, z, w, d) => solids.push({x:x - w/2, z:z - d/2, w, d});
+  if (r.t === 'kitchen'){
+    if (r.small){ // a kitchenette: gas burner, coal pot, small counter and a water bucket
+      box(r.w - 4, 9, 8, '#8d6e63', cx, 4.5, top + 5, fg); box(r.w - 2, .8, 9, '#a1887f', cx, 9.4, top + 5, fg);
+      const pot = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2, 3.4, 12), lam('#3e2723')); pot.position.set(cx - 3, 11.6, top + 5); fg.add(pot); const coal = new THREE.Mesh(new THREE.CylinderGeometry(3, 2.4, 2, 8), lam('#5d4037')); coal.position.set(cx - 3, 10, top + 5); fg.add(coal);
+      const can = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.4, 7, 12), lam('#1565c0')); can.position.set(cx + 6, 3.5, top + 14); fg.add(can);
+      S2(cx, top + 5, r.w - 4, 8); spots.push({k:'stove', x:cx - 3, z:top + 16, r:9}); R.stoveAt = {x:cx - 3, z:top + 16, pot:[cx - 3, 13.6, top + 5]};
+    } else {
+      const L = r.w - 22, kx = ox + r.x + 4 + L/2;
+      box(L, 10, 9, '#fafafa', kx, 5, top + 5.5, fg); box(L + 1, 1, 10, '#37474f', kx, 10.5, top + 5.5, fg); box(L, 8, 4, '#eceff1', kx, 23, top + 2.2, fg);
+      for (let i = 0; i < Math.floor(L / 9); i++) box(.3, 7, 3.6, '#bdbdbd', ox + r.x + 8 + i * 9, 23, top + 4.3, fg);
+      const sx = kx - L * .28; box(9, .6, 6, '#90a4ae', sx, 10.8, top + 5.5, fg); box(.6, 4, .6, '#cfd8dc', sx, 13, top + 2.5, fg); box(.6, .6, 3, '#cfd8dc', sx, 15, top + 3.8, fg);
+      const st = kx + L * .2; box(13, .6, 9, '#111111', st, 11, top + 5.5, fg); for (const [bx, bz] of [[-3, -2], [3, -2], [-3, 2], [3, 2]]){ const ring = new THREE.Mesh(new THREE.TorusGeometry(1.4, .3, 6, 14).rotateX(Math.PI/2), lam('#424242')); ring.position.set(st + bx, 11.5, top + 5.5 + bz); fg.add(ring); }
+      box(12, 7, .4, '#212121', st, 6, top + 10.1, fg); box(9, 4, .2, '#37474f', st, 6, top + 10.3, fg, true); box(10, .6, .6, '#bdbdbd', st, 9.4, top + 10.5, fg);
+      box(10, 5, 6, '#e0e0e0', kx - L * .02, 13.6, top + 4.5, fg); box(6, 3, .2, '#263238', kx - L * .02 - 1, 13.6, top + 7.6, fg, true);   // microwave
+      box(14, 32, 12, '#cfd8dc', ox + r.x + r.w - 9, 16, top + 7, fg); box(.5, 10, .6, '#90a4ae', ox + r.x + r.w - 15.6, 22, top + 13, fg); box(.5, 6, .6, '#90a4ae', ox + r.x + r.w - 15.6, 9, top + 13, fg);
+      S2(kx, top + 5.5, L, 9); S2(ox + r.x + r.w - 9, top + 7, 14, 12);
+      spots.push({k:'stove', x:st, z:top + 17, r:9}); spots.push({k:'sink', x:sx, z:top + 17, r:8}); spots.push({k:'fridge', x:ox + r.x + r.w - 9, z:top + 19, r:9});
+      R.stoveAt = {x:st, z:top + 17, pot:[st - 3, 13.4, top + 3.5]};
+    }
+  }
+  if (r.t === 'bath'){
+    if (r.small){ // bucket bath, Liberian style
+      const bk = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 2.8, 6, 14), lam('#E5392C')); bk.position.set(cx - 4, 3, top + 7); fg.add(bk); const wt = new THREE.Mesh(new THREE.CylinderGeometry(3.1, 3.1, .3, 14), new THREE.MeshLambertMaterial({color:0x4fc3f7})); wt.position.set(cx - 4, 5.6, top + 7); fg.add(wt);
+      const cup = new THREE.Mesh(new THREE.CylinderGeometry(1, .8, 2, 10), lam('#FFB21E')); cup.position.set(cx + 3, 1, top + 9); fg.add(cup);
+      box(r.w - 4, .2, r.d - 6, '#90a4ae', cx, .12, top + r.d/2, fg); S2(cx - 4, top + 7, 7, 7);
+      spots.push({k:'bath', x:cx, z:top + 15, r:9}); R.bathAt = {x:cx - 4, z:top + 12, y:0, small:1};
+    } else {
+      const tx = ox + r.x + 16; box(26, 8, 13, '#fafafa', tx, 4, top + 7.5, fg); const wat = new THREE.Mesh(new THREE.BoxGeometry(23, .4, 10), new THREE.MeshLambertMaterial({color:0x81d4fa, transparent:true, opacity:.85})); wat.position.set(tx, 7.4, top + 7.5); fg.add(wat);
+      box(1, 6, 1, '#b0bec5', tx - 11, 11, top + 2, fg); S2(tx, top + 7.5, 26, 13);
+      const tl = ox + r.x + r.w - 7; box(7, 6, 9, '#fafafa', tl, 3, top + r.d - 12, fg); box(7, 9, 3, '#fafafa', tl + 2, 7, top + r.d - 12, fg); S2(tl, top + r.d - 12, 8, 10);   // toilet
+      const sk = ox + r.x + r.w - 9; box(10, 9, 7, '#eceff1', sk, 4.5, top + 4, fg); box(8, .8, 5, '#b0bec5', sk, 9.2, top + 4, fg); const mir = new THREE.Mesh(new THREE.PlaneGeometry(9, 11), new THREE.MeshPhongMaterial({color:0xcfe8ff, shininess:140})); mir.position.set(sk, 19, top + .3); fg.add(mir); S2(sk, top + 4, 10, 7);
+      box(.4, 1, 12, '#d4af37', ox + r.x + .6, 18, top + r.d/2, fg); box(.6, 7, 10, '#ffffff', ox + r.x + 1, 14, top + r.d/2, fg);   // towel rack
+      const bub = new THREE.Group(); for (let i = 0; i < 14; i++){ const b = new THREE.Mesh(new THREE.SphereGeometry(1 + Math.random(), 8, 6), new THREE.MeshLambertMaterial({color:0xffffff, transparent:true, opacity:.9})); b.position.set(tx - 10 + Math.random() * 20, 8 + Math.random() * 1.5, top + 3.5 + Math.random() * 8); bub.add(b); } bub.visible = false; fg.add(bub);
+      spots.push({k:'bath', x:tx, z:top + 19, r:10}); R.bathAt = {x:tx, z:top + 7.5, y:-3, bub};
+    }
+  }
+  if (r.t === 'hall' && r.stairs){
+    const sx = ox + r.x + r.w/2, sz = r.z + 8; for (let i = 0; i < 8; i++) box(16, 2.4 * (i + 1), 4, '#8d6e63', sx, 1.2 * (i + 1), sz + 28 - i * 4, fg);
+    box(.6, 22, .6, '#5d4037', sx + 8.5, 11, sz + 2, fg); S2(sx, sz + 14, 17, 32);
+    spots.push({k:'stairs', x:sx - 14 < ox + r.x + 6 ? sx + 14 : sx - 14, z:sz + 26, r:10, fi}); R.stairs[fi] = {x:sx - 14 < ox + r.x + 6 ? sx + 14 : sx - 14, z:sz + 26};
+  }
+}
+function houseShell(R, F, fi, ox, col, fg){
+  const W = F.W, D = F.D, H = 34;
+  box(W + 4, 1, D + 4, col.floor, ox, -.5, 0, fg);
+  for (const r of F.rooms){ const fl = new THREE.Mesh(new THREE.PlaneGeometry(r.w, r.d), r.t === 'kitchen' || r.t === 'bath' ? new THREE.MeshLambertMaterial({map: r.t === 'bath' ? tileTex('#b3e5fc', '#e1f5fe', 8) : tileTex('#eeeeee', '#bdbdbd', 8)}) : lam(r.t === 'room' ? col.floor : ROOM_FLOOR[r.t] || col.floor)); fl.rotation.x = -Math.PI/2; fl.position.set(ox + r.x + r.w/2, .03, r.z + r.d/2); fl.receiveShadow = true; fg.add(fl); }
+  const wall = col.wall, sol = R.staticSolids;
+  box(W + 4, H, 2, wall, ox, H/2, -D/2 - 1, fg); box(2, H, D + 4, wall, ox - W/2 - 1, H/2, 0, fg); box(2, H, D + 4, wall, ox + W/2 + 1, H/2, 0, fg);
+  sol.push({x:ox - W/2 - 3, z:-D/2 - 3, w:W + 6, d:3}, {x:ox - W/2 - 3, z:-D/2, w:3, d:D}, {x:ox + W/2, z:-D/2, w:3, d:D}, {x:ox - W/2 - 3, z:D/2, w:W + 6, d:3});
+  // front: low wall with the front door on the ground floor
+  const ent = F.rooms.filter(r => Math.abs(r.z + r.d - D/2) < 1).sort((a, b) => (b.t === 'living' || b.t === 'room') - (a.t === 'living' || a.t === 'room') || b.w - a.w)[0];
+  const doorX = fi === 0 && ent ? ent.x + ent.w/2 : 9999;
+  const segs = fi === 0 ? [[-W/2, doorX - 9], [doorX + 9, W/2]] : [[-W/2, W/2]];
+  for (const [a, b] of segs) if (b - a > 1) box(b - a, 5, 2, wall, ox + (a + b)/2, 2.5, D/2 + 1, fg);
+  if (fi === 0){ box(14, .3, 8, '#5d4037', ox + doorX, .15, D/2 - 4, fg); R.door = {x:ox + doorX, z:D/2 - 3}; R.keep.push({x:ox + doorX - 10, z:D/2 - 18, w:20, d:18}); }
+  // windows on the back wall
+  for (const r of F.rooms) if (Math.abs(r.z + D/2) < 1 && r.w > 24){ const win = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(18, r.w - 10), 11), R.winMat); win.position.set(ox + r.x + r.w/2, 21, -D/2 + .05); fg.add(win); box(Math.min(19, r.w - 9), 1, 1.2, '#6d4c41', ox + r.x + r.w/2, 15, -D/2 + .4, fg); }
+  // inside walls between rooms, each with a doorway
+  const rs = F.rooms;
+  for (let i = 0; i < rs.length; i++) for (let j = i + 1; j < rs.length; j++){ const a = rs[i], b = rs[j];
+    for (const [p, q] of [[a, b], [b, a]]){
+      if (Math.abs(p.x + p.w - q.x) < 1){ const z0 = Math.max(p.z, q.z), z1 = Math.min(p.z + p.d, q.z + q.d); if (z1 - z0 > 8){ const x = ox + q.x, gm = (z0 + z1) / 2;
+        for (const [s0, s1] of [[z0, gm - 8], [gm + 8, z1]]) if (s1 - s0 > .5){ box(2, IWALL, s1 - s0, wall, x, IWALL/2, (s0 + s1) / 2, fg); sol.push({x:x - 1.5, z:s0, w:3, d:s1 - s0}); }
+        R.keep.push({x:x - 9, z:gm - 8, w:18, d:16}); } }
+      if (Math.abs(p.z + p.d - q.z) < 1){ const x0 = Math.max(p.x, q.x), x1 = Math.min(p.x + p.w, q.x + q.w); if (x1 - x0 > 8){ const z = q.z, gm = (x0 + x1) / 2;
+        for (const [s0, s1] of [[x0, gm - 8], [gm + 8, x1]]) if (s1 - s0 > .5){ box(s1 - s0, IWALL, 2, wall, ox + (s0 + s1) / 2, IWALL/2, z, fg); sol.push({x:ox + s0, z:z - 1.5, w:s1 - s0, d:3}); }
+        R.keep.push({x:ox + gm - 8, z:z - 9, w:16, d:18}); } }
+    } }
+  box(W + 4, 2.4, .6, '#8d6e63', ox, 1.2, -D/2 + .1, fg);
+}
+// show homes are staged with furniture so you can see what living there is like
+const STAGE = {living:[['sofa'], ['bigtv', {sz:55}], ['table'], ['rug'], ['bigpalm'], ['vase', {c:'#e91e63'}], ['chandelier', {c:'#d4af37'}]], bed:[['kingbed'], ['wardrobe'], ['lamp'], ['ac']], kitchen:[['dining']], room:[['mattress'], ['sofa'], ['tv']]};
+function buildInterior(homeId, opts){
+  opts = opts || {};
+  const plan = planOf(homeId), col = ROOMS[homeId] || ROOMS.paynes, Wmax = Math.max(...plan.floors.map(f => f.W)), Dmax = Math.max(...plan.floors.map(f => f.D)), pitch = Wmax + 140;
   const sc = new THREE.Scene(); sc.background = new THREE.Color(0x15100c);
   const hl = new THREE.HemisphereLight(0xfff4e0, 0x4a3a2a, 1.05); sc.add(hl);
-  const dl = new THREE.DirectionalLight(0xfff0dd, 1.1); dl.position.set(w * .3, 140, d * .6); dl.castShadow = true; dl.shadow.mapSize.set(1024, 1024);
-  Object.assign(dl.shadow.camera, {left:-w, right:w, top:d, bottom:-d, near:10, far:400}); dl.shadow.bias = -0.001; sc.add(dl, dl.target);
+  const dl = new THREE.DirectionalLight(0xfff0dd, 1.1); dl.position.set(Wmax * .3, 160, Dmax * .6); dl.castShadow = true; dl.shadow.mapSize.set(1024, 1024);
+  Object.assign(dl.shadow.camera, {left:-Wmax, right:Wmax + pitch * (plan.floors.length - 1), top:Dmax, bottom:-Dmax, near:10, far:500}); dl.shadow.bias = -0.001; sc.add(dl, dl.target);
   const bulb = new THREE.PointLight(0xffd9a0, 0, 0, 0); bulb.position.set(0, 30, 0); sc.add(bulb);
   const g = new THREE.Group(); sc.add(g);
-  box(w + 4, 1, d + 4, R.floor, 0, -.5, 0, g);
-  const wall = R.wall, H = 34;
-  box(w + 4, H, 2, wall, 0, H/2, -d/2 - 1, g); box(2, H, d + 4, wall, -w/2 - 1, H/2, 0, g); box(2, H, d + 4, wall, w/2 + 1, H/2, 0, g);
-  box(w/2 - 9, 5, 2, wall, -(w/4 + 4.5), 2.5, d/2 + 1, g); box(w/2 - 9, 5, 2, wall, (w/4 + 4.5), 2.5, d/2 + 1, g);
-  box(w + 4, 2.4, .6, '#8d6e63', 0, 1.2, -d/2 + .1, g);
   const winMat = new THREE.MeshBasicMaterial({color:0xbfe6ff});
-  for (const x of [-w/4, w/4]){ const win = new THREE.Mesh(new THREE.PlaneGeometry(16, 11), winMat); win.position.set(x + 10, 20, -d/2 + .05); g.add(win); box(17, 1, 1.2, '#6d4c41', x + 10, 14, -d/2 + .4, g); }
-  box(14, .3, 8, '#5d4037', 0, .15, d/2 - 4, g);
   const lay = (S.layout = S.layout || {})[homeId] = (S.layout[homeId] || {});
-  const R2 = {home:homeId, sc, g, w, d, solids:[], spots:[], items:{}, lay};
+  const R2 = {home:homeId, sc, g, solids:[], spots:[], items:{}, lay, staticSolids:[], staticSpots:[], keep:[], floors:[], floorG:[], rooms:[], stairs:{}, pitch, winMat, glows:[], lamps:0, tour:!!opts.tour};
+  plan.floors.forEach((F, fi) => { const ox = fi * pitch, fg = new THREE.Group(); g.add(fg); R2.floorG.push(fg);
+    R2.floors.push({ox, W:F.W, D:F.D}); houseShell(R2, F, fi, ox, col, fg);
+    for (const r of F.rooms){ R2.rooms.push({...r, fi, ax:ox + r.x, az:r.z}); houseFixtures(R2, r, F, fi, ox, fg); }
+    if (plan.floors.length > 1){ const lb = canvasTex(256, 64, (x2) => { x2.fillStyle = 'rgba(0,0,0,0)'; x2.clearRect(0, 0, 256, 64); x2.fillStyle = '#ffffff'; x2.font = 'bold 34px sans-serif'; x2.textAlign = 'center'; x2.fillText(fi ? 'UPSTAIRS' : 'GROUND FLOOR', 128, 44); }); const m = new THREE.Mesh(new THREE.PlaneGeometry(50, 12.5), new THREE.MeshBasicMaterial({map:lb, transparent:true})); m.position.set(ox, 40, -F.D/2); fg.add(m); }
+  });
+  // room names on the floor for show-home tours
+  if (R2.tour) for (const r of R2.rooms){ const lb = canvasTex(256, 64, (x2) => { x2.clearRect(0, 0, 256, 64); x2.fillStyle = 'rgba(255,255,255,.75)'; x2.font = 'bold 30px sans-serif'; x2.textAlign = 'center'; x2.fillText(r.n || ROOM_NAME[r.t], 128, 42); }); const m = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(40, r.w - 6), Math.min(10, (r.w - 6) / 4)), new THREE.MeshBasicMaterial({map:lb, transparent:true, depthWrite:false})); m.rotation.x = -Math.PI/2; m.position.set(r.ax + r.w/2, .3, r.az + r.d - 8); R2.floorG[r.fi].add(m); }
   INT_SPIN = [];
-  // the best bed you own takes the bed spot; other beds stay in storage
-  const bedK = items.includes('kingbed') ? 'kingbed' : items.includes('mattress') ? 'mattress' : 'bed';
-  [bedK, ...items.filter(k => !['kingbed', 'mattress', 'bed'].includes(k))].forEach(k => addItem(R2, k));
+  if (R2.tour){ const pending = []; for (const r of R2.rooms){ for (const [k, o] of (STAGE[r.t] || [])) pending.push({it:{id:'show_' + k + '_' + R2.rooms.indexOf(r), k, c:o && o.c, sz:o && o.sz}, room:r}); }
+    for (const {it, room} of pending) addItem(R2, it, room); }
+  else { const inv = invOf(homeId); if (!inv.some(i => BEDS.includes(i.k))) addItem(R2, {id:'bed', k:'bed', builtin:true}); inv.forEach(it => addItem(R2, it)); }
+  R2.floorG.forEach((fg, i) => fg.visible = i === 0);
   const me = personMesh(S.look); sc.add(me);
-  const cam = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 1, 1200);
-  return Object.assign(R2, {cam, me, bulb, winMat, hl, x:0, z:d/2 - 10, a:-Math.PI/2});
+  const cam = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 1, 1600);
+  const door = R2.door || {x:0, z:Dmax/2 - 3};
+  return Object.assign(R2, {cam, me, bulb, winMat, hl, x:door.x, z:door.z - 7, a:-Math.PI/2, fi:0, w:Wmax, d:Dmax});
 }
-function addItem(R, k){
-  if (R.items[k]) return; const sl = SLOTS[k]; if (!sl) return;
-  const f = furnMesh(k, R.home), p = R.lay[k] || (['kingbed', 'mattress'].includes(k) && R.lay.bed) || [sl[0] * R.w/2, sl[1] * R.d/2, sl[2]];
-  f.g.position.set(p[0], 0, p[1]); f.g.rotation.y = p[2]; R.g.add(f.g); f.k = k; R.items[k] = f;
+const BEDS = ['bed', 'mattress', 'kingbed'];
+const floorOf = (R, x) => clamp(Math.round(x / R.pitch), 0, R.floors.length - 1);
+const roomAt = (R, x, z) => R.rooms.find(r => x >= r.ax && x <= r.ax + r.w && z >= r.az && z <= r.az + r.d);
+function itemFits(R, f, x, z, rot){
+  const rotd = Math.abs(Math.sin(rot)) > .5, fw = rotd ? f.fd : f.fw, fd = rotd ? f.fw : f.fd, F = R.floors[floorOf(R, x)];
+  if (x - fw/2 < F.ox - F.W/2 - 1.5 || x + fw/2 > F.ox + F.W/2 + 1.5 || z - fd/2 < -F.D/2 - 1.5 || z + fd/2 > F.D/2 + 1.5) return 'Too close to the wall';
+  if (!f.solid) return '';
+  const hit = s => x - fw/2 < s.x + s.w && x + fw/2 > s.x && z - fd/2 < s.z + s.d && z + fd/2 > s.z;
+  if (R.keep.some(hit)) return 'Keep the doorway clear';
+  if (R.solids.some(hit)) return 'Something is already there';
+  return '';
+}
+function findFree(R, f, k, room){
+  const pref = BEDS.includes(k) ? 'bed' : FURN[k] && FURN[k].room, rooms = room ? [room] : R.rooms.filter(r => pref ? (pref === 'bed' ? r.t === 'bed' || r.t === 'room' : pref === 'living' ? r.t === 'living' || r.t === 'room' : r.t === pref) : r.t !== 'bath' && r.t !== 'hall');
+  const order = (rooms.length ? rooms : R.rooms.filter(r => r.t !== 'bath')).slice().sort((a, b) => R.solids.filter(s => s.x > a.ax && s.x < a.ax + a.w && s.z > a.az && s.z < a.az + a.d).length - R.solids.filter(s => s.x > b.ax && s.x < b.ax + b.w && s.z > b.az && s.z < b.az + b.d).length);
+  for (const r of order){ const wallItem = WALL_ITEMS.includes(k);
+    for (const rot of wallItem ? [-Math.PI/2] : [0, Math.PI/2]) for (let zz = r.az + 4; zz < r.az + r.d - 4; zz += 5) for (let xx = r.ax + 4; xx < r.ax + r.w - 4; xx += 5){
+      const rotd = Math.abs(Math.sin(rot)) > .5, fw = rotd ? f.fd : f.fw, fd = rotd ? f.fw : f.fd, x = wallItem ? xx : xx + fw/2, z = wallItem ? r.az + 1 : zz + fd/2;
+      if (x + fw/2 > r.ax + r.w - 2 || z + fd/2 > r.az + r.d - 2) continue;
+      if (!itemFits(R, f, x, z, rot)) return [x, z, rot];
+      if (wallItem) break; }
+  }
+  const F = R.floors[0]; return [F.ox, 0, 0];
+}
+function addItem(R, it, room){
+  if (typeof it === 'string') it = {id:it, k:it};
+  if (R.items[it.id]) return; const k = it.k; if (!FURN[k] && k !== 'bed') return;
+  const f = furnMesh(k, R.home, it); f.k = k; f.id = it.id; f.it = it;
+  let p = R.lay[it.id];
+  if (!p || itemFits(R, f, p[0], p[1], p[2])) p = findFree(R, f, k, room);
+  f.g.position.set(p[0], 0, p[1]); f.g.rotation.y = p[2]; R.floorG[floorOf(R, p[0])].add(f.g); R.items[it.id] = f;
   if (f.g.userData.spin) INT_SPIN.push(f.g.userData.spin); if (f.g.userData.ceil) INT_SPIN.push({ceil:f.g.userData.ceil});
+  if (f.g.userData.glow) R.glows.push(...f.g.userData.glow);
+  if (f.g.userData.lamp && R.lamps < 5){ R.lamps++; const pl = new THREE.PointLight(f.g.userData.lamp, 0, 110, 1.6); pl.position.set(0, f.g.userData.lampY || 24, 0); f.g.add(pl); (R.pls = R.pls || []).push(pl); }
   refreshInt(R);
 }
 const footOf = f => { const rot = Math.abs(Math.sin(f.g.rotation.y)) > .5; return [rot ? f.fd : f.fw, rot ? f.fw : f.fd]; };
 function refreshInt(R){
-  R.solids = []; R.spots = [{k:'door', x:0, z:R.d/2 - 3}];
+  R.solids = R.staticSolids.slice(); R.spots = [...(R.door ? [{k:'door', x:R.door.x, z:R.door.z}] : []), ...R.staticSpots];
   for (const f of Object.values(R.items)){ if (DES && DES.f === f) continue; const [fw, fd] = footOf(f), x = f.g.position.x, z = f.g.position.z;
     if (f.solid) R.solids.push({x:x - fw/2, z:z - fd/2, w:fw, d:fd});
-    if (SPOT[f.k]) R.spots.push({k:f.k, x, z, r: Math.max(fw, fd)/2 + 8}); }
+    R.spots.push({k:f.k, id:f.id, x, z, r: Math.max(fw, fd)/2 + 8}); }
 }
+/* ---------- inventory: every piece you own, with its colour and size ---------- */
+function invOf(home){ S.inv = S.inv || {}; if (!S.inv[home]) S.inv[home] = ((S.furn && S.furn[home]) || []).map(k => ({id:k, k})); return S.inv[home]; }
+function syncFurn(home){ S.furn = S.furn || {}; S.furn[home] = invOf(home).map(i => i.k); }
+const newItemId = k => k + '_' + (S.invN = (S.invN || 0) + 1);
+function furnPrice(k, sz){ const f = FURN[k]; if (!f) return 0; return f.sizes ? Math.round(f.p * Math.pow((sz || f.sz0) / f.sz0, 1.8) / 100) * 100 : f.p; }
+function furnName(it){ const f = FURN[it.k]; if (!f) return 'Bed'; const cn = f.colors && it.c ? (f.colors.find(c => c[1] === it.c) || [''])[0] : ''; return `${f.t}${it.sz ? ` (${it.sz}-inch)` : ''}${cn ? ' · ' + cn : ''}`; }
 /* ---------- design your home in real time ---------- */
 let DES = null;
 const desMark = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({color:0x39c06a, transparent:true, opacity:.45, depthWrite:false}));
 desMark.rotation.x = -Math.PI/2;
-const ownHomeInside = () => !!(S && S.inside && INT && !INT.place && INT.home === S.inside);
+const ownHomeInside = () => !!(S && S.inside && INT && !INT.place && !INT.tour && INT.home === S.inside);
 function startDesign(){ if (!ownHomeInside()) return toast('Go inside your home to design it.', 'bad'); closeModal(); DES = {mode:'browse'}; INT.sc.add(desMark); desMark.visible = false; designUI(); }
 function endDesign(){ if (DES && DES.f) cancelMove(); DES = null; if (INT) INT.sc.remove(desMark); $('#designBar').hidden = true; save(); hud(); }
 function pickItem(f){ DES = {mode:'place', f, back:[f.g.position.x, f.g.position.z, f.g.rotation.y], rot:f.g.rotation.y}; refreshInt(INT); designUI(); }
-function cancelMove(){ const f = DES.f, b = DES.back; if (b){ f.g.position.set(b[0], 0, b[1]); f.g.rotation.y = b[2]; } else { INT.g.remove(f.g); delete INT.items[f.k]; } DES.f = null; refreshInt(INT); }
-function wallSnap(x, z){ const R = INT, dl = x + R.w/2, dr = R.w/2 - x, db = z + R.d/2;
-  if (db <= dl && db <= dr) return [x, -R.d/2 + 1, -Math.PI/2]; return dl < dr ? [-R.w/2 + 1, z, 0] : [R.w/2 - 1, z, Math.PI]; }
+function cancelMove(){ const f = DES.f, b = DES.back; if (b){ f.g.position.set(b[0], 0, b[1]); f.g.rotation.y = b[2]; INT.floorG[floorOf(INT, b[0])].add(f.g); } DES.f = null; refreshInt(INT); }
+function wallSnap(x, z){ const r = roomAt(INT, x, z) || INT.rooms[0], dl = x - r.ax, dr = r.ax + r.w - x, db = z - r.az, df = r.az + r.d - z, m = Math.min(dl, dr, db, df);
+  if (m === db) return [x, r.az + 1, -Math.PI/2]; if (m === dl) return [r.ax + 1, z, 0]; if (m === dr) return [r.ax + r.w - 1, z, Math.PI]; return [x, r.az + r.d - 1, Math.PI/2]; }
 function designTick(){
   if (!DES || !INT) return;
   if (DES.mode === 'place' && DES.f){
@@ -2616,16 +2861,14 @@ function designTick(){
     let x = INT.x + Math.cos(INT.a) * ahead, z = INT.z + Math.sin(INT.a) * ahead, r = DES.rot;
     if (WALL_ITEMS.includes(f.k)) [x, z, r] = wallSnap(x, z);
     x = Math.round(x / 2) * 2; z = Math.round(z / 2) * 2;
-    f.g.position.set(x, 0, z); f.g.rotation.y = r;
+    f.g.position.set(x, 0, z); f.g.rotation.y = r; const tg = INT.floorG[floorOf(INT, x)]; if (f.g.parent !== tg) tg.add(f.g);
     const [fw, fd] = footOf(f);
-    const inRoom = Math.abs(x) + fw/2 <= INT.w/2 + 1.5 && z - fd/2 >= -INT.d/2 - 1.5 && z + fd/2 <= INT.d/2 + 1.5;
-    const door = f.solid && Math.abs(x) < fw/2 + 9 && z + fd/2 > INT.d/2 - 14;
     const hitsMe = f.solid && INT.x > x - fw/2 - 2 && INT.x < x + fw/2 + 2 && INT.z > z - fd/2 - 2 && INT.z < z + fd/2 + 2;
-    const clash = f.solid && INT.solids.some(s => x - fw/2 < s.x + s.w && x + fw/2 > s.x && z - fd/2 < s.z + s.d && z + fd/2 > s.z);
-    DES.ok = inRoom && !door && !clash && !hitsMe;
+    const why = itemFits(INT, f, x, z, r) || (hitsMe ? 'Step back a little' : '');
+    DES.ok = !why;
     desMark.visible = true; desMark.position.set(x, .4, z); desMark.scale.set(fw + 2, fd + 2, 1); desMark.material.color.set(DES.ok ? 0x39c06a : 0xe5392c);
-    const why = !inRoom ? 'Too close to the wall' : door ? 'Keep the door clear' : clash ? 'Something is already there' : hitsMe ? 'Step back a little' : 'Looks good here';
-    if (DES.why !== why){ DES.why = why; designUI(); }
+    const msg = why || 'Looks good here';
+    if (DES.why !== msg){ DES.why = msg; designUI(); }
   } else {
     let best = null, bd = 34;
     for (const f of Object.values(INT.items)){ const d = Math.hypot(f.g.position.x - INT.x, f.g.position.z - INT.z); if (d < bd){ bd = d; best = f; } }
@@ -2637,47 +2880,132 @@ function designUI(){
   const bar = $('#designBar'); bar.hidden = !DES; if (!DES) return;
   const btn = (id, l, cls, dis) => `<button data-des="${id}" class="${cls || ''}" ${dis ? 'disabled' : ''}>${l}</button>`;
   if (DES.mode === 'place'){ const f = FURN[DES.f.k] || {t:'Bed', ic:'🛏️'};
-    $('#desT').textContent = `${f.ic} Placing your ${f.t}`;
-    $('#desRow').innerHTML = (WALL_ITEMS.includes(DES.f.k) ? '' : btn('rot', '↻ Rotate')) + btn('ok', '✓ Place here', 'go', !DES.ok) + btn('cancel', DES.back ? '✕ Put back' : '✕ Cancel');
+    $('#desT').textContent = `${f.ic} Placing your ${DES.f.it ? furnName(DES.f.it) : f.t}`;
+    $('#desRow').innerHTML = (WALL_ITEMS.includes(DES.f.k) ? '' : btn('rot', '↻ Rotate')) + btn('ok', '✓ Place here', 'go', !DES.ok) + btn('cancel', '✕ Put back');
     $('#desS').textContent = `${DES.why || ''} · walk to move it · R rotate · Enter place`;
-  } else { const n = DES.near, f = n && (FURN[n.k] || {t:'Bed', ic:'🛏️'});
+  } else { const n = DES.near, f = n && (FURN[n.k] || {t:'Bed', ic:'🛏️'}), sellable = n && !(n.it && n.it.builtin);
     $('#desT').textContent = '🛠️ Design mode';
-    $('#desRow').innerHTML = btn('move', n ? `✋ Move ${f.t}` : '✋ Walk up to something', '', !n) + btn('shop', '🛍️ Buy furniture') + btn('done', '✓ Done', 'go');
-    $('#desS').textContent = 'Walk up to furniture to move or turn it. Your layout is saved.';
+    $('#desRow').innerHTML = btn('move', n ? `✋ Move ${f.t}` : '✋ Walk up to something', '', !n) + (sellable ? btn('sell', `💰 Sell ${money(sellPrice(n.it))}`) : '') + btn('shop', '🛍️ Buy furniture') + btn('done', '✓ Done', 'go');
+    $('#desS').textContent = 'Walk up to furniture to move, turn or sell it. Your layout is saved.';
   }
 }
 function designCmd(c){
   if (!DES) return;
   if (c === 'rot' && DES.mode === 'place'){ DES.rot += Math.PI/2; }
-  if (c === 'ok' && DES.mode === 'place' && DES.ok){ const f = DES.f; INT.lay[['kingbed','mattress','bed'].includes(f.k) ? 'bed' : f.k] = [f.g.position.x, f.g.position.z, f.g.rotation.y]; if (['kingbed','mattress','bed'].includes(f.k)) INT.lay[f.k] = INT.lay.bed;
+  if (c === 'ok' && DES.mode === 'place' && DES.ok){ const f = DES.f; INT.lay[f.id] = [f.g.position.x, f.g.position.z, f.g.rotation.y];
     DES = {mode:'browse'}; refreshInt(INT); toast(`${(FURN[f.k] || {ic:'🛏️'}).ic} Placed!`, 'good'); save(); checkGoals(); }
   if (c === 'cancel' && DES.mode === 'place'){ cancelMove(); DES = {mode:'browse'}; }
   if (c === 'move' && DES.near) pickItem(DES.near);
+  if (c === 'sell' && DES.near){ sellItem(DES.near); DES.near = null; }
   if (c === 'shop'){ shopTab = 'home'; openPhone('shop'); }
   if (c === 'done') return endDesign();
   designUI();
 }
 $('#designBar').addEventListener('click', e => { const b = e.target.closest('[data-des]'); if (b) designCmd(b.dataset.des); });
-$('#hornBtn').addEventListener('click', myHorn);
-$('#radioBtn').addEventListener('click', radioNext);
 $('#designBtn').addEventListener('click', () => DES ? endDesign() : startDesign());
+const sellPrice = it => it && !it.builtin ? Math.round(furnPrice(it.k, it.sz) * .5 / 50) * 50 : 0;
+function sellItem(f, home){
+  home = home || S.home; const inv = invOf(home), it = f.it || f, i = inv.findIndex(x => x.id === it.id); if (i < 0) return;
+  const cash = sellPrice(it); inv.splice(i, 1); syncFurn(home); if (S.layout && S.layout[home]) delete S.layout[home][it.id];
+  addMoney(cash, 'sold'); toast(`💰 You sold your ${furnName(it)} for ${money(cash)}.`, 'gold');
+  if (INT && !INT.place && INT.home === home && INT.items[it.id]){ const m = INT.items[it.id]; m.g.parent && m.g.parent.remove(m.g); delete INT.items[it.id];
+    if (!inv.some(x => BEDS.includes(x.k)) && !INT.items.bed) addItem(INT, {id:'bed', k:'bed', builtin:true}); refreshInt(INT); }
+  save(); hud();
+}
 // furniture bought while you are home appears in front of you, ready to place
-function deliverFurn(k, msg){
-  const home = S.home; S.furn = S.furn || {}; (S.furn[home] = S.furn[home] || []).push(k);
+function deliverFurn(k, opt, msg){
+  if (typeof opt === 'string'){ msg = opt; opt = {}; } opt = opt || {};
+  const home = S.home, it = {id:newItemId(k), k, c:opt.c, sz:opt.sz}; invOf(home).push(it); syncFurn(home);
   if (ownHomeInside() && INT.home === home){
-    if (['kingbed', 'mattress'].includes(k)){ for (const b of ['bed', 'mattress', 'kingbed']) if (INT.items[b] && b !== k){ INT.g.remove(INT.items[b].g); delete INT.items[b]; } }
+    if (BEDS.includes(k) && INT.items.bed && INT.items.bed.it && INT.items.bed.it.builtin){ const b = INT.items.bed; b.g.parent && b.g.parent.remove(b.g); delete INT.items.bed; }
     if (DES && DES.f){ if (DES.ok) designCmd('ok'); else designCmd('cancel'); }
-    addItem(INT, k); closeModal(); if (!DES){ DES = {mode:'browse'}; INT.sc.add(desMark); }
-    pickItem(INT.items[k]); toast(`📦 ${FURN[k].t} is here! Walk to where you want it and tap Place.`, 'gold');
-  } else toast(msg + ' Go home and tap Design to arrange it.', 'gold');
+    addItem(INT, it); closeModal(); if (!DES){ DES = {mode:'browse'}; INT.sc.add(desMark); }
+    pickItem(INT.items[it.id]); toast(`📦 ${furnName(it)} is here! Walk to where you want it and tap Place.`, 'gold');
+  } else toast((msg || `📦 ${FURN[k].t} delivered!`) + ' Go home and tap Design to arrange it.', 'gold');
   save(); checkGoals();
 }
+
+/* ---------- the furniture shop: categories, colours, sizes ---------- */
+const SHOP_CATS = [['Beds','🛏️'], ['Living','🛋️'], ['TVs','📺'], ['Kitchen','🍳'], ['Flowers','💐'], ['Decor','🖼️'], ['Lights','💡'], ['Comfort','❄️']];
+let shopCat = 'Beds', shopSel = null;
+function homeShop(fee, where){
+  const home = S.home, inv = invOf(home);
+  if (shopSel){ const f = FURN[shopSel.k], price = furnPrice(shopSel.k, shopSel.sz) + fee;
+    const sw = f.colors ? `<div class="swatches">${f.colors.map(([n, c]) => `<button data-optc="${c}" class="${shopSel.c === c ? 'on' : ''}" style="background:${c}" aria-label="${esc(n)}" title="${esc(n)}"></button>`).join('')}</div><div class="chip">${esc((f.colors.find(c => c[1] === shopSel.c) || ['Pick a colour'])[0])}</div>` : '';
+    const sz = f.sizes ? `<div class="seg wrap">${f.sizes.map(z => `<button data-opts="${z}" aria-selected="${shopSel.sz === z}">${z}"</button>`).join('')}</div>` : '';
+    return {sub:`${f.ic} <b>${f.t}</b>${f.sleep ? ` · sleep +${f.sleep}%` : ''}`, body:`<button class="pback" data-sback="1">‹ ${esc(shopCat)}</button>${f.sizes ? '<b>Size</b>' + sz : ''}${f.colors ? '<b>Colour</b>' + sw : ''}`,
+      acts:[{l:`Buy ${furnName({k:shopSel.k, c:shopSel.c, sz:shopSel.sz})}`, s: ownHomeInside() ? 'It appears in front of you to place' : `Delivered to ${HOMES[home].t}`, p:money(price), pc:'minus', primary:true, dis:!canPay(price), fn:() => { const k0 = shopSel.k, o = {c:shopSel.c, sz:shopSel.sz}; spend(price, true); shopSel = null; deliverFurn(k0, o, `📦 ${where} delivered your ${f.t}!`); }}]};
+  }
+  const tabs = `<div class="seg wrap">${SHOP_CATS.map(([c, ic]) => `<button data-scat="${c}" aria-selected="${shopCat === c}">${ic} ${c}</button>`).join('')}</div>`;
+  return {body:tabs, acts:Object.entries(FURN).filter(([k, f]) => (f.cat || 'Decor') === shopCat).map(([k, f]) => { const own = !f.multi && inv.some(i => i.k === k), opts = f.colors || f.sizes;
+    const from = f.sizes ? 'from ' + money(furnPrice(k, f.sizes[0]) + fee) : money(f.p + fee);
+    return {l:`${f.ic} ${f.t}`, s: own ? 'Already in your home' : [opts ? (f.sizes ? f.sizes.length + ' sizes' : '') + (f.colors ? (f.sizes ? ' · ' : '') + f.colors.length + ' colours' : '') : '', f.sleep ? `sleep +${f.sleep}%` : '', f.multi ? 'buy as many as you like' : ''].filter(Boolean).join(' · ') || 'Makes your home nicer', p: own ? '✓' : from, pc:'minus', dis: own || (!opts && !canPay(f.p + fee)),
+      fn:() => { if (opts){ shopSel = {k, c: f.colors ? f.colors[0][1] : undefined, sz: f.sizes ? f.sz0 : undefined}; return; } spend(f.p + fee, true); deliverFurn(k, {}, `📦 ${where} delivered your ${f.t}!`); }}; })};
+}
+/* ---------- LibHomes: browse houses for sale, see the floor plan, tour inside ---------- */
+let homesSel = null;
+Object.assign(HOMES.auntie, {beds:'Shared', baths:1, storeys:1}); Object.assign(HOMES.room, {beds:1, baths:1, storeys:1}); Object.assign(HOMES.paynes, {beds:2, baths:1, storeys:1});
+Object.assign(HOMES.congo, {beds:3, baths:1, storeys:1}); Object.assign(HOMES.mamba, {beds:3, baths:1, storeys:1, d:'Ocean view, 3 bedrooms, big kitchen. The big-man house.'});
+function planImg(id, fi, wpx){
+  const F = planOf(id).floors[fi], sc = wpx / F.W, c = document.createElement('canvas'); c.width = wpx; c.height = Math.round(F.D * sc) + 2; const x = c.getContext('2d');
+  const col = {living:'#ffe0b2', room:'#ffe0b2', kitchen:'#c8e6c9', bed:'#bbdefb', bath:'#b2ebf2', hall:'#e0e0e0'};
+  for (const r of F.rooms){ const px = (r.x + F.W/2) * sc, py = (r.z + F.D/2) * sc, pw = r.w * sc, ph = r.d * sc; x.fillStyle = col[r.t] || '#eee'; x.fillRect(px, py, pw, ph); x.strokeStyle = '#37474f'; x.lineWidth = 2; x.strokeRect(px + 1, py + 1, pw - 2, ph - 2);
+    x.fillStyle = '#263238'; x.font = `bold ${Math.max(9, Math.min(13, pw / 7))}px sans-serif`; x.textAlign = 'center'; x.fillText(r.n || ROOM_NAME[r.t], px + pw/2, py + ph/2 + 4); if (r.stairs){ x.font = '11px sans-serif'; x.fillText('▤ stairs', px + pw/2, py + ph/2 + 18); } }
+  return c.toDataURL();
+}
+function houseImg(id){
+  const hm = HOMES[id], c = document.createElement('canvas'); c.width = 280; c.height = 150; const x = c.getContext('2d'), st = hm.storeys || 1, roof = (LOC[hm.loc] || {}).roof || '#8a5a3c';
+  const g = x.createLinearGradient(0, 0, 0, 150); g.addColorStop(0, '#9fd0f0'); g.addColorStop(1, '#e3f2fd'); x.fillStyle = g; x.fillRect(0, 0, 280, 150); x.fillStyle = '#7cb342'; x.fillRect(0, 120, 280, 30);
+  const w = 90 + (hm.beds > 3 ? 60 : hm.beds > 1 ? 30 : 0), hh = 36 * st, bx = 140 - w/2, by = 122 - hh;
+  x.fillStyle = '#f1e3c8'; x.fillRect(bx, by, w, hh); x.fillStyle = roof; x.beginPath(); x.moveTo(bx - 10, by); x.lineTo(140, by - 34); x.lineTo(bx + w + 10, by); x.fill();
+  x.fillStyle = '#5d4037'; x.fillRect(132, 96, 16, 26); x.fillStyle = '#90caf9'; for (let f = 0; f < st; f++) for (let i = 0; i < Math.floor(w / 30); i++){ const wx = bx + 8 + i * 30; if (f === 0 && Math.abs(wx + 7 - 140) < 16) continue; x.fillRect(wx, by + 8 + f * 36, 14, 14); }
+  x.fillStyle = '#2e7d32'; x.beginPath(); x.arc(30, 112, 16, 0, 7); x.arc(250, 108, 20, 0, 7); x.fill(); return c.toDataURL();
+}
+function buyHome(k){ const hm = HOMES[k];
+  if (hm.rent){ if (!canPay(hm.rent)) return toast('Not enough money.', 'bad'); spend(hm.rent, true); S.renting = true; S.rentDue = S.day + 7; S.home = k; toast('You rented a room in Duala!', 'gold'); }
+  else { if (!canPay(hm.price)) return toast('Not enough money. Save in the bank and come back!', 'bad'); spend(hm.price, true); S.owned.push(k); S.home = k; toast(`🔑 You bought the ${hm.t}! 🎉`, 'gold'); confetti && confetti(); }
+  save(); checkGoals(); hud(); }
+function homesScreen(back){
+  const list = Object.entries(HOMES).filter(([k]) => k !== 'auntie');
+  if (homesSel){ const k = homesSel, hm = HOMES[k], plan = planOf(k), own = S.owned.includes(k) || (k === 'room' && S.renting), l = LOC[hm.loc];
+    const plans = plan.floors.map((F, fi) => `<div style="font-weight:800;margin:6px 0 2px">${plan.floors.length > 1 ? (fi ? 'Upstairs' : 'Ground floor') : 'Floor plan'}</div><img src="${planImg(k, fi, 300)}" style="width:100%;border-radius:10px">`).join('');
+    return {t:hm.t, ic:'🏘️', sub:`${districtAt(l.x, l.y)} · ${hm.rent ? money(hm.rent) + ' per week' : money(hm.price)}`,
+      body:`<button class="pback" data-homes="list">‹ All homes</button><img src="${houseImg(k)}" style="width:100%;border-radius:12px"><div class="facts"><span class="chip">🛏️ ${hm.beds} bedroom${hm.beds > 1 ? 's' : ''}</span><span class="chip">🛁 ${hm.baths} bath</span><span class="chip">🏢 ${hm.storeys} storey${hm.storeys > 1 ? 's' : ''}</span><span class="chip">🍳 Full kitchen</span><span class="chip ok">😴 Sleep ${hm.sleep}%</span>${own ? '<span class="chip gold">You own this</span>' : ''}</div><p style="margin:0;color:var(--muted)">${esc(hm.d)}</p>${plans}`,
+      acts:[{l:'🚶🏾 Tour inside', s:'Walk through every room of the show home', primary:!own, fn:() => tourHome(k)},
+        own ? {l: S.home === k ? 'This is your home' : 'Move in here', dis:S.home === k, fn:() => { S.home = k; toast(`You moved to ${hm.t}`, 'good'); save(); }}
+            : {l: hm.rent ? 'Rent this room' : 'Buy this house', s:'Pay with cash or MoMo', p: hm.rent ? money(hm.rent) : money(hm.price), pc:'minus', dis:!canPay(hm.rent || hm.price), fn:() => buyHome(k)},
+        {l:'📍 Show me where it is', fn:() => { S.wp = {x:l.x, y:l.y, n:hm.t}; toast(`📍 Waypoint set: ${hm.t}`); closeModal(); }}]};
+  }
+  return {t:'LibHomes', ic:'🏘️', sub:'Houses for sale and rent across Liberia. Tap one to see inside.', body: back + `<div class="list">${list.map(([k, hm]) => { const own = S.owned.includes(k) || (k === 'room' && S.renting);
+    return `<button class="homecard" data-homes="${k}"><img src="${houseImg(k)}" alt=""><span><b>${esc(hm.t)}</b><br><small>${hm.beds} bed · ${hm.baths} bath · ${hm.storeys} storey${hm.storeys > 1 ? 's' : ''} · ${districtAt(LOC[hm.loc].x, LOC[hm.loc].y)}</small><br><b class="num" style="color:var(--gold)">${own ? '✓ Yours' : hm.rent ? money(hm.rent) + '/wk' : money(hm.price)}</b></span></button>`; }).join('')}</div>`, acts:[]};
+}
+function tourHome(k){
+  if (S.inside){ if (DES) endDesign(); S.inside = null; INT = null; }
+  S.riding = false; S.tourFrom = {x:S.x, y:S.y}; closeModal();
+  INT = buildInterior(k, {tour:true}); S.inside = k; orbitIn.yaw = 0; orbitIn.dist = Math.max(110, INT.w * .85);
+  labelEls.forEach(e => e.style.display = 'none'); homeLab.style.display = gigLab.style.display = 'none';
+  toast(`🚶🏾 Show home tour: ${HOMES[k].t}. Walk around, use the stairs, and leave by the front door.`, 'gold');
+}
+/* ---------- cooking, bathing and stairs at home ---------- */
+const HOME_DISHES = [
+  {t:'Jollof rice & chicken', p:180, f:50, m:45, c:'#e65100'}, {t:'Palm butter & rice', p:200, f:55, m:60, c:'#bf360c'}, {t:'Cassava leaf & rice', p:160, f:50, m:60, c:'#33691e'},
+  {t:'Potato greens & rice', p:150, f:48, m:50, c:'#558b2f'}, {t:'Pepper soup', p:220, f:40, e:6, m:40, c:'#c62828'}, {t:'Fried plantain & eggs', p:90, f:28, m:20, c:'#f9a825'}, {t:'Tea & bread', p:40, f:12, m:10, c:'#8d6e63'}];
+function cookAt(d){
+  spend(d.p, true); const st = INT.stoveAt; if (st){ INT.x = st.x; INT.z = st.z; INT.a = -Math.PI/2; }
+  activity('cook', `🍳 Cooking ${d.t}…`, 3.6, () => { advance(d.m); eat('your home-cooked ' + d.t.toLowerCase(), d.f, {e:d.e, color:d.c}); });
+}
+function takeBath(){
+  const b = INT.bathAt; if (b){ INT.x = b.x; INT.z = b.z; INT.a = Math.PI/2; }
+  activity('bath', b && b.small ? '🪣 Taking a bucket bath…' : '🛁 Taking a bath…', 3.8, () => { advance(b && b.small ? 15 : 30); S.hyg = 100; S.energy = clamp(S.energy + 6, 0, 100); toast('🧼 Fresh and clean! You smell nice.', 'good'); if (b){ INT.x = b.x; INT.z = b.z + 14; } });
+}
+function useStairs(){ const R = INT, to = R.fi ? 0 : 1, st = R.stairs[to]; if (!st) return; R.fi = to; R.x = st.x; R.z = st.z; R.floorG.forEach((fg, i) => fg.visible = i === to); closeModal(); toast(to ? '⬆️ Upstairs' : '⬇️ Downstairs'); }
+
 let INT_SPIN = [];
 const orbitIn = {yaw:0, pitch:.95, dist:120};
 function goInside(homeId){
-  INT = buildInterior(homeId); S.inside = homeId; orbitIn.yaw = 0; orbitIn.dist = Math.max(100, ROOMS[homeId].w * .9);
+  INT = buildInterior(homeId); S.inside = homeId; orbitIn.yaw = 0; orbitIn.dist = Math.max(100, INT.w * .85);
   closeModal(); labelEls.forEach(e => e.style.display = 'none'); homeLab.style.display = gigLab.style.display = 'none';
-  toast(`Welcome home. Buy furniture at Home & Things in Red Light.`);
+  toast(`Welcome home! Cook at the stove, take a bath, and tap Design to arrange your things.`);
 }
 function freeSpot(x, y){
   if (!hitsSolid(x, y, 8) && !isWater(x, y)) return [x, y];
@@ -2687,27 +3015,34 @@ function freeSpot(x, y){
 function placeAt(x, y){ [S.x, S.y] = freeSpot(x, y); cam.x = S.x; cam.y = S.y; }
 function goOutside(){
   if (DES) endDesign();
-  const l = INT.place ? INT.loc : LOC[HOMES[INT.home].loc]; S.inside = null; INT = null; placeAt(l.x, l.y); faceFrom(l); closeModal(); hud();
+  const tour = INT.tour && S.tourFrom, l = INT.place ? INT.loc : LOC[HOMES[INT.home].loc]; S.inside = null; INT = null;
+  if (tour){ placeAt(tour.x, tour.y); S.tourFrom = null; toast('Tour finished. Buy it in the LibHomes app.'); } else { placeAt(l.x, l.y); faceFrom(l); } closeModal(); hud();
 }
 function interiorMove(ix, iy, dt){
   const fx = -Math.sin(orbitIn.yaw), fz = -Math.cos(orbitIn.yaw), rx = Math.cos(orbitIn.yaw), rz = -Math.sin(orbitIn.yaw);
   const mx = rx * ix - fx * iy, mz = rz * ix - fz * iy, sp = 55;
   const hitS = (x, z) => INT.solids.some(s => x + 3 > s.x && x - 3 < s.x + s.w && z + 3 > s.z && z - 3 < s.z + s.d);
   const stuck = hitS(INT.x, INT.z);
-  const blocked = (x, z) => Math.abs(x) > INT.w/2 - 4 || z < -INT.d/2 + 4 || z > INT.d/2 - 4 || (!stuck && hitS(x, z));
+  const F = INT.floors ? INT.floors[INT.fi || 0] : {ox:0, W:INT.w, D:INT.d};
+  const blocked = (x, z) => Math.abs(x - F.ox) > F.W/2 - 4 || z < -F.D/2 + 4 || z > F.D/2 - 4 || (!stuck && hitS(x, z));
   if (Math.hypot(ix, iy) > .1){
     const nx = INT.x + mx * sp * dt, nz = INT.z + mz * sp * dt;
     if (!blocked(nx, INT.z)) INT.x = nx; if (!blocked(INT.x, nz)) INT.z = nz;
     INT.a = Math.atan2(mz, mx); player.step += dt * 9; player.moving = true;
   } else player.moving = false;
   let best = null, bd = 1e9;
-  for (const s of INT.spots){ const d = Math.hypot(INT.x - s.x, INT.z - s.z); if (d < (s.r || 14) && d < bd){ bd = d; best = s; } }
+  for (const s of INT.spots){ if (INT.floors && Math.round(s.x / INT.pitch) !== (INT.fi || 0)) continue; const d = Math.hypot(INT.x - s.x, INT.z - s.z); if (d < (s.r || 14) && d < bd){ bd = d; best = s; } }
   if (best && best.k === 'counter'){ const t = INT.loc.type, nm = t === 'school' ? "Talk to the teacher · enroll or attend class" : t === 'bank' ? 'Talk to the teller · save or withdraw money' : t === 'club' ? 'Bar & DJ' : t === 'job' ? 'Talk to the manager · work a shift' : ['food','rest','bar'].includes(t) ? 'Order at the counter' : t === 'hotel' ? 'Hotel reception · book a room' : t === 'airport' ? 'Check-in desk · book a flight' : t === 'landmark' ? 'Visitor desk' : 'Counter · ' + INT.loc.n; return {id:'in_counter', k:'counter', n:nm, ic:INT.loc.ic, type:'inside'}; }
-  return best ? {id:'in_' + best.k, k:best.k, n: best.k === 'door' && INT.place ? 'Exit to the street' : SPOT[best.k].n, ic:SPOT[best.k].ic, type:'inside'} : null;
+  if (best && best.k === 'stairs') return {id:'in_stairs', k:'stairs', n: INT.fi ? 'Go downstairs' : 'Go upstairs', ic: INT.fi ? '⬇️' : '⬆️', type:'inside'};
+  const SP2 = best && (SPOT[best.k] || {n:best.k, ic:'•'});
+  return best ? {id:'in_' + (best.id || best.k), k:best.k, iid:best.id, n: best.k === 'door' && INT.place ? 'Exit to the street' : SP2.n, ic:SP2.ic, type:'inside'} : null;
 }
 function panelInside(s){
-  const P = panelInside0(s), f = INT && !INT.place && INT.items && INT.items[s.k];
-  if (P && f && ownHomeInside()) (P.acts = P.acts || []).push({l:'✋ Move or turn this', s:'Walk it anywhere in the room', fn:() => { closeModal(); startDesign(); pickItem(f); }});
+  if (INT && INT.tour && s.k !== 'door' && s.k !== 'stairs'){ const hm = HOMES[INT.home], own = S.owned.includes(INT.home); return {ic:'🏘️', t:'Show home: ' + hm.t, sub:`${hm.beds} bedrooms · ${hm.baths} bath · ${hm.storeys} storey${hm.storeys > 1 ? 's' : ''}. ${esc(hm.d)}`,
+    acts:[own ? {l:'You own this house', dis:true, fn:() => {}} : {l: hm.rent ? 'Rent it' : 'Buy this house', p:money(hm.rent || hm.price), pc:'minus', primary:true, dis:!canPay(hm.rent || hm.price), fn:() => { buyHome(INT.home); closeModal(); }}, {l:'Leave the tour', fn:goOutside}]}; }
+  const P = panelInside0(s), f = INT && !INT.place && INT.items && INT.items[s.iid || s.k];
+  if (P && f && ownHomeInside()){ (P.acts = P.acts || []).push({l:'✋ Move or turn this', s:'Walk it anywhere in the house', fn:() => { closeModal(); startDesign(); pickItem(f); }});
+    if (f.it && !f.it.builtin) P.acts.push({l:'💰 Sell this', s:"Don't want it? Sell it for half price", p:'+' + money(sellPrice(f.it)), pc:'plus', fn:() => { closeModal(); sellItem(f); }}); }
   return P;
 }
 function panelInside0(s){
@@ -2717,6 +3052,14 @@ function panelInside0(s){
   const bonus = have.reduce((a, k) => a + (FURN[k].sleep || 0), 0), q = Math.min(100, hm.sleep + bonus);
   switch (s.k){
     case 'door': return {ic:'🚪', t:'Front door', sub:'Go back out to the street.', acts:[{l:'Go outside', primary:true, fn:goOutside}]};
+    case 'stairs': return {ic:'🪜', t:'Stairs', sub:INT.fi ? 'Back down to the ground floor.' : 'Up to the bedrooms.', acts:[{l:INT.fi ? '⬇️ Go downstairs' : '⬆️ Go upstairs', primary:true, fn:useStairs}]};
+    case 'stove': return {ic:'🍳', t:'Kitchen stove', sub:'Cook Liberian food at home. Much cheaper than the cookshop!', acts:HOME_DISHES.map(d => ({l:d.t, s:`${d.m} min · +${d.f} food${d.e ? ` · +${d.e} energy` : ''}`, p:money(d.p), pc:'minus', dis:!canPay(d.p) || S.food >= 100, fn:() => cookAt(d)}))};
+    case 'sink': return {ic:'🚰', t:'Kitchen sink', sub:'Wash the dishes and get a drink of water.', acts:[{l:'Wash the dishes', s:'15 min', primary:true, fn:() => busy('🧽', 'Washing dishes…', 'Soap and plenty of water', .8, () => { advance(15); toast('✨ The kitchen is clean!', 'good'); })}, {l:'Drink water', s:'+2 energy', fn:() => { closeModal(); eat('a cup of water', 2, {e:2, drink:true, color:'#4fc3f7'}); }}]};
+    case 'bath': return {ic:INT.bathAt && INT.bathAt.small ? '🪣' : '🛁', t:INT.bathAt && INT.bathAt.small ? 'Bucket bath' : 'Bathroom', sub:`You are ${Math.round(S.hyg ?? 100)}% clean. A bath makes you fresh and gives a little energy.`, acts:[{l:INT.bathAt && INT.bathAt.small ? 'Take a bucket bath' : 'Take a bath', s:'+6 energy · 100% clean', primary:true, fn:takeBath}]};
+    case 'piano': return {ic:'🎹', t:'Piano', sub:'Play a song.', acts:[{l:'Play the piano', s:'30 min · fun', primary:true, fn:() => busy('🎹', 'Playing the piano…', 'A sweet gospel song', 1, () => { advance(30); S.fun = (S.fun || 0) + 1; toast('🎶 Beautiful!', 'good'); })}]};
+    case 'treadmill': return {ic:'🏃🏾', t:'Treadmill', sub:'Stay fit.', acts:[{l:'Work out', s:'30 min · -8 energy · makes you sweaty', primary:true, dis:S.energy < 10, fn:() => busy('🏃🏾', 'Running on the treadmill…', 'Keep going!', 1, () => { advance(30); S.energy = clamp(S.energy - 8, 0, 100); S.hyg = clamp((S.hyg ?? 100) - 25, 0, 100); S.fit = (S.fit || 0) + 1; toast('💪 Good workout! Time for a bath.', 'good'); })}]};
+    case 'console': return {ic:'🎮', t:'Game console', sub:'Football video games with friends.', acts:[{l:'Play football games', s:'1 hour · +5 energy', primary:true, fn:() => busy('🎮', 'Playing video games…', 'Lone Star vs Brazil, 3-2!', 1, () => { advance(60); S.energy = clamp(S.energy + 5, 0, 100); S.fun = (S.fun || 0) + 1; })}]};
+    case 'microwave': return {ic:'🍲', t:'Microwave', sub:'Warm up some food fast.', acts:[{l:'Warm bread & butter', s:'5 min · +10 food', p:money(50), pc:'minus', primary:true, dis:!canPay(50), fn:() => { spend(50); closeModal(); eat('warm bread & butter', 10, {color:'#d7ccc8'}); }}]};
     case 'bed': case 'mattress': return {ic:'🛏️', t:'Your bed', sub:`Sleep restores up to <b>${q}%</b> energy${bonus ? ` (furniture bonus +${bonus})` : ''}.`,
       acts:[{l:'Sleep until 6 AM', primary:true, fn:() => sleep({sleep:q})}, {l:'Take a nap', s:'2 hours · +20 energy', fn:() => busy('😴', 'Napping…', '', 1, () => { advance(120); S.energy = clamp(S.energy + 20, 0, q); S.food = clamp(S.food - 5, 0, 100); })}]};
     case 'sofa': return {ic:'🛋️', t:'Sofa', sub:'Put your feet up.', acts:[{l:'Rest on the sofa', s:'1 hour · +8 energy', primary:true, fn:() => busy('🛋️', 'Resting…', '', 1, () => { advance(60); S.energy = clamp(S.energy + 8, 0, 100); })}]};
@@ -2750,8 +3093,14 @@ function renderInterior(){
   R.me.position.set(R.x, 0, R.z); R.me.rotation.y = -R.a; animPerson(R.me, player.step, player.moving); poseFor(R.me, ACT, false);
   const cp = Math.cos(orbitIn.pitch), sp = Math.sin(orbitIn.pitch);
   R.cam.aspect = innerWidth / innerHeight; R.cam.updateProjectionMatrix();
-  R.cam.position.set(R.x * .5 + Math.sin(orbitIn.yaw) * cp * orbitIn.dist, 8 + sp * orbitIn.dist, R.z * .5 + Math.cos(orbitIn.yaw) * cp * orbitIn.dist);
-  R.cam.lookAt(R.x * .5, 6, R.z * .5);
+  const fx = R.floors ? R.floors[R.fi || 0].ox : 0, cx = fx + (R.x - fx) * .5;
+  if (R.glows) for (const m of R.glows) m.emissiveIntensity = .35 + dark * 1.3;
+  if (R.pls) for (const pl of R.pls) pl.intensity = .15 + dark * 1.6;
+  if (R.bathAt && R.bathAt.bub){ R.bathAt.bub.visible = !!(ACT && ACT.kind === 'bath'); if (R.bathAt.bub.visible) R.bathAt.bub.children.forEach((b, i) => b.position.y = 8 + Math.sin(T * 2 + i) * .4); }
+  if (R.stoveAt){ const on = !!(ACT && ACT.kind === 'cook'); if (on && !R.potFx){ const pg = new THREE.Group(); const pot = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.3, 3.4, 14), lam('#9e9e9e')); pg.add(pot); for (let i = 0; i < 5; i++){ const st = new THREE.Mesh(new THREE.SphereGeometry(1, 6, 5), new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:.5})); st.userData.i = i; pg.add(st); } pg.position.set(...R.stoveAt.pot); R.sc.add(pg); R.potFx = pg; }
+    if (R.potFx){ R.potFx.visible = on; R.potFx.children.forEach(c => { if (c.userData.i === undefined) return; const k = (T * .8 + c.userData.i / 5) % 1; c.position.set(Math.sin(c.userData.i * 2 + T) * 1.2, 2 + k * 10, 0); c.material.opacity = .5 * (1 - k); c.scale.setScalar(.6 + k * 1.6); }); } }
+  R.cam.position.set(cx + Math.sin(orbitIn.yaw) * cp * orbitIn.dist, 8 + sp * orbitIn.dist, R.z * .5 + Math.cos(orbitIn.yaw) * cp * orbitIn.dist);
+  R.cam.lookAt(cx, 6, R.z * .5);
   renderer.render(R.sc, R.cam);
 }
 
@@ -3578,7 +3927,7 @@ function loop(now){
   if ((frame++ % 6) === 0) drawMini();
   requestAnimationFrame(loop);
 }
-if (location.search.includes('debug')) window.__ss = {traffic, roadPoint, get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR, get CAR(){ return CAR; }, offRoad, giveVehicle, nearestRoad, WX, rollWeather, get orbit(){ return orbit; }, goInside, deliverFurn, designCmd, get DES(){ return DES; }, SND, SFX, fly, LOC, panelFor, get FLIGHT(){ return FLIGHT; }, MP};
+if (location.search.includes('debug')) window.__ss = {traffic, roadPoint, get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR, get CAR(){ return CAR; }, offRoad, giveVehicle, nearestRoad, WX, rollWeather, get orbit(){ return orbit; }, goInside, deliverFurn, designCmd, get DES(){ return DES; }, SND, SFX, fly, LOC, panelFor, get FLIGHT(){ return FLIGHT; }, MP, tourHome, useStairs, cookAt, takeBath, HOME_DISHES, invOf, sellItem};
 showIntro(false);
 requestAnimationFrame(loop);
 addEventListener('beforeunload', save);
