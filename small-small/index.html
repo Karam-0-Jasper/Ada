@@ -1835,13 +1835,15 @@ function panelHotel(l){
       {l:'🏊🏾 Swim in the pool', s:'1 hour · +12 energy', p:money(1500), pc:'minus', dis:!canPay(1500), fn:() => { spend(1500); busy('🏊🏾', 'Swimming at the hotel pool…', 'Cool water, hot sun', 1.2, () => { advance(60); S.energy = clamp(S.energy + 12, 0, 100); }); }}]};
 }
 const FARE = {ria:18000, buch_air:18000};
-function panelAirport(l){
-  const to = LOC[l.fly], fare = FARE[l.id] || 18000, big = l.id === 'ria';
-  const busyNow = S.gig || S.duty || AUTO;
+function panelAirport(l, outside){
+  const to = LOC[l.fly], fare = FARE[l.id] || 18000, big = l.id === 'ria', have = S.money + (S.momo || 0);
+  const onRide = AUTO && AUTO.phase === 'trip', job = S.gig || S.duty;
+  const why = onRide ? 'Wait until your OurRide drops you off' : have < fare ? `You need ${money(fare)} · you have ${money(have)} (cash + MoMo)` : job ? 'Your current job will be cancelled' : 'Board now · your car stays in the car park';
+  const acts = [{l:`✈️ Fly to ${l.city}`, s:why, p:money(fare), pc:'minus', primary:true, dis: !!onRide || have < fare, fn:() => { if (S.duty) endDuty(); if (S.gig){ S.gig = null; toast('Your job was cancelled so you can catch the flight.'); } fly(l, to, fare); }}];
+  if (outside) acts.push({l:'🚶🏾 Go inside the terminal', s:'Check-in desks, café, duty free', fn:() => { closeModal(); enterPlace(l); }});
+  acts.push({l:'More cities', s:'Harper, Zwedru and Voinjama are coming soon', dis:true, fn:() => {}});
   return {ic:l.ic, t:l.n, sub: big ? 'Liberia\'s main airport at Harbel. 11,000-foot runway, surrounded by bush and rubber trees.' : 'A small airstrip just outside Buchanan, Grand Bassa County.',
-    body:`<div class="facts"><span class="chip">🛫 ${esc(l.n)}</span><span class="chip gold">🛬 ${esc(to.n)}</span><span class="chip">⏱️ 35 min flight</span></div>`,
-    acts:[{l:`✈️ Fly to ${l.city}`, s: busyNow ? 'Finish your job or ride first' : 'Your car stays parked here', p:money(fare), pc:'minus', primary:true, dis: !!busyNow || !canPay(fare), fn:() => fly(l, to, fare)},
-      {l:'More cities', s:'Harper, Zwedru and Voinjama are coming soon', dis:true, fn:() => {}}]};
+    body:`<div class="facts"><span class="chip">🛫 ${esc(l.n)}</span><span class="chip gold">🛬 ${esc(to.n)}</span><span class="chip">⏱️ 35 min flight</span><span class="chip">💺 Window seat</span></div>`, acts};
 }
 /* ---------- flying: watch the plane take off, cruise and land ---------- */
 let FLIGHT = null;
@@ -1902,7 +1904,7 @@ function panelFor(l){
   if (l.type === 'carlot') return panelLot(l);
   if (l.type === 'hotel') return panelHotel(l);
   if (l.type === 'landmark') return panelLandmark(l);
-  if (l.type === 'airport') return panelAirport(l);
+  if (l.type === 'airport') return panelAirport(l, !S.inside);
   if (l.type === 'park') return panelPark(l);
   if (l.type === 'telco') return panelTelco(l);
   if (l.type === 'club') return panelClub(l);
@@ -2019,6 +2021,7 @@ function findNear(){
 function canEnter(l){ return l.b && l.type !== 'home' && l.shape !== 'stadium' && l.type !== 'gig' || (l.type === 'gig' && l.gig === 'delivery'); }
 function doAction(){
   if (!near || AUTO) return; const n = near;
+  if (n.type === 'airport' && !S.inside){ if (S.riding && !S.duty) parkMyCar(n.lot); return openModal(() => panelAirport(n, true)); }
   if (n.type !== 'inside' && !S.inside && canEnter(n)){ if (S.riding && !S.duty) parkMyCar(n.lot); else if (S.riding) S.riding = false; return enterPlace(n); }
   openModal(() => n.type === 'inside' ? panelInside(n) : panelFor(n));
 }
