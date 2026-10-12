@@ -2036,7 +2036,7 @@ function toggleRide(){
   if (P){ const d = Math.hypot(P.x - S.x, P.y - S.y);
     if (d > 70){ S.wp = {x:P.x, y:P.y, n:'Your ' + VEHICLES[S.ride].t}; return toast(`🚗 Your ${VEHICLES[S.ride].t} is parked at ${P.where}. 📍 Follow the blue beam to it.`, 'gold'); }
     S.x = P.x; S.y = P.y; player.a = P.a; { const pb = parkedBay(); if (pb) pb.busy = false; } S.parked = null; if (S.wp && /^Your /.test(S.wp.n || '')) S.wp = null; }
-  else if (hitsSolid(S.x, S.y, 12)){ toast('Step away from the building to get on.', 'bad'); return; }
+  else if (hitsSolid(S.x, S.y, 5)){ toast('Step away from the building to get on.', 'bad'); return; }
   S.riding = true; CAR.spd = 0;
   toast(`On your ${VEHICLES[S.ride].t}`); hud();
 }
