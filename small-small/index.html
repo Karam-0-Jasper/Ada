@@ -534,6 +534,14 @@ const LOCS = [
   {id:'goldenbeach', n:'Golden Beach Restaurant (Sinkor)', ic:'🏝️', x:1235, y:1566, type:'rest', roof:'#ffb300', beach:1},
   {id:'thinkers', n:'Thinkers Village Beach', ic:'🍹', x:3260, y:1668, type:'rest', roof:'#6d4c41', beach:1},
   {id:'cece', n:'Ce Ce Beach', ic:'🏖️', x:3620, y:1682, type:'rest', roof:'#00897b', beach:1},
+  // Lonestar Cell MTN (head office: Tubman Blvd, Congo Town) and Orange Liberia (Haile Selassie Ave & Capitol Bypass)
+  {id:'mtn_hq', n:'Lonestar Cell MTN Head Office', ic:'📶', x:2600, y:1380, type:'telco', brand:'mtn', roof:'#111111', wall:'#FFCB05', big:1, jobs:['custcare']},
+  {id:'orange_hq', n:'Orange Liberia Head Office', ic:'🟧', x:1230, y:1185, type:'telco', brand:'orange', roof:'#FF7900', wall:'#1c1c1c', big:1, jobs:['custcare']},
+  {id:'mtn_water', n:'Lonestar Cell MTN Shop (Broad Street)', ic:'📶', x:560, y:1420, type:'telco', brand:'mtn', roof:'#111111', wall:'#FFCB05'},
+  {id:'orange_red', n:'Orange Shop (Red Light)', ic:'🟧', x:3560, y:1060, type:'telco', brand:'orange', roof:'#FF7900', wall:'#1c1c1c'},
+  {id:'mtn_duala', n:'Lonestar Cell MTN Shop (Duala)', ic:'📶', x:1420, y:650, type:'telco', brand:'mtn', roof:'#111111', wall:'#FFCB05'},
+  {id:'orange_buch', n:'Orange Shop (Buchanan)', ic:'🟧', x:5950, y:1470, type:'telco', brand:'orange', roof:'#FF7900', wall:'#1c1c1c'},
+  {id:'mtn_buch', n:'Lonestar Cell MTN Shop (Buchanan)', ic:'📶', x:6230, y:1430, type:'telco', brand:'mtn', roof:'#111111', wall:'#FFCB05'},
   {id:'beach', n:'ELWA Beach', ic:'🏖️', x:2960, y:1662, type:'beach', nob:1},
   {id:'t_duala', n:'Duala Taxi Park', ic:'🚕', x:1240, y:662, type:'taxi', nob:1},
   {id:'t_water', n:'Waterside Taxi Park', ic:'🚕', x:745, y:1172, type:'taxi', nob:1},
@@ -709,7 +717,7 @@ for (const l of [...LOCS].sort((a, b) => PRI(a) - PRI(b))){
     if (clear(tx - bw/2, ty - bh/2) && !LOCS.some(o => o !== l && dist(o.x, o.y, px, py) < 40)){ cx = tx; cy = ty; if (DEBUG_MOVES) DEBUG_MOVES.push(l.id + ' ' + rad); l.x = px; l.y = py; ok = true; }
   }
   if (!ok){ cx = l.x + dx*(bw/2 + 12); cy = l.y + dy*(bh/2 + 12); }
-  const b = {x:cx - bw/2, y:cy - bh/2, w:bw, h:bh, roof:l.roof, wall:'#f4ead8', loc:l};
+  const b = {x:cx - bw/2, y:cy - bh/2, w:bw, h:bh, roof:l.roof, wall:l.wall || '#f4ead8', loc:l};
   l.b = b; buildings.push(b); addSolid(b);
 }
 for (const d of DISTRICTS){
@@ -1026,6 +1034,7 @@ function lifeTick(dt){
    ========================================================= */
 Object.assign(JOBS, {
   cleaner:     {t:'Hospital cleaner', wage:500, e:26, f:20, verb:'Mopping the wards', ic:'🧹'},
+  custcare:    {t:'Customer care rep', wage:2000, e:22, f:18, req:'waec', verb:'Helping customers with SIM cards and MoMo', ic:'🎧'},
   aide:        {t:'Nurse aide', wage:1100, e:28, f:22, req:'waec', verb:'Helping nurses with patients', ic:'🩹'},
   doctor:      {t:'Doctor', wage:9000, e:34, f:26, req:'medicine', verb:'Seeing patients in the clinic', ic:'👩🏾‍⚕️'},
   waterw:      {t:'Water factory worker', wage:600, e:34, f:26, verb:'Packing water sachets', ic:'💧'},
@@ -1095,6 +1104,25 @@ function nearestSeg(x, y){
   for (const [a, b] of GRAPH.segs){ const A = GRAPH.nodes[a], B = GRAPH.nodes[b]; const [d, cx, cy] = segDist(x, y, A.x, A.y, B.x, B.y); if (!best || d < best.d) best = {d, a, b, x:cx, y:cy}; }
   return best;
 }
+/* ---------- zebra crossings at junctions and outside busy places ---------- */
+const CROSSINGS = [];
+{
+  const add = (x, y, ux, uy) => { const n = nearestRoad(x, y); if (!n.r || n.r.t !== 'paved' || n.d > n.r.w / 2) return; if (CROSSINGS.some(c => Math.hypot(c.x - x, c.y - y) < 46)) return; CROSSINGS.push({x:n.x, y:n.y, ux, uy, w:n.r.w}); };
+  GRAPH.nodes.forEach((N, i) => { if (GRAPH.adj[i].length < 3) return; for (const [j] of GRAPH.adj[i]){ const M = GRAPH.nodes[j], d = Math.hypot(M.x - N.x, M.y - N.y); if (d < 80) continue; const ux = (M.x - N.x) / d, uy = (M.y - N.y) / d; add(N.x + ux * 40, N.y + uy * 40, ux, uy); } });
+  for (const l of LOCS){ if (!(l.job === 'market' || l.type === 'school' || l.hosp || l.type === 'park' || l.type === 'taxi' || l.type === 'telco' || l.type === 'airport')) continue;
+    const s = nearestSeg(l.x, l.y); if (!s || s.d > 70) continue; const A = GRAPH.nodes[s.a], B = GRAPH.nodes[s.b], d = Math.hypot(B.x - A.x, B.y - A.y) || 1; add(s.x, s.y, (B.x - A.x) / d, (B.y - A.y) / d); }
+}
+function buildCrossings(){
+  let n = 0; for (const c of CROSSINGS) n += Math.floor((c.w - 6) / 4.8);
+  const m = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI/2), new THREE.MeshBasicMaterial({color:0xf2f2f2, polygonOffset:true, polygonOffsetFactor:-5, polygonOffsetUnits:-5}), Math.max(1, n));
+  const M4 = new THREE.Matrix4(), Q = new THREE.Quaternion(), P = new THREE.Vector3(), Sc = new THREE.Vector3(), E = new THREE.Euler(); let i = 0;
+  for (const c of CROSSINGS){ const a = Math.atan2(c.uy, c.ux), px = -c.uy, py = c.ux, k = Math.floor((c.w - 6) / 4.8);
+    for (let s = 0; s < k; s++){ const off = -c.w / 2 + 5 + s * 4.8; E.set(0, -a, 0); Q.setFromEuler(E); P.set(c.x + px * off, .62, c.y + py * off); Sc.set(9, 1, 2.6); M4.compose(P, Q, Sc); m.setMatrixAt(i++, M4); } }
+  m.count = i; m.receiveShadow = true; scene.add(m);
+}
+// people may cross a road only on a zebra crossing
+function crossOK(ax, ay, bx, by){ if (!offRoad(bx, by)) return false; const mx = (ax + bx) / 2, my = (ay + by) / 2; return CROSSINGS.some(c => Math.hypot(c.x - mx, c.y - my) < 16); }
+
 function route(ax, ay, bx, by){
   const s = nearestSeg(ax, ay), e = nearestSeg(bx, by), N = GRAPH.nodes;
   const dist0 = new Map(), prev = new Map(), open = [];
@@ -1408,7 +1436,7 @@ const SKINS = ['#5a3825','#7a4a2c','#3e2618','#8d5a3b'];
 const people = [];
 const COARSE = matchMedia('(pointer: coarse)').matches;
 // busy places pull more people: markets, parks, taxi parks, schools, beaches, the airport
-const HOT = l => l.job === 'market' ? 7 : l.type === 'park' ? 6 : l.type === 'taxi' ? 4 : l.beach || l.type === 'beach' ? 4 : l.type === 'school' || l.type === 'airport' ? 3 : ['food','rest','bar','club','clothes','barber','salon','gas'].includes(l.type) ? 2 : l.type === 'home' ? 0 : 1;
+const HOT = l => l.job === 'market' ? 7 : l.type === 'park' ? 6 : l.type === 'taxi' ? 4 : l.beach || l.type === 'beach' ? 4 : l.type === 'school' || l.type === 'airport' || l.type === 'telco' ? 3 : ['food','rest','bar','club','clothes','barber','salon','gas'].includes(l.type) ? 2 : l.type === 'home' ? 0 : 1;
 const crowdSpots = LOCS.flatMap(l => Array(HOT(l)).fill(l));
 const urbanAddr = ADDR.filter(a => (DISTRICTS.find(d => a.x > d.x && a.x < d.x + d.w && a.y > d.y && a.y < d.y + d.h) || {}).urban);
 const offRoad = (x, y) => { const n = nearestRoad(x, y); return n.d > n.r.w / 2 + 6; };
@@ -1545,7 +1573,7 @@ function renderModal(){
   const m = modalRender(); modalActs = m.acts || [];
   $('#modal').classList.toggle('phone', !!m.phone);
   if (m.phone){
-    $('#modal').innerHTML = `<div class="ios"><div class="ios-top"><b class="num">${fmtTime(S.min).replace(/ (AM|PM)/, '')}</b><i class="island"></i><span>${MP.online ? '5G' : 'LTE'} <i class="batt"><i style="width:${Math.max(8, S.energy)}%"></i></i></span></div>
+    $('#modal').innerHTML = `<div class="ios"><div class="ios-top"><b class="num">${fmtTime(S.min).replace(/ (AM|PM)/, '')}</b><i class="island"></i><span>${S.sim ? BRANDS[S.sim].short + ' ' : ''}${MP.online ? '4G' : 'LTE'} <i class="batt"><i style="width:${Math.max(8, S.energy)}%"></i></i></span></div>
       ${m.home ? '' : `<div class="ios-nav"><button data-app="home" aria-label="Back to home screen">‹</button><b>${esc(m.t)}</b><span></span></div>`}
       <div class="ios-body">${m.sub ? `<div class="sub" style="margin-bottom:8px">${m.sub}</div>` : ''}${m.body || ''}${modalActs.length ? `<div class="acts">${modalActs.map((a, i) => `<button class="act ${a.primary ? 'primary' : ''}" data-i="${i}" ${a.dis ? 'disabled' : ''}><span class="l"><b>${a.l}</b>${a.s ? `<small>${a.s}</small>` : ''}</span>${a.p ? `<span class="p ${a.pc || ''}">${a.p}</span>` : ''}</button>`).join('')}</div>` : ''}</div>
       <button class="ios-home" data-homebar aria-label="${m.home ? 'Close phone' : 'Home screen'}"></button></div>`;
@@ -1677,7 +1705,7 @@ function advance(mins){
 function newDay(){
   S.day++;
   if (S.bank > 0){ const i = Math.round(S.bank * .005); S.bank += i; if (i) toast(`Bank interest: +${money(i)}`, 'good'); }
-  { const cost = 150; const paid = Math.min(cost, S.money); S.money -= paid; toast(`Daily costs (phone credit, water, soap): -${money(paid)}`, 'bad'); }
+  { const cost = (S.bundle || 0) > S.day ? 90 : 150; const paid = Math.min(cost, S.money); S.money -= paid; toast(`Daily costs (phone credit, water, soap): -${money(paid)}`, 'bad'); }
   S.rainDay = Math.random() < .4; WX.next = 0;
   if (S.rainDay) toast('Rainy season day! Expect showers and storms. Deliveries pay 25% more when it rains.', 'gold');
   if (S.renting && S.day >= S.rentDue){
@@ -1845,6 +1873,7 @@ function panelFor(l){
   if (l.type === 'landmark') return panelLandmark(l);
   if (l.type === 'airport') return panelAirport(l);
   if (l.type === 'park') return panelPark(l);
+  if (l.type === 'telco') return panelTelco(l);
   if (l.type === 'club') return panelClub(l);
   const ex = panelExtra(l); if (ex) return ex;
   const h = hour();
@@ -1901,7 +1930,7 @@ function panelFor(l){
         ...(l.jobs || []).map(id => { const j = JOBS[id], why = !hasReq(j.req) ? `Needs ${reqName(j.req)}` : !(h >= 6 && h < 20) ? 'Shifts start 6 AM – 8 PM' : canWork(j.e, j.f); return {l:`${j.ic} Work as ${j.t}`, s: why || '8 hours', p:'+' + money(j.wage), pc:'plus', dis:!!why, fn:() => workShift(id)}; })
       ]};
     case 'taxi': return {ic:'🚕', t:l.n, sub:'Hop in a shared yellow taxi to another part of the county.',
-      acts:LOCS.filter(o => o.type === 'taxi' && o.id !== l.id).map(o => { const d = dist(l.x, l.y, o.x, o.y), fare = Math.round(40 + d * .09), mins = Math.round(d / 18);
+      acts:LOCS.filter(o => o.type === 'taxi' && o.id !== l.id && regionOf(o.x) === regionOf(l.x)).map(o => { const d = dist(l.x, l.y, o.x, o.y), fare = Math.round(40 + d * .09), mins = Math.round(d / 18);
         return {l:o.n.replace(/ Taxi (Park|Stop)/, ''), s:`About ${mins} min`, p:money(fare), pc:'minus', dis:!canPay(fare), fn:() => taxi(o, fare, mins)}; })};
     case 'beach': return {ic:'🏖️', t:l.n, sub:'Waves, breeze and a cold coconut. Good for the mind.',
       acts:[{l:'Relax by the sea', s:'2 hours · +15 energy', primary:true, fn:() => busy('🌊', 'Relaxing at ELWA Beach…', 'Listening to the waves', 1.2, () => { advance(120); S.energy = clamp(S.energy + 15, 0, 100); toast('You feel refreshed. +15 energy', 'good'); })},
@@ -2003,7 +2032,7 @@ function update(dt){
   for (const c of traffic){ c.s += c.dir * c.sp * dt; if (c.s > c.road.len){ c.s = c.road.len; c.dir = -1; } if (c.s < 0){ c.s = 0; c.dir = 1; } }
   for (const p of people){
     p.t += dt; const d = dist(p.x, p.y, p.tx, p.ty);
-    if (d < 2){ if (Math.random() < dt * .6){ const tx = p.ax + (Math.random()-.5)*110, ty = p.ay + (Math.random()-.5)*110; if (!isWater(tx, ty) && !hitsSolid(tx, ty, 4) && pathOffRoad(p.x, p.y, tx, ty)){ p.tx = tx; p.ty = ty; } } }
+    if (d < 2){ if (Math.random() < dt * .6){ const tx = p.ax + (Math.random()-.5)*110, ty = p.ay + (Math.random()-.5)*110; if (!isWater(tx, ty) && !hitsSolid(tx, ty, 4) && (pathOffRoad(p.x, p.y, tx, ty) || (CROSSINGS.length && Math.random() < .5 && crossOK(p.x, p.y, tx, ty)))){ p.tx = tx; p.ty = ty; } } }
     else { const sp = p.sp * (1 + WX.level * .5); p.x += (p.tx - p.x)/d * sp * dt; p.y += (p.ty - p.y)/d * sp * dt; }
   }
   if (paused) return;
@@ -2278,7 +2307,17 @@ const BH = new Map();
   for (const m of [walls, roofs, flats]){ m.castShadow = m.receiveShadow = true; m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; scene.add(m); }
 }
 // landmark signs facing the street
+const BRANDS = {
+  mtn:{n:'Lonestar Cell MTN', short:'Lonestar MTN', main:'#FFCB05', dark:'#111111', text:'#111111', accent:'#004F9F', money:'MTN MoMo', slogan:"Y'ello! Everywhere you go", net:'Lonestar MTN 4G'},
+  orange:{n:'Orange Liberia', short:'Orange', main:'#FF7900', dark:'#111111', text:'#ffffff', accent:'#ffffff', money:'Orange Money', slogan:'Orange. Best network, more data', net:'Orange LBR 4G'}
+};
+function brandSign(b, w, h){ const B = BRANDS[b]; return canvasTex(w || 512, h || 128, (x, W, H) => {
+  if (b === 'mtn'){ x.fillStyle = B.main; x.fillRect(0, 0, W, H); x.fillStyle = '#111'; x.beginPath(); x.ellipse(H * .95, H/2, H * .78, H * .38, 0, 0, 7); x.fill(); x.fillStyle = B.main; x.beginPath(); x.ellipse(H * .95, H/2, H * .68, H * .3, 0, 0, 7); x.fill();
+    x.fillStyle = '#111'; x.font = `900 ${H * .34}px Arial, sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('MTN', H * .95, H/2 + 2); x.textAlign = 'left'; x.font = `800 ${H * .3}px Arial, sans-serif`; x.fillStyle = B.accent; x.fillText('Lonestar Cell', H * 1.9, H * .38); x.fillStyle = '#111'; x.font = `600 ${H * .2}px Arial, sans-serif`; x.fillText("Y'ello!", H * 1.9, H * .72); }
+  else { x.fillStyle = '#111'; x.fillRect(0, 0, W, H); const s = H * .8; x.fillStyle = B.main; x.fillRect(H * .1, H * .1, s, s); x.fillStyle = '#fff'; x.font = `700 ${s * .24}px Arial, sans-serif`; x.textAlign = 'left'; x.textBaseline = 'alphabetic'; x.fillText('orange', H * .1 + s * .1, H * .1 + s * .9); x.fillRect(H * .1 + s * .1, H * .1 + s * .62, s * .5, s * .06);
+    x.fillStyle = '#fff'; x.font = `700 ${H * .3}px Arial, sans-serif`; x.fillText('Orange Liberia', H * 1.1, H * .5); x.fillStyle = B.main; x.font = `600 ${H * .18}px Arial, sans-serif`; x.fillText('Best network · Orange Money', H * 1.1, H * .78); } }); }
 function signTexture(l){
+  if (l.brand) return brandSign(l.brand);
   const c = document.createElement('canvas'); c.width = 512; c.height = 128; const x = c.getContext('2d');
   x.fillStyle = l.roof || '#333'; x.fillRect(0, 0, 512, 128); x.fillStyle = 'rgba(0,0,0,.25)'; x.fillRect(0, 108, 512, 20);
   x.fillStyle = (l.roof === '#f2f2f2' || l.roof === '#e6e1d4') ? '#1b1206' : '#fff';
@@ -2452,7 +2491,7 @@ function hairGroup(L){
   }
   return g;
 }
-const BODY = {x:.84, y:1.16, z:.78};
+const BODY = {x:.84, y:1.16, z:.78}, PS = .78;   // PS: overall people size, so they fit next to the cars
 function personMesh(L){
   if (typeof L === 'string') L = randomLook();
   const g = new THREE.Group(), skin = lam(L.skin);
@@ -2483,7 +2522,7 @@ function personMesh(L){
   const umb = new THREE.Group(); const ucan = new THREE.Mesh(new THREE.ConeGeometry(8, 3.2, 10), lam(pick(['#E5392C','#2E86C1','#111111','#8E44AD']))); ucan.position.y = 26; ucan.castShadow = true; umb.add(ucan); const ust = new THREE.Mesh(new THREE.CylinderGeometry(.3, .3, 10, 5), lam('#333')); ust.position.y = 20; umb.add(ust); umb.visible = false; g.add(umb);
   g.userData = {legs, arms, head, plate, food, spoon, cup, umb};
   // tall and slim: stretch the body, keep the head and hair round
-  g.scale.set(BODY.x, BODY.y, BODY.z);
+  g.scale.set(BODY.x * PS, BODY.y * PS, BODY.z * PS);
   head.scale.set(1, 1 / BODY.y, .92 / BODY.z);
   for (const c of g.children) if (c.isGroup && !legs.includes(c) && !arms.includes(c) && c !== umb) c.scale.z = .92 / BODY.z;
   umb.scale.set(1 / BODY.x, 1 / BODY.y, 1 / BODY.z);
@@ -2552,9 +2591,9 @@ function syncPeople(){
     if (d.rain){ d.m.visible = !!(S && S.rain); if (!d.m.visible) continue; }
     d.ids.forEach((pi, j) => { const p = people[pi], sw = d.swing ? Math.sin(p.t * 8) * .55 * d.swing * (p.bob > 0 || dist(p.x, p.y, p.tx, p.ty) > 2 ? 1 : 0) : 0;
       _E.set(0, -p.a, sw, 'YXZ'); _Q.setFromEuler(_E);
-      if (d.body) _S.set(BODY.x, BODY.y * (d.sy ? d.sy(p) : 1), BODY.z); else _S.set(1, d.sy ? d.sy(p) : 1, 1);
-      const b = d.back || 0, sd = (d.side || 0) * BODY.z, ca = Math.cos(p.a), sa = Math.sin(p.a);
-      _P.set(p.x - ca * b - sa * sd, d.y * BODY.y + p.bob, p.y - sa * b + ca * sd); _M.compose(_P, _Q, _S); d.m.setMatrixAt(j, _M); });
+      if (d.body) _S.set(BODY.x * PS, BODY.y * PS * (d.sy ? d.sy(p) : 1), BODY.z * PS); else _S.set(PS, PS * (d.sy ? d.sy(p) : 1), PS);
+      const b = (d.back || 0) * PS, sd = (d.side || 0) * BODY.z * PS, ca = Math.cos(p.a), sa = Math.sin(p.a);
+      _P.set(p.x - ca * b - sa * sd, d.y * (d.body ? BODY.y : 1) * PS + p.bob, p.y - sa * b + ca * sd); _M.compose(_P, _Q, _S); d.m.setMatrixAt(j, _M); });
     d.m.instanceMatrix.needsUpdate = true;
   }
 }
@@ -3132,6 +3171,44 @@ function artMesh(k, g, opt){ const a = ARTS[k], s = ((opt && opt.sz) || 30) / 30
   box(.6, h + 2, w + 2, a.p > 10000 ? '#d4af37' : '#4e342e', .3, 19, 0, g); box(.2, h + .4, w + .4, '#f5f5f5', .55, 19, 0, g);
   return {g, fw:2, fd:w + 2, solid:false}; }
 
+/* ---------- Lonestar Cell MTN and Orange Liberia ---------- */
+function telcoOutside(){
+  // branded fronts, feather flags and scratch-card umbrellas around each office
+  const flag = (x, y, b) => { const B = BRANDS[b], gr = new THREE.Group(); const pole = new THREE.Mesh(new THREE.CylinderGeometry(.3, .3, 20, 5), lam('#9e9e9e')); pole.position.y = 10; gr.add(pole); const f = new THREE.Mesh(new THREE.PlaneGeometry(4, 14), new THREE.MeshLambertMaterial({map:canvasTex(64, 224, (x2, W, H) => { x2.fillStyle = B.main; x2.fillRect(0, 0, W, H); x2.fillStyle = b === 'mtn' ? '#111' : '#fff'; x2.save(); x2.translate(W/2 + 8, H/2); x2.rotate(-Math.PI/2); x2.font = 'bold 30px Arial'; x2.textAlign = 'center'; x2.fillText(b === 'mtn' ? 'MTN' : 'orange', 0, 0); x2.restore(); }), side:THREE.DoubleSide})); f.position.set(2.2, 12, 0); gr.add(f); gr.position.set(x, 0, y); scene.add(gr); FLAGS.push(f); };
+  for (const l of LOCS.filter(q => q.type === 'telco')){ const b = l.b; if (!b) continue; const cx = b.x + b.w/2, cy = b.y + b.h/2; let ux = l.x - cx, uy = l.y - cy; const m = Math.hypot(ux, uy) || 1; ux /= m; uy /= m; const vx = -uy, vy = ux, face = Math.atan2(ux, uy);
+    // big shopfront sign and a glass front
+    const H = BH.get(b) || 30, sign2 = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(b.w, 70), Math.min(b.w, 70) / 4), new THREE.MeshBasicMaterial({map:brandSign(l.brand), side:THREE.DoubleSide})); sign2.position.set(l.x - ux * 13, H + 6, l.y - uy * 13); sign2.rotation.y = face; scene.add(sign2);
+    const glass = new THREE.Mesh(new THREE.PlaneGeometry(b.w * .7, 10), new THREE.MeshLambertMaterial({color:0x7fb3d5, emissive:0x223344, transparent:true, opacity:.85})); glass.position.set(l.x - ux * 11.4, 7, l.y - uy * 11.4); glass.rotation.y = face; scene.add(glass);
+    for (const sd of [-1, 1]){ const x = l.x + vx * sd * (b.w / 2 - 6) + ux * 2, y = l.y + vy * sd * (b.w / 2 - 6) + uy * 2; if (!isWater(x, y) && offRoad(x, y)) flag(x, y, l.brand); } }
+  // scratch-card sellers under yellow and orange umbrellas on busy streets
+  const spots = ADDR.filter(a => (DISTRICTS.find(d => a.x > d.x && a.x < d.x + d.w && a.y > d.y && a.y < d.y + d.h) || {}).urban); let made = 0;
+  for (let i = 0; i < spots.length && made < 34; i += 3){ const a = spots[i]; if (hitsSolid(a.x, a.y, 9) || !offRoad(a.x, a.y) || LOCS.some(l => Math.hypot(l.x - a.x, l.y - a.y) < 45)) continue; const b = made % 2 ? 'orange' : 'mtn', B = BRANDS[b], gr = new THREE.Group();
+    const um = new THREE.Mesh(new THREE.ConeGeometry(9, 3.4, 10), lam(B.main)); um.position.y = 17; gr.add(um); const rim = new THREE.Mesh(new THREE.CylinderGeometry(9.1, 9.1, 1, 10, 1, true), new THREE.MeshLambertMaterial({map:canvasTex(256, 16, (x2) => { x2.fillStyle = b === 'mtn' ? '#111' : '#fff'; x2.fillRect(0, 0, 256, 16); x2.fillStyle = B.main; x2.font = 'bold 13px Arial'; for (let k = 0; k < 4; k++) x2.fillText(b === 'mtn' ? 'MTN MoMo' : 'Orange Money', 4 + k * 64, 12); }), side:THREE.DoubleSide})); rim.position.y = 15.4; gr.add(rim);
+    const st = new THREE.Mesh(new THREE.CylinderGeometry(.3, .3, 16, 5), lam('#555')); st.position.y = 8; gr.add(st); const tb = new THREE.Mesh(new THREE.BoxGeometry(8, 5, 5), lam(b === 'mtn' ? '#fff3c4' : '#ffe0c2')); tb.position.set(3, 2.5, 0); gr.add(tb);
+    const card = new THREE.Mesh(new THREE.BoxGeometry(5, .4, 3), lam(B.main)); card.position.set(3, 5.2, 0); gr.add(card); const seller = personMesh(randomLook()); seller.position.set(-2, 0, 0); seller.rotation.y = Math.random() * 6; gr.add(seller);
+    gr.position.set(a.x, 0, a.y); scene.add(gr); made++; }
+  // billboards on the main roads
+  const ads = [['mtn', "Y'ello! 4G everywhere in Liberia"], ['orange', 'Orange Money: send money easy'], ['mtn', 'MTN MoMo: pay, send, save'], ['orange', 'More data for less, dial *144#']];
+  let bi = 0; for (const r of ROADS.filter(q => q.main)) for (let s = 300; s < r.len && bi < 12; s += 900){ const p = roadPoint(r, s), side = bi % 2 ? 1 : -1, off = r.w / 2 + 26, x = p.x + Math.cos(p.a + Math.PI/2) * off * side, y = p.y + Math.sin(p.a + Math.PI/2) * off * side;
+    if (isWater(x, y) || hitsSolid(x, y, 14)) continue; const [b, txt] = ads[bi % ads.length], B = BRANDS[b], gr = new THREE.Group();
+    const t = canvasTex(512, 200, (x2, W, H) => { x2.drawImage(brandSign(b, 512, 100).image, 0, 0); x2.fillStyle = b === 'mtn' ? B.main : '#111'; x2.fillRect(0, 100, W, 100); x2.fillStyle = b === 'mtn' ? '#111' : B.main; x2.font = 'bold 34px Arial'; x2.textAlign = 'center'; x2.fillText(txt, W/2, 160); });
+    const board = new THREE.Mesh(new THREE.PlaneGeometry(48, 19), new THREE.MeshBasicMaterial({map:t, side:THREE.DoubleSide})); board.position.y = 30; gr.add(board);
+    for (const sx of [-16, 16]){ const pole = new THREE.Mesh(new THREE.CylinderGeometry(.8, .8, 22, 6), lam('#616161')); pole.position.set(sx, 11, 0); gr.add(pole); }
+    gr.position.set(x, 0, y); gr.rotation.y = -p.a; scene.add(gr); bi++; }
+}
+function panelTelco(l){
+  const B = BRANDS[l.brand], h = hour(), mine = S.sim === l.brand, bundle = (S.bundle || 0) > S.day;
+  const acts = [
+    {l: mine ? `✓ Your SIM is ${B.short}` : `📶 Get a ${B.short} SIM card`, s: mine ? B.net : 'Your phone shows this network', p: mine ? '' : money(100), pc:'minus', dis:mine || !canPay(100), fn:() => { spend(100); S.sim = l.brand; toast(`📶 You are now on ${B.net}!`, 'gold'); save(); }},
+    {l:'📱 Buy scratch card L$100', s:'Phone credit for calls', p:money(100), pc:'minus', dis:!canPay(100), fn:() => { spend(100); S.credit = (S.credit || 0) + 100; toast('📱 Scratched and loaded!', 'good'); }},
+    {l:'📦 Weekly data bundle', s: bundle ? `Active until day ${S.bundle}` : 'Daily phone costs drop by L$60 for 7 days', p:money(600), pc:'minus', dis:bundle || !canPay(600), fn:() => { spend(600); S.bundle = S.day + 7; toast(`📦 ${B.short} data bundle active for 7 days!`, 'gold'); save(); }},
+    {l:`💸 ${B.money}: cash in everything`, s:'No agent fee at the office', dis:S.money <= 0, fn:() => { const n = S.money; S.momo = (S.momo || 0) + n; S.money = 0; logTx(n, 'Cash in at ' + B.short); toast(`💸 ${money(n)} on your ${B.money}`, 'good'); }},
+    {l:`💵 ${B.money}: cash out L$1,000`, s:'No agent fee at the office', dis:(S.momo || 0) < 1000, fn:() => { S.momo -= 1000; S.money += 1000; logTx(-1000, 'Cash out at ' + B.short); }},
+    {l:'📲 Buy a new smartphone', s: S.phoneNew ? 'You have the latest phone' : 'Bigger screen, better camera', p:money(18000), pc:'minus', dis:!!S.phoneNew || !canPay(18000), fn:() => { spend(18000, true); S.phoneNew = true; toast('📲 New smartphone! Looking sharp.', 'gold'); save(); }}];
+  if (l.jobs) for (const id of l.jobs){ const j = JOBS[id], why = !hasReq(j.req) ? `Needs ${reqName(j.req)}` : !(h >= 6 && h < 20) ? 'Shifts start 6 AM – 8 PM' : canWork(j.e, j.f); acts.push({l:`${j.ic} Work as ${j.t}`, s: why || '8 hours', p:'+' + money(j.wage), pc:'plus', dis:!!why, fn:() => workShift(id)}); }
+  return {ic:l.ic, t:l.n, sub:`<b style="color:${B.main}">${B.slogan}</b> · SIM cards, scratch cards, data bundles and ${B.money}.`, acts};
+}
+
 let INT_SPIN = [];
 const orbitIn = {yaw:0, pitch:.95, dist:120};
 function goInside(homeId){
@@ -3411,7 +3488,7 @@ function panelPark(l){
 
 /* ---------- outside decorations: what you expect to see in front of each place ---------- */
 function decorateOutside(){
-  buildParks();
+  buildParks(); buildCrossings(); telcoOutside();
   // beach restaurants: palava huts, tables and loungers on the sand towards the sea
   for (const l of LOCS.filter(q => q.beach)){
     const hut = (x, y) => { const gr = new THREE.Group(); for (const [px, pz] of [[-6, -6], [6, -6], [-6, 6], [6, 6]]){ const p = new THREE.Mesh(new THREE.CylinderGeometry(.6, .7, 12, 6), lam('#6d4c41')); p.position.set(px, 6, pz); gr.add(p); }
@@ -3483,7 +3560,7 @@ function chalkboard(text){ const c = document.createElement('canvas'); c.width =
 function buildPlace(l){
   const big = !!l.big, w = l.huge ? 230 : big ? 150 : 112, d = l.huge ? 130 : big ? 96 : 76;
   const club = l.type === 'club';
-  const R = {w, d, floor: club ? '#1a1a22' : l.hosp ? '#e8eef0' : l.factory ? '#9e9e9e' : l.type === 'bar' ? '#6d4c41' : '#cdbfa8', wall: club ? '#24182e' : l.hosp ? '#f4f8f9' : l.factory ? '#b0b7bb' : '#efe6d4'};
+  const R = l.brand ? {w, d, floor:'#eceff1', wall: l.brand === 'mtn' ? '#FFCB05' : '#2a2a2a'} : {w, d, floor: club ? '#1a1a22' : l.hosp ? '#e8eef0' : l.factory ? '#9e9e9e' : l.type === 'bar' ? '#6d4c41' : '#cdbfa8', wall: club ? '#24182e' : l.hosp ? '#f4f8f9' : l.factory ? '#b0b7bb' : '#efe6d4'};
   const sc = new THREE.Scene(); sc.background = new THREE.Color(club ? 0x07040a : 0x15100c);
   const hl = new THREE.HemisphereLight(0xfff4e0, 0x4a3a2a, club ? .35 : 1.05); sc.add(hl);
   const dl = new THREE.DirectionalLight(0xfff0dd, club ? .2 : 1); dl.position.set(w * .3, 150, d * .6); dl.castShadow = true; dl.shadow.mapSize.set(1024, 1024);
@@ -3558,7 +3635,7 @@ function buildPlace(l){
     hangPictures(g, ['flag','motto','declaration','ship'], w, d);
     for (let r = 0; r < 4; r++) for (let c = 0; c < 6; c++){ const x = -w/2 + 26 + c * (w - 52) / 5, z = 2 + r * 12; if (Math.abs(x) < 14) continue; box(6, 4, 5, '#6d4c41', x, 2, z, g); box(6, 6, 1, '#5d4037', x, 5, z + 2.5, g); }
     addInteriorFlag(g, w/2 - 12, -d/2 + 8);
-  } else if (!['airport', 'hotel'].includes(t) && l.job !== 'market' && l.job !== 'dock') {
+  } else if (!['airport', 'hotel', 'telco'].includes(t) && l.job !== 'market' && l.job !== 'dock') {
     // offices, police HQ, bank, realty, garage, tech hub, schools without a template
     for (let r = 0; r < 2; r++) for (let c = 0; c < 4; c++){ const x = -w/2 + 22 + c * (w - 44) / 3, z = 6 + r * 22; if (Math.abs(x) < 18) continue; box(16, 1.2, 9, '#d7ccc8', x, 8, z, g); box(1, 8, 1, '#5d4037', x - 7, 4, z, g); box(1, 8, 1, '#5d4037', x + 7, 4, z, g);
       box(7, 5, .6, '#263238', x, 11.5, z - 2, g); const sc2 = new THREE.Mesh(new THREE.PlaneGeometry(6.2, 4.2), new THREE.MeshBasicMaterial({color:0x4fc3f7})); sc2.position.set(x, 11.5, z - 1.65); g.add(sc2);
@@ -3674,6 +3751,15 @@ function decoratePlace(P){
       (t === 'bar' ? ['Club beer ..... 150', 'Malta ......... 100', 'Palm wine ..... 120', 'Cane juice .... 200', 'Coke .......... 80'] : ['Jollof rice ... 250', 'Palm butter ... 300', 'Potato greens . 220', 'Fufu & soup ... 350', 'Kala .......... 80']).forEach((s, i) => x2.fillText(s, 14, 56 + i * 21)); }), 24, 15, -w/2 + .4, 18, -d/4, Math.PI/2);
     ceilingFan(g, -w/4, 16, anim); ceilingFan(g, w/4, 16, anim);
     box(8, 14, 6, '#5d4037', w/2 - 8, 7, d/2 - 14, g); box(6, 6, .3, '#ff7043', w/2 - 8, 9, d/2 - 10.9, g, true); solid(w/2 - 8, d/2 - 14, 8, 6); spots.push({k:'jukebox', x:w/2 - 8, z:d/2 - 6, r:9});
+  }
+  else if (t === 'telco'){
+    const B = BRANDS[l.brand];
+    wallPlane(g, brandSign(l.brand, 512, 128), 60, 15, 0, 29, -d/2 + .3);
+    for (const [x, z] of [[-w/4, 8], [w/4, 8], [-w/4, 28], [w/4, 28]]){ box(22, 8, 10, B.main, x, 4, z, g); box(23, .8, 11, l.brand === 'mtn' ? '#111' : '#fafafa', x, 8.4, z, g); for (let i = 0; i < 4; i++){ box(2.4, .4, 4.4, '#111', x - 7.5 + i * 5, 9, z, g); box(2.2, .1, 3.8, '#4fc3f7', x - 7.5 + i * 5, 9.25, z, g, true); } solid(x, z, 22, 10); }
+    for (const [x, z, ry, txt] of [[-w/2 + .4, -d/6, Math.PI/2, B.money], [w/2 - .4, -d/6, -Math.PI/2, '4G is here!']]) wallPlane(g, canvasTex(256, 160, (x2, W, H) => { x2.fillStyle = B.main; x2.fillRect(0, 0, W, H); x2.fillStyle = l.brand === 'mtn' ? '#111' : '#fff'; x2.font = 'bold 30px Arial'; x2.textAlign = 'center'; x2.fillText(txt, W/2, 70); x2.font = '18px Arial'; x2.fillText(B.slogan, W/2, 110); }), 26, 16, x, 18, z, ry);
+    box(4, 12, 4, '#424242', -w/2 + 10, 6, d/2 - 22, g); box(3, 2, .3, '#ff5252', -w/2 + 10, 10, d/2 - 19.9, g, true); solid(-w/2 + 10, d/2 - 22, 4, 4);
+    chairRow(g, w/2 - 50, d/2 - 8, 6, l.brand === 'mtn' ? '#111' : B.main, 0, solid);
+    for (let i = 0; i < 4; i++){ const L = randomLook(); L.top = B.main; L.bottom = '#212121'; const st = personMesh(L); st.position.set(-30 + i * 20, 0, cz - 9); st.rotation.y = Math.PI/2; sc.add(st); npcs.push(st); }
   }
   else if (l.police){
     noticeBoard(g, -w/2 + .4, 18, 0, Math.PI/2, 'WANTED', ['Phone thief|reward L$5,000', 'Fake money|gang', 'Hit and run|Somalia Drive', 'Report crime|call 911']);
