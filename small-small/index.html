@@ -2099,7 +2099,9 @@ function goOutside(){
 function interiorMove(ix, iy, dt){
   const fx = -Math.sin(orbitIn.yaw), fz = -Math.cos(orbitIn.yaw), rx = Math.cos(orbitIn.yaw), rz = -Math.sin(orbitIn.yaw);
   const mx = rx * ix - fx * iy, mz = rz * ix - fz * iy, sp = 55;
-  const blocked = (x, z) => Math.abs(x) > INT.w/2 - 4 || z < -INT.d/2 + 4 || z > INT.d/2 - 4 || INT.solids.some(s => x + 3 > s.x && x - 3 < s.x + s.w && z + 3 > s.z && z - 3 < s.z + s.d);
+  const hitS = (x, z) => INT.solids.some(s => x + 3 > s.x && x - 3 < s.x + s.w && z + 3 > s.z && z - 3 < s.z + s.d);
+  const stuck = hitS(INT.x, INT.z);
+  const blocked = (x, z) => Math.abs(x) > INT.w/2 - 4 || z < -INT.d/2 + 4 || z > INT.d/2 - 4 || (!stuck && hitS(x, z));
   if (Math.hypot(ix, iy) > .1){
     const nx = INT.x + mx * sp * dt, nz = INT.z + mz * sp * dt;
     if (!blocked(nx, INT.z)) INT.x = nx; if (!blocked(INT.x, nz)) INT.z = nz;
@@ -2107,7 +2109,7 @@ function interiorMove(ix, iy, dt){
   } else player.moving = false;
   let best = null, bd = 1e9;
   for (const s of INT.spots){ const d = Math.hypot(INT.x - s.x, INT.z - s.z); if (d < (s.r || 14) && d < bd){ bd = d; best = s; } }
-  if (best && best.k === 'counter') return {id:'in_counter', k:'counter', n: INT.loc.type === 'school' ? "Teacher's desk" : INT.loc.type === 'club' ? 'Bar & DJ' : 'Counter · ' + INT.loc.n, ic:INT.loc.ic, type:'inside'};
+  if (best && best.k === 'counter'){ const t = INT.loc.type, nm = t === 'school' ? "Talk to the teacher · enroll or attend class" : t === 'bank' ? 'Talk to the teller · save or withdraw money' : t === 'club' ? 'Bar & DJ' : t === 'job' ? 'Talk to the manager · work a shift' : ['food','rest','bar'].includes(t) ? 'Order at the counter' : t === 'landmark' ? 'Visitor desk' : 'Counter · ' + INT.loc.n; return {id:'in_counter', k:'counter', n:nm, ic:INT.loc.ic, type:'inside'}; }
   return best ? {id:'in_' + best.k, k:best.k, n: best.k === 'door' && INT.place ? 'Exit to the street' : SPOT[best.k].n, ic:SPOT[best.k].ic, type:'inside'} : null;
 }
 function panelInside(s){
@@ -2221,20 +2223,20 @@ function buildPlace(l){
   const t = l.type;
   if (t === 'school'){
     const bb = new THREE.Mesh(new THREE.PlaneGeometry(50, 22), new THREE.MeshBasicMaterial({map:chalkboard(COURSES[l.course] ? COURSES[l.course].t : l.n)})); bb.position.set(-w/2 + 30, 18, -d/2 + .2); g.add(bb);
-    for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++){ const x = -w/2 + 22 + c * (w - 44) / 3, z = -4 + r * 16; box(12, 1, 7, '#a1887f', x, 7, z, g); box(1, 7, 1, '#6d4c41', x, 3.5, z, g); box(7, 1, 6, '#5d4037', x, 4, z + 6, g); solid(x, z, 12, 7);
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++){ const x = -w/2 + 22 + c * (w - 44) / 3, z = -4 + r * 16; if (Math.abs(x) < 16) continue; box(12, 1, 7, '#a1887f', x, 7, z, g); box(1, 7, 1, '#6d4c41', x, 3.5, z, g); box(7, 1, 6, '#5d4037', x, 4, z + 6, g); solid(x, z, 12, 7);
       if (Math.random() < .5){ const s = staff(sc, x, z + 7, Math.PI/2, npcs); s.position.y = -2; s.rotation.y = Math.PI/2; } }
   } else if (l.hosp){
     for (let i = 0; i < 4; i++){ const z = -d/2 + 30 + i * 16; box(26, 4, 11, '#dfe6e9', -w/2 + 16, 4, z, g); box(24, 2, 10, '#ffffff', -w/2 + 16, 7, z, g); box(6, 1.6, 8, '#ffffff', -w/2 + 6, 8.6, z, g); solid(-w/2 + 16, z, 26, 11); if (i % 2) { const p = staff(sc, -w/2 + 18, z, 0, npcs); p.rotation.z = Math.PI/2; p.position.set(-w/2 + 26, 9, z); } }
     box(1, 12, 3, '#E5392C', w/2 - .5, 22, 0, g); box(1, 3, 12, '#E5392C', w/2 - .5, 22, 0, g);
     for (let i = 0; i < 3; i++) staff(sc, w/4 - 10 + i * 14, d/4, Math.random() * 6, npcs);
   } else if (l.factory){
-    for (const z of [-4, 22]){ box(w - 40, 6, 9, '#424242', 0, 3, z, g); solid(0, z, w - 40, 9); for (let i = 0; i < 7; i++){ const bx = box(5, 4, 5, l.id === 'waterf' ? '#4fc3f7' : l.id === 'cement' ? '#bdbdbd' : l.id === 'bottle' ? '#e53935' : '#6d4c41', -w/2 + 24 + i * 16, 8, z, g); anim.belts.push({m:bx, z, w:w - 40}); } }
+    for (const z of [-4, 22]){ const half = (w - 40) / 2 - 12; for (const sx of [-1, 1]){ box(half, 6, 9, '#424242', sx * (12 + half / 2), 3, z, g); solid(sx * (12 + half / 2), z, half, 9); } for (let i = 0; i < 7; i++){ const bx = box(5, 4, 5, l.id === 'waterf' ? '#4fc3f7' : l.id === 'cement' ? '#bdbdbd' : l.id === 'bottle' ? '#e53935' : '#6d4c41', -w/2 + 24 + i * 16, 8, z, g); anim.belts.push({m:bx, z, w:w - 40}); } }
     for (const x of [-w/2 + 14, w/2 - 14]){ box(14, 20, 14, '#f9a825', x, 10, d/2 - 22, g); solid(x, d/2 - 22, 14, 14); }
-    for (let i = 0; i < 5; i++) staff(sc, -w/2 + 30 + i * 22, 10, -Math.PI/2, npcs);
+    for (let i = 0; i < 5; i++){ const x = -w/2 + 30 + i * 22; if (Math.abs(x) > 14) staff(sc, x, 10, -Math.PI/2, npcs); }
     box(w, .3, 3, '#fdd835', 0, .2, 36, g);
   } else if (t === 'bar' || t === 'rest' || t === 'food' || t === 'gig'){
     for (let i = 0; i < 9; i++){ const bt = new THREE.Mesh(new THREE.CylinderGeometry(.8, .8, 4, 6), lam(pick(['#2e7d32','#6d4c41','#f9a825','#c62828']))); bt.position.set(-16 + i * 4, 13, cz - 2); g.add(bt); }
-    for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++){ const x = -w/2 + 24 + c * (w - 48) / 2, z = 4 + r * 22; const tb = new THREE.Mesh(new THREE.CylinderGeometry(7, 7, 1, 14), lam('#8d6e63')); tb.position.set(x, 8, z); g.add(tb); box(1.4, 8, 1.4, '#5d4037', x, 4, z, g); solid(x, z, 14, 14);
+    for (let r = 0; r < 2; r++) for (let c = 0; c < 4; c++){ const x = -w/2 + 20 + c * (w - 40) / 3, z = 4 + r * 22; if (Math.abs(x) < 22) continue; const tb = new THREE.Mesh(new THREE.CylinderGeometry(7, 7, 1, 14), lam('#8d6e63')); tb.position.set(x, 8, z); g.add(tb); box(1.4, 8, 1.4, '#5d4037', x, 4, z, g); solid(x, z, 14, 14);
       for (const [ox, oz] of [[-10, 0], [10, 0]]){ box(5, 4, 5, '#4e342e', x + ox, 2, z + oz, g); if (Math.random() < .6) staff(sc, x + ox, z + oz, ox < 0 ? 0 : Math.PI, npcs); } }
     if (t === 'bar'){ const c = document.createElement('canvas'); c.width = 128; c.height = 72; const x = c.getContext('2d'); x.fillStyle = '#2e8b3a'; x.fillRect(0, 0, 128, 72); x.fillStyle = '#fff'; x.font = 'bold 12px sans-serif'; x.fillText('LIB 1 - 0 SEN', 22, 40);
       const tv = new THREE.Mesh(new THREE.PlaneGeometry(28, 16), new THREE.MeshBasicMaterial({map:tex(c)})); tv.position.set(w/2 - .2, 20, 0); tv.rotation.y = -Math.PI/2; g.add(tv); }
@@ -2245,13 +2247,13 @@ function buildPlace(l){
     const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(4, 1), new THREE.MeshPhongMaterial({color:0xdddddd, shininess:120, flatShading:true})); ball.position.set(0, 28, 6); g.add(ball); anim.ball = ball;
     for (const [c, x] of [[0xff2266, -30], [0x22aaff, 30], [0x66ff44, 0]]){ const pl = new THREE.PointLight(c, 2.5, 0, 0); pl.position.set(x, 24, 10); sc.add(pl); anim.lights = anim.lights || []; anim.lights.push(pl); }
     for (let i = 0; i < 14; i++){ const p = staff(sc, -30 + Math.random() * 60, -10 + Math.random() * 40, Math.random() * 6); anim.dancers.push({m:p, ph:Math.random() * 6}); }
-    box(36, 10, 8, '#311b92', w/2 - 24, 5, d/2 - 18, g); solid(w/2 - 24, d/2 - 18, 36, 8); spots.push({k:'counter', x:w/2 - 24, z:d/2 - 30, r:18});
+    box(36, 10, 8, '#311b92', w/2 - 24, 5, d/2 - 18, g); solid(w/2 - 24, d/2 - 18, 36, 8); spots.push({k:'counter', x:0, z:-d/2 + 22, r:16}); spots.push({k:'counter', x:w/2 - 24, z:d/2 - 30, r:18});
   } else if (t === 'clothes'){
     for (let r = 0; r < 3; r++){ const z = 0 + r * 16; box(1, 14, 30, '#9e9e9e', -w/2 + 30, 7, z, g); for (let i = 0; i < 6; i++) box(1.5, 8, 4, pick(BRIGHT), -w/2 + 30, 9, z - 12 + i * 5, g); solid(-w/2 + 30, z, 4, 30); }
     for (let i = 0; i < 3; i++){ const m = personMesh(randomLook()); m.position.set(w/2 - 20, 0, -6 + i * 16); m.rotation.y = Math.PI; sc.add(m); solid(w/2 - 20, -6 + i * 16, 6, 6); }
     const mir = new THREE.Mesh(new THREE.PlaneGeometry(12, 22), new THREE.MeshPhongMaterial({color:0xcfe8ff, shininess:150})); mir.position.set(-w/2 + .2, 14, -10); mir.rotation.y = Math.PI/2; g.add(mir);
   } else if (t === 'barber' || t === 'salon'){
-    for (let i = 0; i < 3; i++){ const x = -w/2 + 24 + i * 26; box(8, 6, 8, '#c62828', x, 3, -d/2 + 34, g); box(8, 8, 2, '#b71c1c', x, 9, -d/2 + 37, g); solid(x, -d/2 + 34, 8, 8);
+    for (let i = 0; i < 4; i++){ const x = -w/2 + 18 + i * (w - 36) / 3; if (Math.abs(x) < 16) continue; box(8, 6, 8, '#c62828', x, 3, -d/2 + 34, g); box(8, 8, 2, '#b71c1c', x, 9, -d/2 + 37, g); solid(x, -d/2 + 34, 8, 8);
       const mir = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.MeshPhongMaterial({color:0xcfe8ff, shininess:150})); mir.position.set(x, 18, -d/2 + .2); g.add(mir);
       const c = staff(sc, x, -d/2 + 34, -Math.PI/2, npcs); c.position.y = 2; staff(sc, x + 8, -d/2 + 30, -Math.PI/2 + .5, npcs); }
     for (let i = 0; i < 4; i++){ box(6, 4, 6, '#424242', w/2 - 14, 2, -4 + i * 9, g); if (i % 2) staff(sc, w/2 - 14, -4 + i * 9, Math.PI, npcs); }
@@ -2259,13 +2261,13 @@ function buildPlace(l){
     const car = vehicleMesh('suv', '#1F2A30'); car.position.set(-w/4, 0, 6); car.rotation.y = .6; g.add(car); solid(-w/4, 6, 32, 32);
     const car2 = vehicleMesh('car', '#F2C230'); car2.position.set(w/4, 0, 14); car2.rotation.y = -.5; g.add(car2); solid(w/4, 14, 30, 30);
   } else if (t === 'furniture'){
-    for (const [k, x, z] of [['sofa', -40, 10], ['tv', 40, -20], ['fridge', -60, 30], ['dining', 30, 26], ['chairs', -10, 30]]){ const f = furnMesh(k, 'mamba'); f.g.position.set(x, 0, z); g.add(f.g); if (f.solid) solid(x, z, f.fw, f.fd); }
+    for (const [k, x, z] of [['sofa', -42, 10], ['tv', 44, -20], ['fridge', -62, -18], ['dining', 40, 26], ['chairs', -46, 30]]){ const f = furnMesh(k, 'mamba'); f.g.position.set(x, 0, z); g.add(f.g); if (f.solid) solid(x, z, f.fw, f.fd); }
   } else if (t === 'landmark'){
-    for (let r = 0; r < 4; r++) for (let c = 0; c < 6; c++){ const x = -w/2 + 26 + c * (w - 52) / 5, z = 2 + r * 12; box(6, 4, 5, '#6d4c41', x, 2, z, g); box(6, 6, 1, '#5d4037', x, 5, z + 2.5, g); }
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 6; c++){ const x = -w/2 + 26 + c * (w - 52) / 5, z = 2 + r * 12; if (Math.abs(x) < 14) continue; box(6, 4, 5, '#6d4c41', x, 2, z, g); box(6, 6, 1, '#5d4037', x, 5, z + 2.5, g); }
     addInteriorFlag(g, w/2 - 12, -d/2 + 8);
   } else {
     // offices, police HQ, bank, realty, garage, tech hub, schools without a template
-    for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++){ const x = -w/2 + 26 + c * (w - 52) / 2, z = 6 + r * 22; box(16, 1.2, 9, '#d7ccc8', x, 8, z, g); box(1, 8, 1, '#5d4037', x - 7, 4, z, g); box(1, 8, 1, '#5d4037', x + 7, 4, z, g);
+    for (let r = 0; r < 2; r++) for (let c = 0; c < 4; c++){ const x = -w/2 + 22 + c * (w - 44) / 3, z = 6 + r * 22; if (Math.abs(x) < 18) continue; box(16, 1.2, 9, '#d7ccc8', x, 8, z, g); box(1, 8, 1, '#5d4037', x - 7, 4, z, g); box(1, 8, 1, '#5d4037', x + 7, 4, z, g);
       box(7, 5, .6, '#263238', x, 11.5, z - 2, g); const sc2 = new THREE.Mesh(new THREE.PlaneGeometry(6.2, 4.2), new THREE.MeshBasicMaterial({color:0x4fc3f7})); sc2.position.set(x, 11.5, z - 1.65); g.add(sc2);
       solid(x, z, 16, 9); if (Math.random() < .7){ const p = staff(sc, x, z + 8, -Math.PI/2, npcs); p.position.y = -1.5; } }
     if (l.police){ addInteriorFlag(g, -w/2 + 10, -d/2 + 8); for (let i = 0; i < 6; i++) box(.8, 26, .8, '#555', w/2 - 30 + i * 4, 13, -d/2 + 26, g); box(26, 1, .8, '#555', w/2 - 20, 26, -d/2 + 26, g); solid(w/2 - 20, -d/2 + 14, 26, 24); }
@@ -2273,7 +2275,10 @@ function buildPlace(l){
   for (const p of [...Array(club ? 0 : 3)]){ const s = staff(sc, -w/4 + Math.random() * w/2, d/2 - 16 - Math.random() * 10, Math.random() * 6, npcs); }
   const me = personMesh(S.look); sc.add(me);
   const cam = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 1, 1200);
-  return {loc:l, place:true, sc, cam, w, d, solids, spots, me, bulb, winMat, hl, anim, x:0, z:d/2 - 10, a:-Math.PI/2};
+  const cs = spots.find(q => q.k === 'counter');
+  const ringC = new THREE.Mesh(new THREE.RingGeometry(7, 9.5, 32).rotateX(-Math.PI/2), new THREE.MeshBasicMaterial({color:0xffb21e, transparent:true, opacity:.9}));
+  if (cs){ ringC.position.set(cs.x, .3, cs.z); sc.add(ringC); anim.ring = ringC; }
+  return {loc:l, place:true, sc, cam, w, d, solids, spots, me, bulb, winMat, hl, anim, x:0, z:d/2 - 8, a:-Math.PI/2};
 }
 function addInteriorFlag(g, x, z){ const pole = new THREE.Mesh(new THREE.CylinderGeometry(.4, .4, 26, 6), lam('#ccc')); pole.position.set(x, 13, z); g.add(pole); const f = new THREE.Mesh(new THREE.PlaneGeometry(12, 6.4), new THREE.MeshLambertMaterial({map:flagTex, side:THREE.DoubleSide})); f.position.set(x + 6, 22, z); g.add(f); }
 function enterPlace(l){
@@ -2281,7 +2286,7 @@ function enterPlace(l){
   INT = buildPlace(l); S.inside = 'place:' + l.id; orbitIn.yaw = 0; orbitIn.dist = Math.max(110, INT.w * .85); orbitIn.pitch = .95;
   closeModal(); labelEls.forEach(e => e.style.display = 'none'); homeLab.style.display = gigLab.style.display = 'none';
   for (const p of MP.peers.values()) if (p.lab) p.lab.style.display = 'none';
-  toast(`You walked into ${l.n}`);
+  toast(`You walked into ${l.n}. Walk to the glowing gold ring to ${l.type === 'bank' ? 'see the teller' : l.type === 'school' ? 'see the teacher' : 'be served'}.`, 'gold');
 }
 function animatePlace(){
   const A = INT.anim, t = performance.now() / 1000; if (!A) return;
@@ -2289,6 +2294,7 @@ function animatePlace(){
   for (const b of A.belts){ b.m.position.x += .5; if (b.m.position.x > b.w/2) b.m.position.x -= b.w; }
   for (const dn of A.dancers){ dn.m.position.y = Math.abs(Math.sin(t * 6 + dn.ph)) * 2.4; dn.m.rotation.y += .03; animPerson(dn.m, t * 8 + dn.ph, true); }
   if (A.ball) A.ball.rotation.y += .02;
+  if (A.ring){ const k = 1 + Math.sin(t * 4) * .12; A.ring.scale.set(k, 1, k); }
   if (A.lights) A.lights.forEach((pl, i) => pl.intensity = 1.5 + Math.sin(t * 5 + i * 2) * 1.2);
 }
 
