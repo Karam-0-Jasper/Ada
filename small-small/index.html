@@ -222,6 +222,7 @@ button{cursor:pointer;border:0;background:none;padding:0}
     <div class="where" id="hOnline" style="text-transform:none;letter-spacing:0">⚪ Offline</div>
     <div class="bar" id="bEn"><span>Energy</span><span class="t"><span class="f en" id="fEn"></span></span></div>
     <div class="bar" id="bHu"><span>Food</span><span class="t"><span class="f hu" id="fHu"></span></span></div>
+    <div class="bar" id="bFu" hidden><span>Fuel</span><span class="t"><span class="f" id="fFu" style="background:linear-gradient(90deg,#2e86c1,#5ab0ff)"></span></span></div>
   </div>
   <div class="right">
     <div class="card money num" id="hMoney">L$1,500</div>
@@ -287,7 +288,7 @@ const DISTRICTS = [
   {n:'Mamba Point', x:150,y:1150,w:300,h:330, c:'#a9c98a', d:.5},
   {n:'Central Monrovia', x:450,y:1120,w:420,h:420, c:'#c9bea9', d:.95, urban:1},
   {n:'Capitol Hill', x:870,y:1120,w:300,h:430, c:'#9cc57e', d:.35},
-  {n:'Sinkor', x:1170,y:1100,w:850,h:520, c:'#b3c98f', d:.7},
+  {n:'Sinkor', x:1170,y:1100,w:850,h:520, c:'#b3c98f', d:.7, urban:1},
   {n:'Congo Town', x:2020,y:1100,w:600,h:560, c:'#a5c886', d:.5},
   {n:'Paynesville', x:2620,y:1000,w:800,h:680, c:'#b0c48a', d:.62},
   {n:'Red Light', x:3420,y:900,w:500,h:450, c:'#c7b99c', d:.9, urban:1},
@@ -406,7 +407,7 @@ const LOCS = [
   {id:'cook3', n:'Red Light Cookshop', ic:'🍛', x:3460, y:1262, type:'food', roof:'#d35400'},
   {id:'cook4', n:'Gardnersville Chop Bar', ic:'🍛', x:2700, y:760, type:'food', roof:'#d35400'},
   {id:'clothes1', n:'Waterside Fashion House', ic:'👕', x:850, y:1290, type:'clothes', roof:'#c2185b'},
-  {id:'clothes2', n:'Sinkor Boutique', ic:'👗', x:1760, y:1384, type:'clothes', roof:'#ad1457'},
+  {id:'clothes2', n:'Sinkor Boutique', ic:'👗', x:1790, y:1462, type:'clothes', roof:'#ad1457'},
   {id:'barber1', n:'Fresh Cut Barbershop', ic:'💈', x:1150, y:684, type:'barber', roof:'#1565c0'},
   {id:'barber2', n:'Red Light Fade Kings', ic:'💈', x:3330, y:1312, type:'barber', roof:'#0d47a1'},
   {id:'salon', n:'Queen Musu Beauty Salon', ic:'💇🏾‍♀️', x:2075, y:1404, type:'salon', roof:'#e91e63'},
@@ -449,6 +450,17 @@ const LOCS = [
   {id:'ejs', n:'EJS Ministerial Complex', ic:'🏢', x:2300, y:1416, type:'landmark', roof:'#546e7a', big:1},
   {id:'btc', n:'Barclay Training Center', ic:'🎖️', x:440, y:1294, type:'landmark', roof:'#556b2f'},
   {id:'providence', n:'Providence Island', ic:'🗽', x:742, y:1000, type:'landmark', nob:1},
+  {id:'gas1', n:'Total Sinkor', ic:'⛽', x:1600, y:1226, type:'gas', brand:'total', nob:1, price:98},
+  {id:'gas2', n:'Total Congo Town', ic:'⛽', x:2700, y:1458, type:'gas', brand:'total', nob:1, price:98},
+  {id:'gas3', n:'Total Duala', ic:'⛽', x:1500, y:548, type:'gas', brand:'total', nob:1, price:98},
+  {id:'gas4', n:'Petro Trade Red Light', ic:'⛽', x:3300, y:920, type:'gas', brand:'petro', nob:1, price:95},
+  {id:'gas5', n:'Petro Trade Gardnersville', ic:'⛽', x:2870, y:740, type:'gas', brand:'petro', nob:1, price:95},
+  {id:'lot1', n:'Belgium Used Cars (Somalia Drive)', ic:'🚗', x:1750, y:566, type:'carlot', nob:1, stock:['corolla','pickup','cruiser','rover','keke']},
+  {id:'lot2', n:'Capitol Bypass Car Lot', ic:'🚗', x:2000, y:1240, type:'carlot', nob:1, stock:['moto','keke','corolla','sclass','gwagon']},
+  {id:'lot3', n:'Careysburg Road Car Sales', ic:'🚗', x:3792, y:890, type:'carlot', nob:1, stock:['pickup','cruiser','gwagon','porsche','rover']},
+  {id:'lot4', n:'Gardnersville Car Lot', ic:'🚗', x:2380, y:640, type:'carlot', nob:1, stock:['corolla','keke','ferrari','lambo','sclass']},
+  {id:'royal', n:'Royal Grand Hotel', ic:'🏨', x:1668, y:1320, type:'hotel', roof:'#263238', big:1, shape:'hotel', floors:11, room:9000},
+  {id:'boulevard', n:'Boulevard Palace Hotel', ic:'🏨', x:1310, y:1345, type:'hotel', roof:'#4e342e', big:1, shape:'hotel', floors:8, room:6500},
   {id:'beach', n:'ELWA Beach', ic:'🏖️', x:2960, y:1662, type:'beach', nob:1},
   {id:'t_duala', n:'Duala Taxi Park', ic:'🚕', x:1240, y:662, type:'taxi', nob:1},
   {id:'t_water', n:'Waterside Taxi Park', ic:'🚕', x:745, y:1172, type:'taxi', nob:1},
@@ -560,7 +572,7 @@ function rectFree(x, y, w, h, pad){
   if (pts.some(([px,py]) => isWater(px, py))) return false;
   if (hitsSolid(x + w/2, y + h/2, Math.max(w, h)/2 + pad)) return false;
   const n = nearestRoad(x + w/2, y + h/2); if (n.d < n.r.w/2 + Math.max(w,h)/2 + 6) return false;
-  for (const l of LOCS) if (dist(x + w/2, y + h/2, l.x, l.y) < 70) return false;
+  for (const l of LOCS) if (dist(x + w/2, y + h/2, l.x, l.y) < (l.type === 'carlot' ? 125 : l.type === 'gas' ? 85 : 70)) return false;
   return true;
 }
 const ZINC = ['#9aa3a8','#8d969b','#a65a33','#b3683c','#3f6fb0','#4b8a5a','#7c8a91','#c2c7c9','#8b4b2f'];
@@ -1207,6 +1219,11 @@ for (let i = 0; i < 72; i++){
   traffic.push({road, s: Math.random() * road.len, dir: Math.random() < .5 ? 1 : -1, sp: kind === 'keke' ? 55 + Math.random()*25 : kind === 'moto' ? 90 + Math.random()*40 : 70 + Math.random()*55, kind,
     c: kind === 'taxi' || kind === 'keke' ? '#F2C230' : kind === 'bus' ? '#e0e0e0' : kind === 'moto' ? pick(['#E5392C','#2c3e50','#1b4f8e']) : pick(CARCOL)});
 }
+for (const [kind, c] of [['gwagon','#0d0d0d'],['gwagon','#f2f2f2'],['rover','#e8e8e8'],['rover','#1b2a49'],['luxsedan','#111418'],['sports','#d40000'],['supercar','#f4c20d'],['sports','#f2f2f2'],['suv','#1F2A30'],['suv','#ffffff'],['truck','#3E6FD8'],['car','#8e1b1b']]){
+  let pickLen = Math.random() * totalPaved, road = PAVED[0];
+  for (const r of PAVED){ if (pickLen < r.len){ road = r; break; } pickLen -= r.len; }
+  traffic.push({road, s: Math.random() * road.len, dir: Math.random() < .5 ? 1 : -1, sp: kind === 'sports' || kind === 'supercar' ? 140 + Math.random() * 40 : 85 + Math.random() * 40, kind, c});
+}
 const SHIRTS = ['#E5392C','#3157C8','#39C06A','#FFB21E','#8E44AD','#F2F2F2','#16A085','#E67E22'];
 const SKINS = ['#5a3825','#7a4a2c','#3e2618','#8d5a3b'];
 const people = [];
@@ -1345,6 +1362,10 @@ $('#scrim').addEventListener('click', e => {
   const a = modalActs[+b.dataset.i]; if (a && a.fn) a.fn();
   hud(); if (modalRender) renderModal();
 });
+const TANK = {moto:[10,120], keke:[15,90], car:[45,60], truck:[70,45], suv:[80,50], rover:[85,45], luxsedan:[70,50], gwagon:[100,38], sports:[65,40], supercar:[90,32]};
+const tankOf = k => (VEHICLES[k] && TANK[VEHICLES[k].kind]) || [50, 50];
+function fuelOf(k){ S.tanks = S.tanks || {}; if (S.tanks[k] === undefined) S.tanks[k] = tankOf(k)[0]; return S.tanks[k]; }
+function giveVehicle(k){ if (!S.vehicles.includes(k)) S.vehicles.push(k); S.ride = k; S.tanks = S.tanks || {}; S.tanks[k] = tankOf(k)[0]; }
 let ACT = null;
 function activity(kind, label, secs, then, extra){
   closeModal(); keys.clear(); ACT = Object.assign({kind, label, t0:performance.now(), dur:secs * 1000, then}, extra || {});
@@ -1458,7 +1479,35 @@ function gigCheck(){
    LOCATION PANELS
    ========================================================= */
 function reqText(c){ return COURSES[c].t; }
+function panelGas(l){
+  const brand = l.brand === 'total' ? 'TotalEnergies' : 'Petro Trade', pr = l.price, acts = [];
+  const mine = S.vehicles.filter(k => !VEHICLES[k].duty);
+  for (const k of mine){ const cap = tankOf(k)[0], have = fuelOf(k), need = Math.ceil(cap - have), cost = need * pr;
+    acts.push({l:`⛽ Fill up the ${VEHICLES[k].t}`, s: need <= 0 ? 'Tank is already full' : `${need} L · tank ${Math.round(have / cap * 100)}% full`, p: need > 0 ? money(cost) : '✓', pc:'minus', primary: need > 0 && k === S.ride, dis: need <= 0 || !canPay(cost),
+      fn:() => { spend(cost); S.tanks[k] = cap; activity('fuel', `⛽ Filling up at ${l.n}…`, 2.2, () => { advance(10); toast(`Tank full! ${need} L of fuel for ${money(cost)}.`, 'good'); }); }});
+    const ten = Math.min(10, Math.ceil(cap - have)); if (ten > 0 && ten < need) acts.push({l:`Buy ${ten} L for the ${VEHICLES[k].t}`, p:money(ten * pr), pc:'minus', dis:!canPay(ten * pr), fn:() => { spend(ten * pr); S.tanks[k] = Math.min(cap, have + ten); toast(`+${ten} L`, 'good'); }}); }
+  acts.push({l:'🛢️ Buy a 10 L jerry can', s:`For when you run dry on the road · you have ${S.jerry || 0}`, p:money(10 * pr + 300), pc:'minus', dis:!canPay(10 * pr + 300), fn:() => { spend(10 * pr + 300); S.jerry = (S.jerry || 0) + 1; toast('Jerry can in your trunk.', 'good'); }});
+  acts.push({l:'🥤 Cold drink from the shop', p:money(150), pc:'minus', dis:!canPay(150), fn:() => { spend(150); eat('a cold drink', 4, {drink:true, e:2}); }});
+  acts.push({l:'🍞 Meat pie & juice', p:money(250), pc:'minus', dis:!canPay(250), fn:() => { spend(250); eat('a meat pie', 22, {color:'#d9a14a'}); }});
+  return {ic:'⛽', t:l.n, sub:`${brand} · Fuel today: <b>${money(pr)} per liter</b>.${mine.length ? '' : ' You have no vehicle yet.'}`, acts};
+}
+function panelLot(l){
+  return {ic:'🚗', t:l.n, sub:'Cars parked by the road with FOR SALE signs. Prices are a little cheaper than the showroom. Cash or MoMo.',
+    acts:(l.stock || []).map(k => { const v = VEHICLES[k], pr = Math.round(v.price * .9 / 1000) * 1000, own = S.vehicles.includes(k);
+      return own ? {l:`${v.ic} ${v.t}`, s:'You already own one', p:'✓', dis:true} : {l:`${v.ic} ${v.t}`, s:`Used · ${v.sp}× speed · ${tankOf(k)[0]} L tank`, p:money(pr), pc:'minus', dis:!canPay(pr), fn:() => { spend(pr); giveVehicle(k); toast(`Deal done! The ${v.t} is yours. Press Ride.`, 'gold'); save(); checkGoals(); }}; })};
+}
+function panelHotel(l){
+  const r = l.room;
+  return {ic:'🏨', t:l.n, sub:`${l.floors} floors over Tubman Boulevard. Pool, restaurant and a rooftop bar.`,
+    acts:[{l:'🛏️ Book a room for the night', s:'Sleep until 6 AM with 100% energy', p:money(r), pc:'minus', primary:true, dis:!canPay(r), fn:() => { spend(r); sleep({sleep:100}); }},
+      {l:'🍽️ Hotel restaurant: grilled lobster & rice', s:'+70 food', p:money(1800), pc:'minus', dis:!canPay(1800), fn:() => { spend(1800); eat('grilled lobster & rice', 70, {color:'#e74c3c', mins:40}); }},
+      {l:'🍹 Rooftop bar cocktail', s:'+4 energy · best view in Sinkor', p:money(900), pc:'minus', dis:!canPay(900), fn:() => { spend(900); eat('a rooftop cocktail', 3, {drink:true, e:4}); }},
+      {l:'🏊🏾 Swim in the pool', s:'1 hour · +12 energy', p:money(1500), pc:'minus', dis:!canPay(1500), fn:() => { spend(1500); busy('🏊🏾', 'Swimming at the hotel pool…', 'Cool water, hot sun', 1.2, () => { advance(60); S.energy = clamp(S.energy + 12, 0, 100); }); }}]};
+}
 function panelFor(l){
+  if (l.type === 'gas') return panelGas(l);
+  if (l.type === 'carlot') return panelLot(l);
+  if (l.type === 'hotel') return panelHotel(l);
   if (l.type === 'landmark') return panelLandmark(l);
   if (l.type === 'club') return panelClub(l);
   const ex = panelExtra(l); if (ex) return ex;
@@ -1498,7 +1547,7 @@ function panelFor(l){
     case 'dealer': return {ic:l.ic, t:l.n, sub:(l.sub || 'New and used rides.') + ' Faster cars earn more on deliveries.',
       acts:Object.entries(VEHICLES).filter(([k, v]) => !v.duty && (!l.stock || l.stock.includes(k))).map(([k, v]) => { const own = S.vehicles.includes(k);
         return own ? {l:`${v.ic} ${v.t}`, s: S.ride === k ? 'Your active ride' : 'Owned · tap to make it your ride', p:'Owned', dis:S.ride === k, fn:() => { S.ride = k; toast(`${v.t} is now your ride. Press Ride.`); save(); }}
-                   : {l:`${v.ic} ${v.t}`, s:`${v.sp}× walking speed · fuel about ${money(v.fuel*400)} per km`, p:money(v.price), pc:'minus', dis:!canPay(v.price), primary:canPay(v.price), fn:() => { spend(v.price); S.vehicles.push(k); S.ride = k; toast(`You bought a ${v.t}! Press Ride to drive it.`, 'gold'); save(); checkGoals(); }}; })};
+                   : {l:`${v.ic} ${v.t}`, s:`${v.sp}× walking speed · ${tankOf(k)[0]} L tank · about ${tankOf(k)[1]} km per tank`, p:money(v.price), pc:'minus', dis:!canPay(v.price), primary:canPay(v.price), fn:() => { spend(v.price); giveVehicle(k); toast(`You bought a ${v.t}! Press Ride to drive it.`, 'gold'); save(); checkGoals(); }}; })};
     case 'realty': return {ic:'🔑', t:l.n, sub:'Rooms and houses across Montserrado. The home you pick is where you sleep.',
       acts:Object.entries(HOMES).map(([k, hm]) => {
         const own = S.owned.includes(k) || (k === 'room' && S.renting), cur = S.home === k;
@@ -1582,6 +1631,10 @@ function toggleRide(){
   if (S.duty){ S.ride = S.duty; if (!S.riding && hitsSolid(S.x, S.y, 12)) return toast('Step away from the building.', 'bad'); S.riding = !S.riding; return hud(); }
   if (!S.vehicles.length){ toast('You don\'t own a vehicle yet. Visit Somalia Drive Motors.', 'bad'); return; }
   if (!S.ride) S.ride = S.vehicles[0];
+  if (!S.riding && fuelOf(S.ride) <= 0){
+    if ((S.jerry || 0) > 0){ S.jerry--; S.tanks[S.ride] = Math.min(tankOf(S.ride)[0], 10); toast('⛽ You poured a 10 L jerry can into the tank.', 'good'); }
+    else return toast(`⛽ The ${VEHICLES[S.ride].t} has no fuel. Buy a jerry can at a gas station.`, 'bad');
+  }
   if (!S.riding && hitsSolid(S.x, S.y, 12)){ toast('Step away from the building to get on.', 'bad'); return; }
   S.riding = !S.riding;
   toast(S.riding ? `On your ${VEHICLES[S.ride].t}` : 'You parked and got off'); hud();
@@ -1649,7 +1702,8 @@ function update(dt){
   const mx = rx * ix - fx * iy, mz = rz * ix - fz * iy;
   if (player.moving){
     const nx = S.x + mx * sp * dt, ny = S.y + mz * sp * dt;
-    if (v){ S.fuel = (S.fuel || 0) + sp * dt * v.fuel; if (S.fuel >= 1){ const f = Math.floor(S.fuel); S.fuel -= f; S.money = Math.max(0, S.money - f); S.stats.fuel = (S.stats.fuel || 0) + f; if (S.money <= 0){ S.riding = false; toast('Out of money for fuel. You had to park.', 'bad'); } } }
+    if (v && !v.duty){ const [cap, range] = tankOf(S.ride), used = (sp * dt * MPP / 1000) * cap / range; S.tanks = S.tanks || {}; S.tanks[S.ride] = Math.max(0, fuelOf(S.ride) - used);
+      if (S.tanks[S.ride] <= 0){ S.riding = false; toast(`⛽ Your ${v.t} ran out of fuel! Buy a jerry can at a Total or Petro Trade station.`, 'bad'); } }
     const stuck = !!hitsSolid(S.x, S.y, r);
     if (!isWater(nx, S.y) && (stuck || !hitsSolid(nx, S.y, r))) S.x = nx;
     if (!isWater(S.x, ny) && (stuck || !hitsSolid(S.x, ny, r))) S.y = ny;
@@ -1672,6 +1726,7 @@ function hud(){
   $('#hClock').textContent = `Day ${S.day} · ${fmtTime(S.min)}${S.rain ? ' 🌧️' : ''}`;
   $('#hWhere').textContent = districtAt(S.x, S.y);
   $('#fEn').style.width = S.energy + '%'; $('#fHu').style.width = S.food + '%';
+  { const show = S.ride && VEHICLES[S.ride] && !VEHICLES[S.ride].duty && S.vehicles.includes(S.ride); $('#bFu').hidden = !show; if (show){ const f = fuelOf(S.ride) / tankOf(S.ride)[0] * 100; $('#fFu').style.width = f + '%'; $('#bFu').classList.toggle('low', f < 15); } }
   $('#bEn').classList.toggle('low', S.energy < 20); $('#bHu').classList.toggle('low', S.food < 20);
   $('#hMoney').innerHTML = `${money(S.money)}${S.momo ? ` <small class="num">MoMo ${money(S.momo)}</small>` : ''}`;
   $('#hWhere').textContent = S.inside ? 'Inside ' + (INT && INT.place ? INT.loc.n : HOMES[S.inside] ? HOMES[S.inside].t : '') : districtAt(S.x, S.y);
@@ -1881,6 +1936,21 @@ for (const l of LOCS){
 }
 // taxi shelters, beach umbrellas
 for (const l of LOCS){
+  if (l.type === 'gas'){
+    const n = nearestRoad(l.x, l.y); let dx = l.x - n.x, dz = l.y - n.y; const m = Math.hypot(dx, dz) || 1; dx /= m; dz /= m;
+    const cx = l.x + dx * 26, cz = l.y + dz * 26, g = new THREE.Group(), tot = l.brand === 'total';
+    const canopy = new THREE.Mesh(new THREE.BoxGeometry(56, 3, 34), lam(tot ? '#ffffff' : '#1b7a3a')); canopy.position.y = 22; g.add(canopy);
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(56.4, 1.4, 34.4), lam(tot ? '#E4002B' : '#f4c20d')); stripe.position.y = 21.6; g.add(stripe);
+    for (const [px, pz] of [[-24,-14],[24,-14],[-24,14],[24,14]]){ const post = new THREE.Mesh(new THREE.BoxGeometry(1.6, 21, 1.6), lam('#bdbdbd')); post.position.set(px, 10.5, pz); g.add(post); }
+    for (const px of [-12, 12]){ const pump = new THREE.Mesh(new THREE.BoxGeometry(4, 9, 3), lam(tot ? '#E4002B' : '#1b7a3a')); pump.position.set(px, 4.5, 0); g.add(pump); const top = new THREE.Mesh(new THREE.BoxGeometry(4.2, 2, 3.2), lam(tot ? '#1d4f9e' : '#f4c20d')); top.position.set(px, 9.5, 0); g.add(top); }
+    const kiosk = new THREE.Mesh(new THREE.BoxGeometry(20, 12, 12), lam('#f5f5f5')); kiosk.position.set(0, 6, -26); g.add(kiosk);
+    const c2 = document.createElement('canvas'); c2.width = 256; c2.height = 96; const x2 = c2.getContext('2d'); x2.fillStyle = tot ? '#ffffff' : '#1b7a3a'; x2.fillRect(0, 0, 256, 96);
+    x2.fillStyle = tot ? '#E4002B' : '#f4c20d'; x2.font = 'bold 46px sans-serif'; x2.textAlign = 'center'; x2.fillText(tot ? 'TOTAL' : 'PETRO TRADE', 128, 52); x2.fillStyle = tot ? '#1d4f9e' : '#ffffff'; x2.font = 'bold 22px sans-serif'; x2.fillText(`L$${l.price}/liter`, 128, 84);
+    const pole = new THREE.Mesh(new THREE.BoxGeometry(1.4, 34, 1.4), lam('#9e9e9e')); pole.position.set(32, 17, 18); g.add(pole);
+    const board = new THREE.Mesh(new THREE.PlaneGeometry(22, 8.2), new THREE.MeshBasicMaterial({map:tex(c2), side:THREE.DoubleSide})); board.position.set(32, 34, 18); g.add(board); bothWays(board, g);
+    const sg = new THREE.Mesh(new THREE.PlaneGeometry(30, 11), new THREE.MeshBasicMaterial({map:tex(c2), side:THREE.DoubleSide})); sg.position.set(0, 22, 17.3); g.add(sg); sg.material = sg.material.clone(); sg.material.side = THREE.FrontSide; const sgb = sg.clone(); sgb.position.z = -17.3; sgb.rotation.y = Math.PI; g.add(sgb);
+    g.position.set(cx, 0, cz); g.rotation.y = Math.atan2(dx, dz); g.traverse(o => { o.castShadow = true; o.receiveShadow = true; }); scene.add(g);
+  }
   if (l.type === 'taxi'){
     const g = new THREE.Group(); const roof = new THREE.Mesh(new THREE.BoxGeometry(26, 1.5, 12), lam('#F2C230')); roof.position.y = 14; g.add(roof);
     for (const sx of [-11, 11]){ const post = new THREE.Mesh(new THREE.BoxGeometry(1.4, 14, 1.4), lam('#333')); post.position.set(sx, 7, -4); g.add(post); }
@@ -2214,7 +2284,7 @@ function interiorMove(ix, iy, dt){
   } else player.moving = false;
   let best = null, bd = 1e9;
   for (const s of INT.spots){ const d = Math.hypot(INT.x - s.x, INT.z - s.z); if (d < (s.r || 14) && d < bd){ bd = d; best = s; } }
-  if (best && best.k === 'counter'){ const t = INT.loc.type, nm = t === 'school' ? "Talk to the teacher · enroll or attend class" : t === 'bank' ? 'Talk to the teller · save or withdraw money' : t === 'club' ? 'Bar & DJ' : t === 'job' ? 'Talk to the manager · work a shift' : ['food','rest','bar'].includes(t) ? 'Order at the counter' : t === 'landmark' ? 'Visitor desk' : 'Counter · ' + INT.loc.n; return {id:'in_counter', k:'counter', n:nm, ic:INT.loc.ic, type:'inside'}; }
+  if (best && best.k === 'counter'){ const t = INT.loc.type, nm = t === 'school' ? "Talk to the teacher · enroll or attend class" : t === 'bank' ? 'Talk to the teller · save or withdraw money' : t === 'club' ? 'Bar & DJ' : t === 'job' ? 'Talk to the manager · work a shift' : ['food','rest','bar'].includes(t) ? 'Order at the counter' : t === 'hotel' ? 'Hotel reception · book a room' : t === 'landmark' ? 'Visitor desk' : 'Counter · ' + INT.loc.n; return {id:'in_counter', k:'counter', n:nm, ic:INT.loc.ic, type:'inside'}; }
   return best ? {id:'in_' + best.k, k:best.k, n: best.k === 'door' && INT.place ? 'Exit to the street' : SPOT[best.k].n, ic:SPOT[best.k].ic, type:'inside'} : null;
 }
 function panelInside(s){
@@ -2285,14 +2355,23 @@ function addFlag(x, z, h){
   const pole = new THREE.Mesh(new THREE.CylinderGeometry(.5, .5, h, 6), lam('#ddd')); pole.position.set(x, h/2, z); pole.castShadow = true; scene.add(pole);
   const f = new THREE.Mesh(new THREE.PlaneGeometry(14, 7.4), new THREE.MeshLambertMaterial({map:flagTex, side:THREE.DoubleSide})); f.position.set(x + 7, h - 4, z); scene.add(f); FLAGS.push(f);
 }
-const FLAGS = [];
+const FLAGS = [], HOTEL_MATS = [];
 for (const l of LOCS){
-  if (l.type !== 'landmark' && !l.police) continue;
+  if (l.type !== 'landmark' && !l.police && l.type !== 'hotel') continue;
   if (l.nob){ const ob = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 4, 40, 4), lam('#e0dccf')); ob.position.set(l.x, 20, l.y); ob.castShadow = true; scene.add(ob); addFlag(l.x + 12, l.y + 6, 34); continue; }
   const b = l.b; if (!b) continue; const h = BH.get(b), cx = b.x + b.w/2, cz = b.y + b.h/2;
   if (l.shape === 'dome'){ const d = new THREE.Mesh(new THREE.SphereGeometry(Math.min(b.w, b.h) * .32, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), lam('#f5f5f5')); d.position.set(cx, h + 1.6, cz); d.castShadow = true; scene.add(d);
     const lan = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 8, 8), lam('#f5f5f5')); lan.position.set(cx, h + Math.min(b.w, b.h) * .32 + 4, cz); scene.add(lan); }
   if (l.shape === 'mansion'){ for (let i = 0; i < 6; i++){ const col = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, h, 8), lam('#ffffff')); col.position.set(b.x + 10 + i * (b.w - 20) / 5, h/2, b.y - 3); col.castShadow = true; scene.add(col); } }
+  if (l.shape === 'hotel'){
+    const floors = l.floors || 8, fh = 9, tw = b.w * .78, td = b.h * .72;
+    const gl = (() => { const c = document.createElement('canvas'); c.width = 64; c.height = 64; const x = c.getContext('2d'); x.fillStyle = '#b0bec5'; x.fillRect(0, 0, 64, 64); x.fillStyle = '#4f7ca8'; for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) x.fillRect(3 + k * 16, 3 + r * 16, 12, 11); const t = tex(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(4, floors / 2); return t; })();
+    const tower = new THREE.Mesh(new THREE.BoxGeometry(tw, floors * fh, td), new THREE.MeshLambertMaterial({map:gl, emissive:0xffc070, emissiveMap:gl, emissiveIntensity:0})); tower.position.set(cx, h + floors * fh / 2, cz); tower.castShadow = true; scene.add(tower); HOTEL_MATS.push(tower.material);
+    const crown = new THREE.Mesh(new THREE.BoxGeometry(tw + 2, 3, td + 2), lam(l.roof)); crown.position.set(cx, h + floors * fh + 1.5, cz); scene.add(crown);
+    const c3 = document.createElement('canvas'); c3.width = 512; c3.height = 96; const x3 = c3.getContext('2d'); x3.fillStyle = 'rgba(0,0,0,0)'; x3.fillRect(0, 0, 512, 96); x3.fillStyle = '#FFD75A'; x3.font = 'bold 54px serif'; x3.textAlign = 'center'; x3.fillText(l.n.replace(' Hotel', '').toUpperCase(), 256, 66);
+    const top = new THREE.Mesh(new THREE.PlaneGeometry(tw, tw * 96 / 512), new THREE.MeshBasicMaterial({map:tex(c3), transparent:true, side:THREE.DoubleSide})); top.position.set(cx, h + floors * fh + 8, cz + td / 2 + .5); scene.add(top); const top2 = top.clone(); top2.material = top.material.clone(); top2.material.side = THREE.FrontSide; top2.position.z = cz - td / 2 - .5; top2.rotation.y = Math.PI; scene.add(top2); top.material.side = THREE.FrontSide;
+    const pool = new THREE.Mesh(new THREE.BoxGeometry(26, .6, 14), lam('#29b6f6')); pool.position.set(cx + b.w / 2 + 18, .3, cz); scene.add(pool);
+  }
   if (l.shape === 'tower'){ const t = new THREE.Mesh(new THREE.BoxGeometry(b.w * .7, 70, b.h * .7), wallMat); t.position.set(cx, h + 35, cz); t.castShadow = true; scene.add(t); }
   if (l.shape === 'stadium'){ const s = new THREE.Mesh(new THREE.CylinderGeometry(b.w * .62, b.w * .5, 14, 28, 1, true), lam('#9e9e9e', {side:THREE.DoubleSide})); s.position.set(cx, h + 7, cz); s.scale.z = b.h / b.w; s.castShadow = true; scene.add(s);
     const pitch = new THREE.Mesh(new THREE.PlaneGeometry(b.w * .8, b.h * .7), lam('#3c9a3c')); pitch.rotation.x = -Math.PI/2; pitch.position.set(cx, h + 2, cz); scene.add(pitch); }
@@ -2300,6 +2379,7 @@ for (const l of LOCS){
 }
 
 /* ---------- interiors for public buildings ---------- */
+function bothWays(m, parent){ m.material.side = THREE.FrontSide; const back = m.clone(); back.rotation.y = m.rotation.y + Math.PI; (parent || scene).add(back); return m; }
 function pictureTex(kind){
   const c = document.createElement('canvas'); c.width = 256; c.height = 200; const x = c.getContext('2d');
   const cap = t => { x.fillStyle = '#f5ecd7'; x.fillRect(0, 168, 256, 32); x.fillStyle = '#2b1d14'; x.font = 'bold 15px sans-serif'; x.textAlign = 'center'; x.fillText(t, 128, 190); };
@@ -2468,6 +2548,19 @@ function syncPeers(dt){
 }
 
 for (const c of traffic){ c.mesh = vehicleMesh(c.kind, c.c); if (c.kind === 'moto'){ const rd = personMesh(randomLook()); rd.position.set(-1, 4, 0); rd.scale.setScalar(.85); c.mesh.add(rd); } scene.add(c.mesh); }
+function buildLots(){ for (const l of LOCS){ if (l.type !== 'carlot') continue;
+    const n = nearestRoad(l.x, l.y); const seg = n.r.segs.find(sg => segDist(n.x, n.y, sg.ax, sg.ay, sg.bx, sg.by)[0] < 1) || n.r.segs[0];
+    const ux = (seg.bx - seg.ax) / seg.l, uz = (seg.by - seg.ay) / seg.l; let dx = l.x - n.x, dz = l.y - n.y; const m = Math.hypot(dx, dz) || 1; dx /= m; dz /= m;
+    (l.stock || []).forEach((k, i) => { const v = VEHICLES[k], off = (i - ((l.stock.length - 1) / 2)) * 34, px = l.x + ux * off + dx * 14, pz = l.y + uz * off + dz * 14;
+      const car = vehicleMesh(v.kind, v.c); car.position.set(px, 0, pz); car.rotation.y = -Math.atan2(-dz, -dx); scene.add(car);
+      const tg = document.createElement('canvas'); tg.width = 192; tg.height = 72; const tx = tg.getContext('2d'); tx.fillStyle = '#fff'; tx.fillRect(0, 0, 192, 72); tx.fillStyle = '#c0392b'; tx.font = 'bold 22px sans-serif'; tx.textAlign = 'center'; tx.fillText('FOR SALE', 96, 28); tx.fillStyle = '#111'; tx.font = 'bold 18px sans-serif'; tx.fillText(money(Math.round(v.price * .9 / 1000) * 1000), 96, 56);
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(10, 3.8), new THREE.MeshBasicMaterial({map:tex(tg), side:THREE.DoubleSide})); sign.position.set(px - dx * 2, 15, pz - dz * 2); sign.rotation.y = Math.atan2(-dx, -dz); scene.add(sign); bothWays(sign); });
+    const um = new THREE.Mesh(new THREE.ConeGeometry(10, 4, 10), lam('#E5392C')); um.position.set(l.x + dx * 40, 14, l.y + dz * 40); scene.add(um);
+    const up = new THREE.Mesh(new THREE.CylinderGeometry(.4, .4, 14), lam('#eee')); up.position.set(l.x + dx * 40, 7, l.y + dz * 40); scene.add(up);
+    const seller = personMesh(randomLook()); seller.position.set(l.x + dx * 38, 0, l.y + dz * 38); seller.rotation.y = Math.atan2(dx, dz) + Math.PI/2; scene.add(seller);
+    for (let i = -3; i <= 3; i++){ const fl = new THREE.Mesh(new THREE.ConeGeometry(1.6, 3, 3), lam(['#BF0A30','#ffffff','#002868'][(i + 3) % 3])); fl.rotation.x = Math.PI; fl.position.set(l.x + ux * i * 22 + dx * 26, 18, l.y + uz * i * 22 + dz * 26); scene.add(fl); }
+  } }
+buildLots();
 const beam = new THREE.Mesh(new THREE.CylinderGeometry(7, 7, 260, 20, 1, true), new THREE.MeshBasicMaterial({color:0xffb21e, transparent:true, opacity:.28, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide}));
 const ring = new THREE.Mesh(new THREE.RingGeometry(16, 22, 32).rotateX(-Math.PI/2), new THREE.MeshBasicMaterial({color:0xffb21e, transparent:true, opacity:.85, depthWrite:false}));
 const waiting = personMesh(randomLook());
@@ -2527,7 +2620,7 @@ function render(){
   sun.intensity = (1.8 * (1 - dark) + .05) * (S && S.rain ? .45 : 1);
   sun.color.setHSL(.1, .6, .55 + .3 * Math.max(0, el));
   hemi.intensity = .95 * (1 - dark) + .32; hemi.color.setHSL(.58, .5, .75 - dark * .35);
-  wallMat.emissiveIntensity = dark * 1.1;
+  wallMat.emissiveIntensity = dark * 1.1; for (const m of HOTEL_MATS) m.emissiveIntensity = dark * .9;
   lampGlow.material.opacity = Math.min(1, dark * 1.3);
   waterMat.color.setHSL(.57, .58, .42 - dark * .25 + Math.sin(T * .7) * .01);
   // traffic
@@ -2619,6 +2712,7 @@ function drawConfetti(){
 /* =========================================================
    INTRO / BOOT
    ========================================================= */
+function testerBonus(){ if (!S || !/[?&]tester\b/.test(location.search) || S.testerBonus) return; S.testerBonus = true; S.money += 8000000; toast('🧪 Tester bonus: +L$8,000,000. Go buy that Lamborghini!', 'gold'); hud(); save(); }
 let pickShirt = SHIRTS[0], pickSkin = SKINS[0], pickG = 'm', pickHair = 'low';
 function hairChoices(){ const list = pickG === 'm' ? BARBER_STYLES : SALON_STYLES; if (!list.includes(pickHair)) pickHair = list[0]; $('#swHair').innerHTML = list.map(k => `<button data-h="${k}" aria-selected="${k === pickHair}">${HAIR[k].t}</button>`).join(''); $('#topLabel').textContent = pickG === 'm' ? 'Shirt colour' : 'Dress colour'; }
 function swatches(el, list, cur, set){
@@ -2639,12 +2733,12 @@ function showIntro(forceNew){
 $('#startBtn').addEventListener('click', () => {
   const name = $('#pname').value.trim().slice(0, 16) || 'Tayo';
   const look = defaultLook(pickG, pickShirt, pickSkin); look.hair = pickHair; if (pickHair === 'headtie') look.hc = pick(TIES);
-  S = fresh(name, pickShirt, pickSkin, look); setTimeout(mpStart, 400); cam.x = S.x; cam.y = S.y; orbit.pitch = .78; orbit.dist = 175; faceFrom(LOC.h_auntie); save();
+  S = fresh(name, pickShirt, pickSkin, look); setTimeout(mpStart, 400); setTimeout(testerBonus, 800); cam.x = S.x; cam.y = S.y; orbit.pitch = .78; orbit.dist = 175; faceFrom(LOC.h_auntie); save();
   $('#intro').hidden = true; hud();
   setTimeout(() => toast(`Welcome to Duala, ${S.name}! Head to Waterside Market or Freeport to start earning.`, 'gold'), 300);
   setTimeout(() => toast('Tip: press P (or Phone) for goals and how to play.'), 3200);
 });
-$('#contBtn').addEventListener('click', () => { S = load(); if (!S) return showIntro(true); setTimeout(mpStart, 400); S.duty = null; S.inCar = false; S.riding = false; S.inside = null; placeAt(S.x, S.y); if (!S.look) S.look = defaultLook('m', S.shirt, S.skin); S.momo = S.momo || 0; S.furn = S.furn || {}; S.wardrobe = S.wardrobe || [S.look.outfit || 'tshirt']; S.tx = S.tx || []; if (S.booking) S.booking = null; cam.x = S.x; cam.y = S.y; orbit.pitch = .78; orbit.dist = 175; faceFrom(findNear()); $('#intro').hidden = true; hud(); toast(`Welcome back, ${S.name}!`, 'good'); });
+$('#contBtn').addEventListener('click', () => { S = load(); if (!S) return showIntro(true); setTimeout(mpStart, 400); setTimeout(testerBonus, 800); S.duty = null; S.inCar = false; S.riding = false; S.inside = null; placeAt(S.x, S.y); if (!S.look) S.look = defaultLook('m', S.shirt, S.skin); S.momo = S.momo || 0; S.furn = S.furn || {}; S.wardrobe = S.wardrobe || [S.look.outfit || 'tshirt']; S.tx = S.tx || []; if (S.booking) S.booking = null; cam.x = S.x; cam.y = S.y; orbit.pitch = .78; orbit.dist = 175; faceFrom(findNear()); $('#intro').hidden = true; hud(); toast(`Welcome back, ${S.name}!`, 'good'); });
 $('#newBtn').addEventListener('click', () => showIntro(true));
 $('#pname').addEventListener('keydown', e => { if (e.key === 'Enter') $('#startBtn').click(); });
 
