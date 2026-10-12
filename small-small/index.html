@@ -1388,7 +1388,7 @@ const PAVED = ROADS.filter(r => r.t === 'paved');
 const totalPaved = PAVED.reduce((a, r) => a + r.len, 0);
 const CARCOL = ['#d9d9d9','#2c3e50','#8e1b1b','#ffffff','#1b4f8e','#5d6d7e','#145a32'];
 const traffic = [];
-for (let i = 0; i < 72; i++){
+for (let i = 0; i < (matchMedia('(pointer: coarse)').matches ? 85 : 115); i++){
   let pickLen = Math.random() * totalPaved, road = PAVED[0];
   for (const r of PAVED){ if (pickLen < r.len){ road = r; break; } pickLen -= r.len; }
   const kind = pick(['taxi','taxi','keke','keke','car','car','moto','moto','bus']);
@@ -1407,11 +1407,15 @@ const SHIRTS = ['#E5392C','#3157C8','#39C06A','#FFB21E','#8E44AD','#F2F2F2','#16
 const SKINS = ['#5a3825','#7a4a2c','#3e2618','#8d5a3b'];
 const people = [];
 const COARSE = matchMedia('(pointer: coarse)').matches;
-const crowdSpots = LOCS.filter(l => !['home','beach'].includes(l.type));
+// busy places pull more people: markets, parks, taxi parks, schools, beaches, the airport
+const HOT = l => l.job === 'market' ? 7 : l.type === 'park' ? 6 : l.type === 'taxi' ? 4 : l.beach || l.type === 'beach' ? 4 : l.type === 'school' || l.type === 'airport' ? 3 : ['food','rest','bar','club','clothes','barber','salon','gas'].includes(l.type) ? 2 : l.type === 'home' ? 0 : 1;
+const crowdSpots = LOCS.flatMap(l => Array(HOT(l)).fill(l));
+const urbanAddr = ADDR.filter(a => (DISTRICTS.find(d => a.x > d.x && a.x < d.x + d.w && a.y > d.y && a.y < d.y + d.h) || {}).urban);
 const offRoad = (x, y) => { const n = nearestRoad(x, y); return n.d > n.r.w / 2 + 6; };
 const pathOffRoad = (ax, ay, bx, by) => { for (let k = 1; k <= 4; k++){ const t = k / 4; if (!offRoad(ax + (bx - ax) * t, ay + (by - ay) * t)) return false; } return true; };
-for (let i = 0, tries = 0; i < (COARSE ? 140 : 220) && tries < 4000; tries++){
-  const busy = Math.random() < .72, anchor = busy ? pick(crowdSpots) : pick(ADDR), spread = busy ? 90 : 60;
+const CROWD_N = COARSE ? 330 : 580;
+for (let i = 0, tries = 0; i < CROWD_N && tries < 16000; tries++){
+  const r = Math.random(), busy = r < .7, anchor = busy ? pick(crowdSpots) : r < .88 ? pick(urbanAddr) : pick(ADDR), spread = busy ? 110 : 70;
   const a = {x: anchor.x + (Math.random()-.5)*spread, y: anchor.y + (Math.random()-.5)*spread};
   if (isWater(a.x, a.y) || hitsSolid(a.x, a.y, 5) || !offRoad(a.x, a.y)) continue;
   people.push({ax:a.x, ay:a.y, x:a.x, y:a.y, tx:a.x, ty:a.y, sp: 16 + Math.random()*22, t: Math.random()*10, a:0, look: randomLook(), load: Math.random() < .16}); i++;
@@ -2533,7 +2537,7 @@ const CROWD = {};
   };
   for (const [k, d] of Object.entries(def)){
     const m = new THREE.InstancedMesh(d.geo, lam('#ffffff', k === 'cap' || k === 'afro' ? {flatShading:true} : null), Math.max(1, d.ids.length));
-    m.count = d.ids.length; m.castShadow = true; m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    m.count = d.ids.length; m.castShadow = true; m.frustumCulled = false; m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     d.ids.forEach((pi, j) => m.setColorAt(j, C.set(d.col(people[pi]))));
     if (m.instanceColor) m.instanceColor.needsUpdate = true;
     scene.add(m); CROWD[k] = {m, ...d};
@@ -4179,7 +4183,7 @@ function loop(now){
   if ((frame++ % 6) === 0) drawMini();
   requestAnimationFrame(loop);
 }
-if (location.search.includes('debug')) window.__ss = {traffic, roadPoint, get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR, get CAR(){ return CAR; }, offRoad, giveVehicle, nearestRoad, WX, rollWeather, get orbit(){ return orbit; }, goInside, deliverFurn, designCmd, get DES(){ return DES; }, SND, SFX, fly, LOC, panelFor, get FLIGHT(){ return FLIGHT; }, MP, tourHome, useStairs, cookAt, takeBath, HOME_DISHES, invOf, sellItem, deliverFurn};
+if (location.search.includes('debug')) window.__ss = {traffic, roadPoint, get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR, get CAR(){ return CAR; }, offRoad, giveVehicle, nearestRoad, WX, rollWeather, get orbit(){ return orbit; }, goInside, deliverFurn, designCmd, get DES(){ return DES; }, SND, SFX, fly, LOC, panelFor, get FLIGHT(){ return FLIGHT; }, MP, tourHome, useStairs, cookAt, takeBath, HOME_DISHES, invOf, sellItem, deliverFurn, cam};
 showIntro(false);
 requestAnimationFrame(loop);
 addEventListener('beforeunload', save);
