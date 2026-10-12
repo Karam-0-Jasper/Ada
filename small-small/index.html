@@ -674,6 +674,7 @@ function rectFree(x, y, w, h, pad){
   const pts = [[x,y],[x+w,y],[x,y+h],[x+w,y+h],[x+w/2,y+h/2]];
   if (pts.some(([px,py]) => isWater(px, py))) return false;
   if (onRunway(x, y, w, h, 24) || inPark(x, y, w, h, 10)) return false;
+  if (LOTS.some(o => x < o.x + o.w + 6 && x + w > o.x - 6 && y < o.y + o.h + 6 && y + h > o.y - 6)) return false;
   if (hitsSolid(x + w/2, y + h/2, Math.max(w, h)/2 + pad)) return false;
   const n = nearestRoad(x + w/2, y + h/2); if (n.d < n.r.w/2 + Math.max(w,h)/2 + 6) return false;
   for (const l of LOCS) if (dist(x + w/2, y + h/2, l.x, l.y) < (l.type === 'carlot' ? 125 : l.type === 'gas' ? 85 : 70)) return false;
@@ -720,6 +721,36 @@ for (const l of [...LOCS].sort((a, b) => PRI(a) - PRI(b))){
   const b = {x:cx - bw/2, y:cy - bh/2, w:bw, h:bh, roof:l.roof, wall:l.wall || '#f4ead8', loc:l};
   l.b = b; buildings.push(b); addSolid(b);
 }
+// parking lots beside every building you can go into (reserved before the filler houses are placed)
+const LOTS = [];
+{
+  const BAY = 15, DEP = 30;
+  const lotFree = (x, y, w, h) => {
+    if (inPark(x, y, w, h, 4) || onRunway(x, y, w, h, 6)) return false;
+    if (LOTS.some(o => x < o.x + o.w + 6 && x + w > o.x - 6 && y < o.y + o.h + 6 && y + h > o.y - 6)) return false;
+    if (LOCS.some(l => l.x > x - 8 && l.x < x + w + 8 && l.y > y - 8 && l.y < y + h + 8)) return false;
+    if (buildings.some(o => x < o.x + o.w + 3 && x + w > o.x - 3 && y < o.y + o.h + 3 && y + h > o.y - 3)) return false;
+    for (let i = 0; i <= 4; i++) for (let j = 0; j <= 3; j++){ const px = x + w * i / 4, py = y + h * j / 3; if (isWater(px, py)) return false; const n = nearestRoad(px, py); if (n.d < n.r.w / 2 + 3) return false; }
+    return true; };
+  for (const l of LOCS){ const b = l.b; if (!b || l.shape === 'stadium') continue;
+    const cx = b.x + b.w/2, cy = b.y + b.h/2, dx = l.x - cx, dy = l.y - cy, alongX = Math.abs(dy) >= Math.abs(dx);
+    const ux = alongX ? 0 : Math.sign(dx) || 1, uy = alongX ? Math.sign(dy) || 1 : 0;
+    let made = null;
+    for (const nb of l.huge ? [8, 6, 4] : l.big ? [4, 3, 2, 1] : [3, 2, 1]){
+      const W = nb * BAY, fy = uy > 0 ? b.y + b.h - DEP : b.y, by2 = uy > 0 ? b.y : b.y + b.h - DEP, fx = ux > 0 ? b.x + b.w - DEP : b.x, bx2 = ux > 0 ? b.x : b.x + b.w - DEP;
+      const cands = alongX
+        ? [[b.x + b.w + 5, fy, W, DEP], [b.x - 5 - W, fy, W, DEP], [b.x + b.w + 5, by2, W, DEP], [b.x - 5 - W, by2, W, DEP], [cx - W/2, uy > 0 ? b.y - 5 - DEP : b.y + b.h + 5, W, DEP]]
+        : [[fx, b.y + b.h + 5, DEP, W], [fx, b.y - 5 - W, DEP, W], [bx2, b.y + b.h + 5, DEP, W], [bx2, b.y - 5 - W, DEP, W], [ux > 0 ? b.x - 5 - DEP : b.x + b.w + 5, cy - W/2, DEP, W]];
+      for (const [x, y, w, h] of cands) if (lotFree(x, y, w, h)){ made = {x, y, w, h, nb, alongX, ux, uy, loc:l}; break; }
+      if (made) break; }
+    if (!made) continue;
+    // bays: cars face the building, like you nose in to park
+    made.bays = []; const a = alongX ? (uy > 0 ? -Math.PI/2 : Math.PI/2) : (ux > 0 ? Math.PI : 0);
+    for (let i = 0; i < made.nb; i++){ const bx = alongX ? made.x + BAY * (i + .5) : made.x + DEP/2, by = alongX ? made.y + DEP/2 : made.y + BAY * (i + .5); made.bays.push({x:bx, y:by, a, busy:false}); }
+    l.lot = made; LOTS.push(made); }
+}
+const inLot = (x, y, pad) => LOTS.find(o => x > o.x - (pad || 0) && x < o.x + o.w + (pad || 0) && y > o.y - (pad || 0) && y < o.y + o.h + (pad || 0));
+
 for (const d of DISTRICTS){
   const n = Math.round(d.w * d.h / 3600 * d.d * .46);
   for (let i = 0, tries = 0; i < n && tries < n * 8; tries++){
@@ -738,7 +769,7 @@ const BUSH_WALL = {x:5130 * K, y:0, w:270 * K, h:H}; addSolid(BUSH_WALL);
 const trees = [], patches = [], waves = [];
 for (let i = 0, t = 0; i < 1700 && t < 9000; t++){
   const x = R() * W, y = R() * H; if (isWater(x, y)) continue;
-  if (hitsSolid(x, y, 10) || inPark(x - 8, y - 8, 16, 16, 0)) continue; const n = nearestRoad(x, y); if (n.d < n.r.w/2 + 10) continue;
+  if (hitsSolid(x, y, 10) || inPark(x - 8, y - 8, 16, 16, 0) || inLot(x, y, 10)) continue; const n = nearestRoad(x, y); if (n.d < n.r.w/2 + 10) continue;
   const coastal = isWater(x, y + 70) || isWater(x - 70, y) || isWater(x, y - 70);
   trees.push({x, y, r: 9 + R() * 9, palm: coastal || R() < .35, a: R() * 6.28}); i++;
 }
@@ -1988,7 +2019,7 @@ function findNear(){
 function canEnter(l){ return l.b && l.type !== 'home' && l.shape !== 'stadium' && l.type !== 'gig' || (l.type === 'gig' && l.gig === 'delivery'); }
 function doAction(){
   if (!near || AUTO) return; const n = near;
-  if (n.type !== 'inside' && !S.inside && canEnter(n)){ if (S.riding){ S.riding = false; toast('You parked outside.'); } return enterPlace(n); }
+  if (n.type !== 'inside' && !S.inside && canEnter(n)){ if (S.riding && !S.duty) parkMyCar(n.lot); else if (S.riding) S.riding = false; return enterPlace(n); }
   openModal(() => n.type === 'inside' ? panelInside(n) : panelFor(n));
 }
 function toggleRide(){
@@ -2000,9 +2031,14 @@ function toggleRide(){
     if ((S.jerry || 0) > 0){ S.jerry--; S.tanks[S.ride] = Math.min(tankOf(S.ride)[0], 10); toast('⛽ You poured a 10 L jerry can into the tank.', 'good'); }
     else return toast(`⛽ The ${VEHICLES[S.ride].t} has no fuel. Buy a jerry can at a gas station.`, 'bad');
   }
-  if (!S.riding && hitsSolid(S.x, S.y, 12)){ toast('Step away from the building to get on.', 'bad'); return; }
-  S.riding = !S.riding;
-  toast(S.riding ? `On your ${VEHICLES[S.ride].t}` : 'You parked and got off'); hud();
+  if (S.riding) return parkMyCar();
+  const P = S.parked && S.parked.ride === S.ride ? S.parked : null;
+  if (P){ const d = Math.hypot(P.x - S.x, P.y - S.y);
+    if (d > 70){ S.wp = {x:P.x, y:P.y, n:'Your ' + VEHICLES[S.ride].t}; return toast(`🚗 Your ${VEHICLES[S.ride].t} is parked at ${P.where}. 📍 Follow the blue beam to it.`, 'gold'); }
+    S.x = P.x; S.y = P.y; player.a = P.a; { const pb = parkedBay(); if (pb) pb.busy = false; } S.parked = null; if (S.wp && /^Your /.test(S.wp.n || '')) S.wp = null; }
+  else if (hitsSolid(S.x, S.y, 12)){ toast('Step away from the building to get on.', 'bad'); return; }
+  S.riding = true; CAR.spd = 0;
+  toast(`On your ${VEHICLES[S.ride].t}`); hud();
 }
 let phoneTab = 'me', renaming = false;
 function openPhone(app){ if (!S) return; renaming = false; momoTo = null; shopSel = null; homesSel = null; phoneApp = typeof app === 'string' ? app : 'home'; openModal(() => Object.assign(phoneScreen(), {phone:true})); }
@@ -2117,6 +2153,7 @@ function update(dt){
   cam.x = lerp(cam.x, S.x, Math.min(1, dt * (S.riding ? 9 : 6))); cam.y = lerp(cam.y, S.y, Math.min(1, dt * (S.riding ? 9 : 6)));
   if (S.riding && (tAcc + dt) > .1) tAcc = .25;
   near = findNear(); gigCheck();
+  if (S.riding){ const o = inLot(S.x, S.y, 6); if (o && o !== lotHint && freeBay(o)){ lotHint = o; toast(`🅿️ Car park at ${o.loc.n}. Press R (or Get off) to park here.`); } else if (!o) lotHint = null; }
   if (S.x > BUSH_WALL.x - 30 && S.x < BUSH_WALL.x + BUSH_WALL.w + 30 && T > (S.bushT || 0)){ S.bushT = T + 25; toast('🌳 The bush is too thick to pass. Catch a flight to Buchanan at Roberts International Airport.'); }
   if ((tAcc += dt) > .25){ tAcc = 0; hud(); }
   if ((saveT += dt) > 8){ saveT = 0; save(); }
@@ -3519,9 +3556,45 @@ function panelPark(l){
   return {ic:l.ic, t:l.n, sub: sports ? 'Opened in 2022 in Sinkor near Spriggs Payne: FIFA-standard pitch, running track, basketball, tennis and volleyball courts, and a children\'s playground.' : 'Unification Park in central Monrovia, opened in December 2023: fountain, gardens, monument and playground.', acts};
 }
 
+/* ---------- parking lots in 3D, parked cars, and parking your own car ---------- */
+const PARKED = [];
+function buildCarParks(){
+  const n = LOTS.length, lines = LOTS.reduce((a, o) => a + o.nb + 1, 0);
+  const asph = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI/2), new THREE.MeshLambertMaterial({color:0x4a4846, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2}), Math.max(1, n));
+  const ln = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI/2), new THREE.MeshBasicMaterial({color:0xf2f2f2, polygonOffset:true, polygonOffsetFactor:-4, polygonOffsetUnits:-4}), Math.max(1, lines));
+  const pTex = canvasTex(64, 64, (x) => { x.fillStyle = '#1565c0'; x.fillRect(0, 0, 64, 64); x.fillStyle = '#fff'; x.font = 'bold 50px Arial'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('P', 32, 35); });
+  const sgn = new THREE.InstancedMesh(new THREE.PlaneGeometry(6, 6), new THREE.MeshBasicMaterial({map:pTex, side:THREE.DoubleSide}), Math.max(1, n));
+  const pole = new THREE.InstancedMesh(new THREE.CylinderGeometry(.3, .3, 12, 5), lam('#9e9e9e'), Math.max(1, n));
+  const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), P = new THREE.Vector3(), Sc = new THREE.Vector3(1, 1, 1), E = new THREE.Euler(); let li = 0;
+  LOTS.forEach((o, i) => {
+    P.set(o.x + o.w/2, .48, o.y + o.h/2); Sc.set(o.w, 1, o.h); M.compose(P, Q.identity(), Sc); asph.setMatrixAt(i, M);
+    for (let k = 0; k <= o.nb; k++){ if (o.alongX){ P.set(o.x + k * o.w / o.nb, .6, o.y + o.h/2); Sc.set(.8, 1, o.h - 4); } else { P.set(o.x + o.w/2, .6, o.y + k * o.h / o.nb); Sc.set(o.w - 4, 1, .8); } M.compose(P, Q.identity(), Sc); ln.setMatrixAt(li++, M); }
+    const sx = o.alongX ? o.x + o.w + 2 : o.x + o.w/2, sy = o.alongX ? o.y + o.h/2 : o.y + o.h + 2; Sc.set(1, 1, 1);
+    P.set(sx, 6, sy); M.compose(P, Q.identity(), Sc); pole.setMatrixAt(i, M); E.set(0, o.alongX ? Math.PI/2 : 0, 0); Q.setFromEuler(E); P.set(sx, 13, sy); M.compose(P, Q, Sc); sgn.setMatrixAt(i, M);
+    // some bays already have cars in them
+    for (const b of o.bays) if (Math.random() < .3 && PARKED.length < 80){ const kind = pick(['car', 'car', 'taxi', 'suv', 'rover', 'truck']), c = vehicleMesh(kind, pick(CARCOL)); c.position.set(b.x, 0, b.y); c.rotation.y = -b.a; c.visible = false; scene.add(c); b.busy = true; PARKED.push({m:c, x:b.x, y:b.y}); addSolid({x:b.x - 7, y:b.y - 7, w:14, h:14}); }
+  });
+  ln.count = li; [asph, ln, sgn, pole].forEach(m => { m.receiveShadow = true; scene.add(m); });
+}
+let parkedT = 0;
+function parkedTick(){ if ((parkedT++ % 20) !== 0) return; for (const p of PARKED) p.m.visible = Math.abs(p.x - cam.x) < 650 && Math.abs(p.y - cam.y) < 650; }
+const parkedBay = () => S.parked && S.parked.lot >= 0 && LOTS[S.parked.lot] ? LOTS[S.parked.lot].bays[S.parked.bay] : null;
+let lotHint = null;
+const freeBay = (o) => o && o.bays.filter(b => !b.busy).sort((a, b) => Math.hypot(a.x - S.x, a.y - S.y) - Math.hypot(b.x - S.x, b.y - S.y))[0];
+// park the car you are riding: into a bay if you are at a car park, otherwise right where you are
+function parkMyCar(lot){
+  const v = VEHICLES[S.ride], o = lot || inLot(S.x, S.y, 18), bay = freeBay(o);
+  if (bay){ const old = parkedBay(); if (old) old.busy = false; S.x = bay.x; S.y = bay.y; player.a = bay.a; bay.busy = true; S.parked = {x:bay.x, y:bay.y, a:bay.a, ride:S.ride, where:o.loc.n, lot:LOTS.indexOf(o), bay:o.bays.indexOf(bay)}; }
+  else S.parked = {x:S.x, y:S.y, a:player.a, ride:S.ride, where:districtAt(S.x, S.y)};
+  S.riding = false; CAR.spd = 0;
+  // step out beside the car
+  for (const side of [1, -1]){ const px = S.x + Math.cos(player.a + Math.PI/2) * 12 * side, py = S.y + Math.sin(player.a + Math.PI/2) * 12 * side; if (!hitsSolid(px, py, 5) && !isWater(px, py)){ S.x = px; S.y = py; break; } }
+  toast(bay ? `🅿️ Parked your ${v.t} at ${o.loc.n}` : `🅿️ You parked your ${v.t} on the roadside`, 'good'); hud(); save();
+}
+
 /* ---------- outside decorations: what you expect to see in front of each place ---------- */
 function decorateOutside(){
-  buildParks(); buildCrossings(); telcoOutside();
+  buildParks(); buildCrossings(); telcoOutside(); buildCarParks();
   // beach restaurants: palava huts, tables and loungers on the sand towards the sea
   for (const l of LOCS.filter(q => q.beach)){
     const hut = (x, y) => { const gr = new THREE.Group(); for (const [px, pz] of [[-6, -6], [6, -6], [-6, 6], [6, 6]]){ const p = new THREE.Mesh(new THREE.CylinderGeometry(.6, .7, 12, 6), lam('#6d4c41')); p.position.set(px, 6, pz); gr.add(p); }
@@ -4165,12 +4238,13 @@ function render(){
   // traffic
   for (const c of traffic){ const p = roadPoint(c.road, c.s), off = c.road.w/4 * c.dir; const x = p.x + Math.cos(p.a + Math.PI/2) * off, z = p.y + Math.sin(p.a + Math.PI/2) * off;
     c.mesh.position.set(x, groundY(x, z), z); c.mesh.rotation.y = -(p.a + (c.dir < 0 ? Math.PI : 0)); }
-  syncPeople(); brakeLights();
+  syncPeople(); brakeLights(); parkedTick();
   // player
   if (S && S.x > -500){
     ensurePlayer();
     const veh = S.riding && !FLIGHT ? VEHICLES[S.ride] : null, gy = groundY(S.x, S.y);
     for (const k in myRides) myRides[k].visible = false;
+    if (!S.riding && S.parked && VEHICLES[S.parked.ride]){ const pv = VEHICLES[S.parked.ride]; if (!myRides[S.parked.ride]) { myRides[S.parked.ride] = vehicleMesh(pv.kind, pv.c); scene.add(myRides[S.parked.ride]); } const pm = myRides[S.parked.ride]; pm.visible = true; pm.position.set(S.parked.x, groundY(S.parked.x, S.parked.y), S.parked.y); pm.rotation.set(0, -S.parked.a, 0); }
     if (veh){
       if (!myRides[S.ride]) { myRides[S.ride] = vehicleMesh(veh.kind, veh.c); scene.add(myRides[S.ride]); }
       const m = myRides[S.ride]; m.visible = true; m.position.set(S.x, gy, S.y); m.rotation.set(CAR.roll || 0, -player.a, CAR.pitch || 0, 'YXZ');
@@ -4281,7 +4355,7 @@ $('#startBtn').addEventListener('click', () => {
   setTimeout(() => toast(`Welcome to Duala, ${S.name}! Head to Waterside Market or Freeport to start earning.`, 'gold'), 300);
   setTimeout(() => toast('Tip: press P (or Phone) for goals and how to play.'), 3200);
 });
-$('#contBtn').addEventListener('click', () => { S = load(); if (!S) return showIntro(true); setTimeout(mpStart, 400); setTimeout(testerBonus, 800); S.duty = null; S.inCar = false; S.riding = false; S.inside = null; placeAt(S.x, S.y); if (!S.look) S.look = defaultLook('m', S.shirt, S.skin); S.momo = S.momo || 0; S.furn = S.furn || {}; S.wardrobe = S.wardrobe || [S.look.outfit || 'tshirt']; S.tx = S.tx || []; if (S.booking) S.booking = null; cam.x = S.x; cam.y = S.y; orbit.pitch = .78; orbit.dist = 175; faceFrom(findNear()); $('#intro').hidden = true; hud(); toast(`Welcome back, ${S.name}!`, 'good'); });
+$('#contBtn').addEventListener('click', () => { S = load(); if (!S) return showIntro(true); { const pb = parkedBay(); if (pb) pb.busy = true; } setTimeout(mpStart, 400); setTimeout(testerBonus, 800); S.duty = null; S.inCar = false; S.riding = false; S.inside = null; placeAt(S.x, S.y); if (!S.look) S.look = defaultLook('m', S.shirt, S.skin); S.momo = S.momo || 0; S.furn = S.furn || {}; S.wardrobe = S.wardrobe || [S.look.outfit || 'tshirt']; S.tx = S.tx || []; if (S.booking) S.booking = null; cam.x = S.x; cam.y = S.y; orbit.pitch = .78; orbit.dist = 175; faceFrom(findNear()); $('#intro').hidden = true; hud(); toast(`Welcome back, ${S.name}!`, 'good'); });
 $('#newBtn').addEventListener('click', () => showIntro(true));
 $('#pname').addEventListener('keydown', e => { if (e.key === 'Enter') $('#startBtn').click(); });
 
@@ -4302,7 +4376,7 @@ function loop(now){
   if ((frame++ % 6) === 0) drawMini();
   requestAnimationFrame(loop);
 }
-if (location.search.includes('debug')) window.__ss = {traffic, roadPoint, get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR, get CAR(){ return CAR; }, offRoad, giveVehicle, nearestRoad, WX, rollWeather, get orbit(){ return orbit; }, goInside, deliverFurn, designCmd, get DES(){ return DES; }, SND, SFX, fly, LOC, panelFor, get FLIGHT(){ return FLIGHT; }, MP, tourHome, useStairs, cookAt, takeBath, HOME_DISHES, invOf, sellItem, deliverFurn, cam, people};
+if (location.search.includes('debug')) window.__ss = {traffic, roadPoint, get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR, get CAR(){ return CAR; }, offRoad, giveVehicle, nearestRoad, WX, rollWeather, get orbit(){ return orbit; }, goInside, deliverFurn, designCmd, get DES(){ return DES; }, SND, SFX, fly, LOC, panelFor, get FLIGHT(){ return FLIGHT; }, MP, tourHome, useStairs, cookAt, takeBath, HOME_DISHES, invOf, sellItem, deliverFurn, cam, people, LOTS, parkMyCar};
 showIntro(false);
 requestAnimationFrame(loop);
 addEventListener('beforeunload', save);
