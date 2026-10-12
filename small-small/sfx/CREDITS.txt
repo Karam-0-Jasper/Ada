@@ -1,0 +1,12 @@
+Sound effects used in Small Small. All are CC0 (public domain) from OpenGameArt.org.
+
+horn_car.mp3   "Car signal" by yaroslavnovikov           https://opengameart.org/content/car-signal
+horn_bike.mp3  "Bicycle Horn" by antumdeluge             https://opengameart.org/content/bicycle-horn
+eng_car.mp3    "Car Sound Effects Pack" by ggbotnet      https://opengameart.org/content/car-sound-effects-pack-low-quality
+eng_truck.mp3  "Car Sound Effects Pack" by ggbotnet      https://opengameart.org/content/car-sound-effects-pack-low-quality
+eng_moto.mp3   "Motor Sound Effect" by ezduzziteh        https://opengameart.org/content/motor-sound-effect
+traffic.mp3    "High traffic road sounds" by ignasd      https://opengameart.org/content/high-traffic-road-sounds
+voices.mp3     "Background voices" by pauliuw            https://opengameart.org/content/background-voices
+crowd.mp3      "Crowd Shouting/Speaking Ambience" by starninjas  https://opengameart.org/content/crowd-shoutingspeaking-ambience
+
+Files were trimmed, converted to mono MP3 and loudness-normalised.

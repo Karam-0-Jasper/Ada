@@ -242,11 +242,12 @@ button{cursor:pointer;border:0;background:none;padding:0}
   <div class="card prompt" id="prompt" hidden></div>
   <div class="card actbar" id="actBar" hidden><b id="actT">Eating…</b><div class="prog"><i id="actP"></i></div></div>
   <div class="joy" id="joy" aria-hidden="true"><i id="knob"></i></div>
-  <div class="card keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <kbd>E</kbd> enter · <kbd>R</kbd> ride · <kbd>P</kbd> phone · <kbd>M</kbd> map · drag to look · <kbd>Space</kbd> handbrake</div>
+  <div class="card keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <kbd>E</kbd> enter · <kbd>R</kbd> ride · <kbd>P</kbd> phone · <kbd>M</kbd> map · drag to look · <kbd>Space</kbd> handbrake · <kbd>H</kbd> horn</div>
   <div class="controls">
     <button class="cbtn" id="phoneBtn" aria-label="Open phone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>Phone</button>
     <div class="card speedo" id="speedo" hidden><b id="spdV" class="num">0</b><small>km/h</small></div>
     <button class="cbtn" id="designBtn" aria-label="Design your home" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V10l7-6 7 6v11"/><path d="M10 21v-6h4v6"/></svg>Design</button>
+    <button class="cbtn" id="hornBtn" aria-label="Horn" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4h4l6 4V6L7 10H3z"/><path d="M16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/></svg>Horn</button>
     <button class="cbtn" id="rideBtn" aria-label="Ride your vehicle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="16" r="3"/><circle cx="18" cy="16" r="3"/><path d="M6 16l4-7h5l3 7M9 9l-1-3h3"/></svg>Ride</button>
     <button class="cbtn big" id="actBtn" aria-label="Enter" disabled>ENTER</button>
   </div>
@@ -286,13 +287,14 @@ import * as THREE from './three.module.min.js';
    WORLD DATA — a stylised Montserrado County
    ========================================================= */
 const K = 1.25; // the city was scaled up: data below is in the original units, multiplied by K after
-const W = 4000 * K, H = 1900 * K;
+const W = 6900 * K, H = 1900 * K;
 const MPP = 2.5; // metres per world pixel (for distances shown to the player)
 
 const WATER = [
-  {k:'ocean', p:[[0,0],[210,0],[220,250],[235,500],[240,800],[230,940],[200,1100],[150,1180],[130,1280],[160,1380],[260,1480],[500,1540],[900,1580],[1400,1612],[1900,1640],[2400,1668],[2900,1690],[3400,1702],[4000,1722],[4000,1900],[0,1900]]},
+  {k:'ocean', p:[[0,0],[210,0],[220,250],[235,500],[240,800],[230,940],[200,1100],[150,1180],[130,1280],[160,1380],[260,1480],[500,1540],[900,1580],[1400,1612],[1900,1640],[2400,1668],[2900,1690],[3400,1702],[4000,1722],[4600,1736],[5200,1748],[5480,1752],[5720,1738],[6000,1702],[6300,1694],[6600,1722],[6900,1735],[6900,1900],[0,1900]]},
   {k:'river', n:'Mesurado River', p:[[180,930],[600,900],[1000,880],[1500,860],[2000,895],[2400,930],[2620,975],[2700,1030],[2640,1085],[2200,1062],[1700,1050],[1200,1078],[900,1098],[600,1115],[180,1112]]},
   {k:'river', n:'St. Paul River', p:[[180,240],[800,236],[1400,276],[2000,328],[2500,400],[2640,460],[2600,505],[2000,420],[1400,372],[800,344],[180,372]]},
+  {k:'river', n:'St. John River', p:[[5410,0],[5490,0],[5505,500],[5480,1000],[5510,1400],[5520,1770],[5400,1770],[5390,1400],[5420,1000],[5395,500]]},
   {k:'river', n:'Stockton Creek', p:[[1872,372],[1958,380],[2012,905],[1928,900]]}
 ];
 const ISLANDS = [[[655,958],[760,948],[792,1000],[742,1042],[668,1036]]];
@@ -315,7 +317,11 @@ const DISTRICTS = [
   {n:'Gardnersville', x:2020,y:450,w:800,h:500, c:'#a8c784', d:.55},
   {n:'Barnersville', x:2820,y:300,w:700,h:550, c:'#9dc47c', d:.32},
   {n:'Brewerville', x:300,y:0,w:1500,h:235, c:'#92bf72', d:.22},
-  {n:'Bensonville', x:3520,y:150,w:480,h:700, c:'#8fbd6e', d:.18}
+  {n:'Bensonville', x:3520,y:150,w:480,h:700, c:'#8fbd6e', d:.18},
+  {n:'Harbel (RIA)', x:4080,y:1080,w:1040,h:600, c:'#6f9e4f', d:0, bush:1},
+  {n:'Fanti Town', x:6100,y:1560,w:350,h:130, c:'#c7b99c', d:.95},
+  {n:'Upper Buchanan', x:5560,y:1130,w:700,h:330, c:'#c2b997', d:.6, urban:1},
+  {n:'Lower Buchanan', x:5600,y:1460,w:1050,h:230, c:'#c9bea9', d:.8}
 ];
 
 const ROADS = [
@@ -328,6 +334,13 @@ const ROADS = [
   {n:'Somalia Drive', w:28, t:'paved', main:1, p:[[700,800],[1000,720],[1300,610],[1600,565],[1900,620],[2100,620],[2600,700],[3100,850],[3500,1050],[3700,1060]]},
   {n:'Brewerville Road', w:22, t:'paved', p:[[1000,720],[1020,380],[1020,120],[700,80]]},
   {n:'Careysburg Road', w:24, t:'paved', p:[[3700,1060],[3880,800],[3950,350]]},
+  {n:'Robertsfield Highway', w:26, t:'paved', main:1, p:[[3700,1060],[3900,1200],[4150,1320],[4420,1390]]},
+  {n:'Buchanan Main Road', w:24, t:'paved', main:1, p:[[5600,1240],[5850,1330],[6100,1420],[6400,1520],[6560,1600]]},
+  {n:'Port Road', w:20, t:'paved', p:[[6100,1420],[6250,1560],[6420,1640]]},
+  {n:'Atlantic Street', w:18, t:'paved', p:[[5580,1640],[5900,1640],[6250,1640]]},
+  {t:'dirt', w:14, p:[[5850,1330],[5800,1640]]},
+  {t:'dirt', w:14, p:[[6400,1520],[6600,1450],[6760,1500]]},
+  {t:'dirt', w:14, p:[[5700,1290],[5660,1170]]},
   {n:'Bushrod Island Road', w:20, t:'paved', p:[[460,540],[372,470],[300,400]]},
   {n:'Old Road', w:18, t:'paved', p:[[1300,1500],[1650,1520],[2000,1545],[2350,1560]]},
   {n:'Airfield Shortcut', w:18, t:'paved', p:[[1960,1420],[1960,1268]]},
@@ -485,6 +498,22 @@ const LOCS = [
   {id:'redlight', n:'Red Light Market', ic:'🍅', x:3470, y:1112, type:'job', job:'market', roof:'#e65100', big:1},
   {id:'dualamkt', n:'Duala Market', ic:'🥭', x:1200, y:588, type:'job', job:'market', roof:'#c62828', big:1},
   {id:'mambahotel', n:'Mamba Point Hotel', ic:'🏨', x:300, y:1322, type:'hotel', roof:'#00695c', big:1, shape:'hotel', floors:5, room:5500},
+  // Roberts International Airport (Harbel) and Buchanan, Grand Bassa County
+  {id:'ria', n:'Roberts International Airport (RIA)', ic:'✈️', x:4520, y:1352, type:'airport', roof:'#eceff1', big:1, huge:1, shape:'terminal', fly:'buch_air', city:'Buchanan'},
+  {id:'buch_air', n:'Buchanan Airfield', ic:'🛩️', x:5650, y:1222, type:'airport', roof:'#b0bec5', big:1, fly:'ria', city:'Monrovia (RIA)'},
+  {id:'buch_port', n:'Port of Buchanan', ic:'⚓', x:6420, y:1596, type:'job', job:'dock', roof:'#37474f', big:1},
+  {id:'fanti', n:'Fanti Town Fish Market', ic:'🐟', x:6200, y:1612, type:'job', job:'market', roof:'#0277bd'},
+  {id:'buch_hosp', n:'Liberian Government Hospital (Buchanan)', ic:'🏥', x:5990, y:1392, type:'job', jobs:['cleaner','aide','nurse','doctor'], roof:'#eeeeee', heal:1, hosp:1},
+  {id:'gbcc', n:'Grand Bassa Community College', ic:'🎓', x:5770, y:1296, type:'school', course:'business', roof:'#2e7d32', big:1},
+  {id:'stpeter', n:'St. Peter Claver Catholic High School', ic:'⛪', x:6150, y:1452, type:'landmark', roof:'#8d6e63'},
+  {id:'lighthouse', n:'Buchanan Lighthouse', ic:'🗼', x:6600, y:1662, type:'landmark', nob:1, shape:'lighthouse'},
+  {id:'buch_cook', n:'Bassa Cookshop', ic:'🍛', x:5900, y:1356, type:'food', roof:'#d35400'},
+  {id:'buch_bar', n:'Waterhouse Bay Bar', ic:'🍻', x:6020, y:1628, type:'bar', roof:'#6a1b9a'},
+  {id:'buch_rest', n:'Bassa Cove Seafood Spot', ic:'🦐', x:5700, y:1628, type:'rest', roof:'#00838f'},
+  {id:'buch_hotel', n:'Bassa Cove Guest House', ic:'🏨', x:5860, y:1662, type:'hotel', roof:'#5d4037', big:1, shape:'hotel', floors:3, room:3500},
+  {id:'gas6', n:'Total Buchanan', ic:'⛽', x:6290, y:1490, type:'gas', brand:'total', nob:1, price:102},
+  {id:'t_buch', n:'Buchanan Taxi Park', ic:'🚕', x:6060, y:1438, type:'taxi', nob:1},
+  {id:'buch_beach', n:'Buchanan Beach', ic:'🏖️', x:6140, y:1676, type:'beach', nob:1},
   {id:'beach', n:'ELWA Beach', ic:'🏖️', x:2960, y:1662, type:'beach', nob:1},
   {id:'t_duala', n:'Duala Taxi Park', ic:'🚕', x:1240, y:662, type:'taxi', nob:1},
   {id:'t_water', n:'Waterside Taxi Park', ic:'🚕', x:745, y:1172, type:'taxi', nob:1},
@@ -504,7 +533,10 @@ for (const d of DISTRICTS){ d.x *= K; d.y *= K; d.w *= K; d.h *= K; }
 for (const r of ROADS) r.p = r.p.map(([x, y]) => [x * K, y * K]);
 for (const l of LOCS){ l.x *= K; l.y *= K; }
 const PLANE = {t:0};
-const RUNWAY = {x:1820 * K, y:1112 * K, w:250 * K, h:34};
+const RUNWAYS = [{x:1820 * K, y:1112 * K, w:250 * K, h:34}, {x:4180 * K, y:1470 * K, w:860 * K, h:54, big:1}, {x:5570 * K, y:1150 * K, w:260 * K, h:30}];
+const RUNWAY = RUNWAYS[0];
+const onRunway = (x, y, w, h, pad) => RUNWAYS.some(r => x < r.x + r.w + pad && x + w > r.x - pad && y < r.y + r.h + pad && y + h > r.y - pad);
+const REG_X = 5300 * K, regionOf = x => x > REG_X ? 'bassa' : 'mont';
 
 const FIRST = ['Comfort','Moses','Fatu','Jartu','Kebeh','Siafa','Mamie','Garmai','Varney','Musu','Sekou','Korto','Tenneh','Yassah','Prince','Blessing','Gbessay','Momo','Hawa','Augustine'];
 const LAST = ['Kollie','Doe','Kamara','Johnson','Tarpeh','Flomo','Kpoto','Sackor','Cooper','Gbala','Togba','Massaquoi','Dolo','Nyumah','Kiazolu','Freeman'];
@@ -602,7 +634,7 @@ function hitsSolid(x, y, r){
 function rectFree(x, y, w, h, pad){
   const pts = [[x,y],[x+w,y],[x,y+h],[x+w,y+h],[x+w/2,y+h/2]];
   if (pts.some(([px,py]) => isWater(px, py))) return false;
-  if (x < RUNWAY.x + RUNWAY.w + 24 && x + w > RUNWAY.x - 24 && y < RUNWAY.y + RUNWAY.h + 24 && y + h > RUNWAY.y - 24) return false;
+  if (onRunway(x, y, w, h, 24)) return false;
   if (hitsSolid(x + w/2, y + h/2, Math.max(w, h)/2 + pad)) return false;
   const n = nearestRoad(x + w/2, y + h/2); if (n.d < n.r.w/2 + Math.max(w,h)/2 + 6) return false;
   for (const l of LOCS) if (dist(x + w/2, y + h/2, l.x, l.y) < (l.type === 'carlot' ? 125 : l.type === 'gas' ? 85 : 70)) return false;
@@ -618,7 +650,7 @@ for (const l of [...LOCS].sort((a, b) => PRI(a) - PRI(b))){
   const n = nearestRoad(l.x, l.y);
   if (n.d < n.r.w/2 + 12){ const dx = l.x - n.x, dy = l.y - n.y, m = Math.hypot(dx, dy) || 1; l.x = n.x + dx/m*(n.r.w/2 + 14); l.y = n.y + dy/m*(n.r.w/2 + 14); }
   if (l.nob) continue;
-  const bw = l.big ? 96 : 70, bh = l.big ? 66 : 50;
+  const bw = l.huge ? 210 : l.big ? 96 : 70, bh = l.huge ? 96 : l.big ? 66 : 50;
   let dx = l.x - n.x, dy = l.y - n.y; const m = Math.hypot(dx, dy);
   if (m < 1 || n.d > 80){ dx = 0; dy = -1; } else { dx /= m; dy /= m; }
   // snap direction to the dominant axis so buildings stay square to the street
@@ -626,7 +658,7 @@ for (const l of [...LOCS].sort((a, b) => PRI(a) - PRI(b))){
   // keep the whole footprint (and a hotel's pool) off every road; try other sides, then step back
   const clear = (x, y) => { const ex = l.shape === 'hotel' ? 42 : 0;
     for (let i = 0; i <= 6; i++) for (let j = 0; j <= 6; j++){ const px = x - 4 + (bw + ex + 8)*i/6, py = y - 4 + (bh + 8)*j/6, q = nearestRoad(px, py); if (q.d < q.r.w/2 + 3 || isWater(px, py)) return false; }
-    if (x < RUNWAY.x + RUNWAY.w + 20 && x + bw + ex > RUNWAY.x - 20 && y < RUNWAY.y + RUNWAY.h + 20 && y + bh > RUNWAY.y - 20) return false;
+    if (onRunway(x, y, bw + ex, bh, 20)) return false;
     if (LOCS.some(o => o !== l && o.x > x - 8 && o.x < x + bw + ex + 8 && o.y > y - 8 && o.y < y + bh + 8)) return false;
     return !buildings.some(o => x < o.x + o.w + 6 && x + bw + ex > o.x - 6 && y < o.y + o.h + 6 && y + bh > o.y - 6); };
   let cx, cy, ok = false;
@@ -660,14 +692,22 @@ for (const d of DISTRICTS){
     buildings.push(b); addSolid(b); i++;
   }
 }
-addSolid({x:RUNWAY.x - 6, y:RUNWAY.y - 6, w:RUNWAY.w + 12, h:RUNWAY.h + 12});
+for (const r of RUNWAYS) addSolid({x:r.x - 6, y:r.y - 6, w:r.w + 12, h:r.h + 12});
+// thick bush between Harbel and the St. John River: you fly to Buchanan
+const BUSH_WALL = {x:5130 * K, y:0, w:270 * K, h:H}; addSolid(BUSH_WALL);
 // trees (palms near the coast, round bush trees inland), ground patches
 const trees = [], patches = [], waves = [];
-for (let i = 0, t = 0; i < 1100 && t < 6000; t++){
+for (let i = 0, t = 0; i < 1700 && t < 9000; t++){
   const x = R() * W, y = R() * H; if (isWater(x, y)) continue;
   if (hitsSolid(x, y, 10)) continue; const n = nearestRoad(x, y); if (n.d < n.r.w/2 + 10) continue;
   const coastal = isWater(x, y + 70) || isWater(x - 70, y) || isWater(x, y - 70);
   trees.push({x, y, r: 9 + R() * 9, palm: coastal || R() < .35, a: R() * 6.28}); i++;
+}
+// dense bush around RIA and the forest wall towards Buchanan
+for (const d of [...DISTRICTS.filter(d => d.bush), BUSH_WALL]) for (let i = 0, t = 0; i < (d === BUSH_WALL ? 520 : 700) && t < 5000; t++){
+  const x = d.x + R() * d.w, y = d.y + R() * d.h; if (isWater(x, y)) continue;
+  if (d !== BUSH_WALL && hitsSolid(x, y, 14)) continue; const n = nearestRoad(x, y); if (n.d < n.r.w/2 + 14) continue;
+  trees.push({x, y, r: 11 + R() * 12, palm: R() < .18, a: R() * 6.28}); i++;
 }
 for (let i = 0; i < 900; i++){ const x = R() * W, y = R() * H; if (!isWater(x, y)) patches.push({x, y, rx: 20 + R()*60, ry: 10 + R()*30, c: R() < .5 ? 'rgba(60,110,40,.18)' : 'rgba(160,90,40,.14)'}); }
 for (let i = 0; i < 700; i++){ const x = R() * W, y = R() * H; if (isWater(x, y) && !hit.isPointInPath(WATER[1].path, x, y)) waves.push({x, y, p: R() * 6.28, l: 10 + R()*16}); }
@@ -824,8 +864,8 @@ function panelExtra(l){
     case 'furniture': {
       const home = S.home, hm = HOMES[home], have = (S.furn && S.furn[home]) || [];
       const small = home === 'auntie';
-      return {ic:'🛋️', t:l.n, sub:`Furniture is delivered to your current home: <b>${hm.t}</b>.${small ? ' Auntie only has space for small things.' : ''}`,
-        acts:Object.entries(FURN).map(([k, f]) => { const own = have.includes(k), blocked = small && !f.small;
+      return {ic:'🛋️', t:l.n, sub:`Furniture is delivered to your current home: <b>${hm.t}</b>.`,
+        acts:Object.entries(FURN).map(([k, f]) => { const own = have.includes(k), blocked = false;
           return {l:`${f.ic} ${f.t}`, s: own ? 'Already in your home' : blocked ? 'Needs your own room or house' : (f.sleep ? `Sleep +${f.sleep}%` : 'Makes your home nicer'), p: own ? '✓' : money(f.p), pc:'minus', dis: own || blocked || !canPay(f.p),
             fn:() => { spend(f.p); deliverFurn(k, `${f.t} delivered to ${hm.t}!`); }}; })};
     }
@@ -870,7 +910,7 @@ function appScreen(){
       }
       if (S.booking) return {t:'OurRide', ic:'🚘', sub:'Your ride is on the way.', body: back + tabs + `<div class="goal"><span class="dot">${RIDE[S.booking.svc].ic}</span><span><b>${esc(S.booking.driver)}</b> · ${esc(S.booking.plate)}<br><small style="color:var(--muted)">To ${esc(LOC[S.booking.dest].n)} · ${money(S.booking.fare)}</small></span></div>`,
         acts:[{l:'Cancel ride', s:'Free while the driver is coming', fn:() => { S.booking = null; toast('Ride cancelled'); }}]};
-      const dests = LOCS.filter(l => l.type !== 'taxi' && dist(S.x, S.y, l.x, l.y) > 150).sort((a, b) => a.n.localeCompare(b.n));
+      const dests = LOCS.filter(l => l.type !== 'taxi' && regionOf(l.x) === regionOf(S.x) && dist(S.x, S.y, l.x, l.y) > 150).sort((a, b) => a.n.localeCompare(b.n));
       return {t:'OurRide', ic:'🚘', sub:'Where are you going? Pick a ride type, then a place.', body: back + tabs +
         `<div class="tabs">${Object.entries(RIDE).map(([k, r]) => `<button data-svc="${k}" aria-selected="${rideSvc === k}">${r.ic} ${r.t}</button>`).join('')}</div>` + balance,
         acts: dests.map(l => { const f = rideFare(rideSvc, l); return {l:`${l.ic} ${l.n}`, s:`${districtAt(l.x, l.y)} · about ${Math.max(2, Math.round(dist(S.x, S.y, l.x, l.y) / 22))} min`, p:money(f), pc:'minus', dis:!canPay(f) || S.inside, fn:() => bookRide(rideSvc, l, f)}; })};
@@ -1095,7 +1135,7 @@ function bookRide2(svc, l){
   });
   save();
 }
-function nearestHospital(x, y){ return LOCS.filter(l => l.hosp).sort((a, b) => dist(x, y, a.x, a.y) - dist(x, y, b.x, b.y))[0]; }
+function nearestHospital(x, y){ return LOCS.filter(l => l.hosp && regionOf(l.x) === regionOf(x)).sort((a, b) => dist(x, y, a.x, a.y) - dist(x, y, b.x, b.y))[0]; }
 function ambulanceRescue(why){
   if (AUTO) return;
   const h = nearestHospital(S.x, S.y), bill = Math.min(S.money + (S.momo || 0), 1200);
@@ -1244,7 +1284,7 @@ function shopScreen(){
   const tabs = `<div class="seg"><button data-shop="home" aria-selected="${shopTab === 'home'}">For your home</button><button data-shop="clothes" aria-selected="${shopTab === 'clothes'}">Clothes</button></div>`;
   const fee = shopTab === 'home' ? (ownHomeInside() ? 0 : 300) : 200, home = S.home, have = (S.furn && S.furn[home]) || [], small = home === 'auntie';
   if (shopTab === 'home') return {t:'LibMart', sub: ownHomeInside() ? 'You are home: it arrives right now and you place it yourself. Free delivery!' : `Delivered to ${HOMES[home].t} · delivery ${money(fee)}`, body: tabs,
-    acts:Object.entries(FURN).map(([k, f]) => { const own = have.includes(k), blocked = small && !f.small;
+    acts:Object.entries(FURN).map(([k, f]) => { const own = have.includes(k), blocked = false;
       return {l:`${f.ic} ${f.t}`, s: own ? 'Already in your home' : blocked ? 'Needs your own room or house' : 'Pay with MoMo or cash, delivered today', p: own ? '✓' : money(f.p + fee), pc:'minus', dis: own || blocked || !canPay(f.p + fee),
         fn:() => { spend(f.p + fee, true); deliverFurn(k, `📦 LibMart delivered your ${f.t}!`); }}; })};
   S.wardrobe = S.wardrobe || [];
@@ -1269,7 +1309,7 @@ function ourrideScreen(){
   }
   if (AUTO) return {t:'OurRide', sub:'Your ride is on the way.', body: tabs + `<div class="goal"><span class="dot">🚘</span><span>${esc(AUTO.label)}</span></div>`, acts:[]};
   if (S.inside) return {t:'OurRide', sub:'Go outside first so the driver can find you.', body: tabs, acts:[]};
-  const dests = LOCS.filter(l => l.type !== 'taxi' && dist(S.x, S.y, l.x, l.y) > 150).sort((a, b) => a.n.localeCompare(b.n));
+  const dests = LOCS.filter(l => l.type !== 'taxi' && regionOf(l.x) === regionOf(S.x) && dist(S.x, S.y, l.x, l.y) > 150).sort((a, b) => a.n.localeCompare(b.n));
   const R = RIDES[rideSvc] || RIDES.keke;
   return {t:'OurRide', sub:R.d, body: tabs + `<div class="seg wrap">${Object.entries(RIDES).map(([k, r]) => `<button data-svc="${k}" aria-selected="${rideSvc === k}">${r.ic} ${r.t}</button>`).join('')}</div>
     <div class="statgrid"><div class="stat"><span>Cash</span><b class="num">${money(S.money)}</b></div><div class="stat"><span>MoMo</span><b class="num">${money(S.momo || 0)}</b></div></div>`,
@@ -1356,6 +1396,7 @@ addEventListener('keydown', e => {
   if (k === 'e' || (k === ' ' && !(S && S.riding)) || k === 'enter'){ e.preventDefault(); doAction(); }
   if (k === ' ' && S && S.riding) e.preventDefault();
   if (k === 'r') toggleRide();
+  if (k === 'h') myHorn();
   if (k === 'p') openPhone();
   if (k === 'm') $('#mapWrap').hidden ? openMap() : closeMap();
 });
@@ -1547,8 +1588,9 @@ function workShift(jobId){
    GIGS (open-world jobs)
    ========================================================= */
 function farAddr(fromX, fromY, minD, maxD){
-  const opts = ADDR.filter(a => { const d = dist(a.x, a.y, fromX, fromY); return d > minD && d < maxD; });
-  return pick(opts.length ? opts : ADDR);
+  const reg = regionOf(fromX), here = ADDR.filter(a => regionOf(a.x) === reg);
+  const opts = here.filter(a => { const d = dist(a.x, a.y, fromX, fromY); return d > minD && d < maxD; });
+  return pick(opts.length ? opts : here.length ? here : ADDR);
 }
 function startGig(kind){
   const who = pick(FIRST) + ' ' + pick(LAST);
@@ -1616,11 +1658,27 @@ function panelHotel(l){
       {l:'🍹 Rooftop bar cocktail', s:'+4 energy · best view in Sinkor', p:money(900), pc:'minus', dis:!canPay(900), fn:() => { spend(900); eat('a rooftop cocktail', 3, {drink:true, e:4}); }},
       {l:'🏊🏾 Swim in the pool', s:'1 hour · +12 energy', p:money(1500), pc:'minus', dis:!canPay(1500), fn:() => { spend(1500); busy('🏊🏾', 'Swimming at the hotel pool…', 'Cool water, hot sun', 1.2, () => { advance(60); S.energy = clamp(S.energy + 12, 0, 100); }); }}]};
 }
+const FARE = {ria:18000, buch_air:18000};
+function panelAirport(l){
+  const to = LOC[l.fly], fare = FARE[l.id] || 18000, big = l.id === 'ria';
+  const busyNow = S.gig || S.duty || AUTO;
+  return {ic:l.ic, t:l.n, sub: big ? 'Liberia\'s main airport at Harbel. 11,000-foot runway, surrounded by bush and rubber trees.' : 'A small airstrip just outside Buchanan, Grand Bassa County.',
+    body:`<div class="facts"><span class="chip">🛫 ${esc(l.n)}</span><span class="chip gold">🛬 ${esc(to.n)}</span><span class="chip">⏱️ 35 min flight</span></div>`,
+    acts:[{l:`✈️ Fly to ${l.city}`, s: busyNow ? 'Finish your job or ride first' : 'Your car stays parked here', p:money(fare), pc:'minus', primary:true, dis: !!busyNow || !canPay(fare), fn:() => fly(l, to, fare)},
+      {l:'More cities', s:'Harper, Zwedru and Voinjama are coming soon', dis:true, fn:() => {}}]};
+}
+function fly(from, to, fare){
+  spend(fare, true); closeModal(); S.riding = false; if (S.inside){ S.inside = null; INT = null; }
+  busy('✈️', `Flying to ${to.n}…`, pick(['Cruising over Grand Bassa at 10,000 ft','The flight attendant brings cold water','You can see the coast and the rubber farms below']), 2.4, () => {
+    advance(35); placeAt(to.x, to.y); faceFrom(to); S.visited = S.visited || []; if (!S.visited.includes(to.id)) S.visited.push(to.id);
+    toast(to.id === 'buch_air' ? '🛬 Welcome to Buchanan, Grand Bassa County! The port city on Waterhouse Bay.' : '🛬 Welcome back to Roberts International Airport!', 'gold'); hud(); save(); checkGoals(); });
+}
 function panelFor(l){
   if (l.type === 'gas') return panelGas(l);
   if (l.type === 'carlot') return panelLot(l);
   if (l.type === 'hotel') return panelHotel(l);
   if (l.type === 'landmark') return panelLandmark(l);
+  if (l.type === 'airport') return panelAirport(l);
   if (l.type === 'club') return panelClub(l);
   const ex = panelExtra(l); if (ex) return ex;
   const h = hour();
@@ -1828,6 +1886,7 @@ function update(dt){
   cam.x = lerp(cam.x, S.x, Math.min(1, dt * (S.riding ? 9 : 6))); cam.y = lerp(cam.y, S.y, Math.min(1, dt * (S.riding ? 9 : 6)));
   if (S.riding && (tAcc + dt) > .1) tAcc = .25;
   near = findNear(); gigCheck();
+  if (S.x > BUSH_WALL.x - 30 && S.x < BUSH_WALL.x + BUSH_WALL.w + 30 && T > (S.bushT || 0)){ S.bushT = T + 25; toast('🌳 The bush is too thick to pass. Catch a flight to Buchanan at Roberts International Airport.'); }
   if ((tAcc += dt) > .25){ tAcc = 0; hud(); }
   if ((saveT += dt) > 8){ saveT = 0; save(); }
 }
@@ -1837,6 +1896,7 @@ function faint(){ if (S.energy <= 0 && !AUTO) ambulanceRescue(); S.energy = Math
    HUD
    ========================================================= */
 function hud(){
+  { const hb = $('#hornBtn'), on = !!(S && S.riding && !S.inside); if (hb.hidden === on) hb.hidden = !on; }
   { const db = $('#designBtn'); const own = ownHomeInside(); if (db.hidden === own) db.hidden = !own; db.classList.toggle('on', !!DES); }
   if (!S) return;
   $('#hName').textContent = S.name;
@@ -1895,7 +1955,8 @@ function drawRoads(c, simple){
   for (const r of ROADS){ if (r.t !== 'dirt') continue; c.strokeStyle = '#b8683a'; c.lineWidth = r.w; c.beginPath(); r.p.forEach(([x,y], i) => i ? c.lineTo(x,y) : c.moveTo(x,y)); c.stroke(); }
   for (const r of ROADS){ if (r.t !== 'paved') continue; c.strokeStyle = '#3d3a38'; c.lineWidth = r.w + 4; c.beginPath(); r.p.forEach(([x,y], i) => i ? c.lineTo(x,y) : c.moveTo(x,y)); c.stroke(); }
   for (const b of BRIDGES){ c.fillStyle = '#3d3a38'; c.fillRect(b.x, b.y, b.w, b.h); }
-  c.fillStyle = '#4a4a48'; c.fillRect(RUNWAY.x, RUNWAY.y, RUNWAY.w, RUNWAY.h); c.fillStyle = '#f2f2f2'; for (let x = RUNWAY.x + 14; x < RUNWAY.x + RUNWAY.w - 14; x += 26) c.fillRect(x, RUNWAY.y + RUNWAY.h/2 - 1, 14, 2);
+  c.fillStyle = 'rgba(30,70,25,.55)'; c.fillRect(BUSH_WALL.x, BUSH_WALL.y, BUSH_WALL.w, BUSH_WALL.h);
+  for (const R of RUNWAYS){ c.fillStyle = '#4a4a48'; c.fillRect(R.x, R.y, R.w, R.h); c.fillStyle = '#f2f2f2'; for (let x = R.x + 14; x < R.x + R.w - 14; x += 26) c.fillRect(x, R.y + R.h/2 - 1, 14, 2); }
 }
 function darkness(){
   const h = hour();
@@ -1978,9 +2039,20 @@ const ROADMATS = [];
   ROADMATS.push([asph.material, new THREE.Color('#3b3937'), new THREE.Color('#1f2226')], [dirt.material, new THREE.Color('#b8683a'), new THREE.Color('#7a4426')]);
   scene.add(dirt, curb, asph, yl, wl);
   // Spriggs Payne runway with a small plane waiting
-  { const rw = new THREE.Mesh(new THREE.BoxGeometry(RUNWAY.w, .5, RUNWAY.h), lam('#4a4a48', po(-3))); rw.position.set(RUNWAY.x + RUNWAY.w/2, .25, RUNWAY.y + RUNWAY.h/2); rw.receiveShadow = true; scene.add(rw);
-    for (let x = RUNWAY.x + 14; x < RUNWAY.x + RUNWAY.w - 14; x += 26){ const d = new THREE.Mesh(new THREE.BoxGeometry(14, .2, 2), new THREE.MeshBasicMaterial({color:0xf2f2f2})); d.position.set(x + 7, .6, RUNWAY.y + RUNWAY.h/2); scene.add(d); }
-    const pl = new THREE.Group(), w = lam('#f5f5f5'), r = lam('#c62828');
+  for (const R of RUNWAYS){ const rw = new THREE.Mesh(new THREE.BoxGeometry(R.w, .5, R.h), lam('#4a4a48', po(-3))); rw.position.set(R.x + R.w/2, .25, R.y + R.h/2); rw.receiveShadow = true; scene.add(rw);
+    for (let x = R.x + 14; x < R.x + R.w - 14; x += 26){ const d = new THREE.Mesh(new THREE.BoxGeometry(14, .2, 2), new THREE.MeshBasicMaterial({color:0xf2f2f2})); d.position.set(x + 7, .6, R.y + R.h/2); scene.add(d); }
+    if (R.big) for (const z of [R.y + 4, R.y + R.h - 4]){ const e = new THREE.Mesh(new THREE.BoxGeometry(R.w, .2, 1.2), new THREE.MeshBasicMaterial({color:0xf2f2f2})); e.position.set(R.x + R.w/2, .6, z); scene.add(e); } }
+  // a passenger jet at RIA
+  { const jet = new THREE.Group(), w = lam('#f7f7f7'), bl = lam('#0d47a1'), R = RUNWAYS[1];
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(5, 4.4, 74, 14).rotateZ(Math.PI/2), w); body.position.y = 11; jet.add(body);
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(5, 12, 8, 0, Math.PI), w); nose.rotation.y = -Math.PI/2; nose.position.set(37, 11, 0); jet.add(nose);
+    const wing = new THREE.Mesh(new THREE.BoxGeometry(16, 1, 80), w); wing.position.set(2, 9, 0); jet.add(wing);
+    for (const z of [-18, 18]){ const en = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 9, 12).rotateZ(Math.PI/2), lam('#9e9e9e')); en.position.set(6, 6, z); jet.add(en); }
+    const fin = new THREE.Mesh(new THREE.BoxGeometry(10, 16, 1), bl); fin.position.set(-32, 20, 0); jet.add(fin); const ts = new THREE.Mesh(new THREE.BoxGeometry(8, 1, 28), w); ts.position.set(-33, 12, 0); jet.add(ts);
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(74, 1.4, 10.2), bl); stripe.position.set(0, 9.5, 0); jet.add(stripe);
+    for (let i = 0; i < 12; i++){ for (const z of [-5.05, 5.05]){ const wdw = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.4, .2), new THREE.MeshBasicMaterial({color:0x1c2a33})); wdw.position.set(-22 + i * 4, 13, z); jet.add(wdw); } }
+    jet.traverse(m => m.castShadow = true); jet.position.set(R.x + 70, 0, R.y + R.h/2); scene.add(jet); PLANE.jet = jet; }
+  { const R = RUNWAY; const pl = new THREE.Group(), w = lam('#f5f5f5'), r = lam('#c62828');
     const body = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2, 30, 10).rotateZ(Math.PI/2), w); body.position.y = 6; pl.add(body);
     const wing = new THREE.Mesh(new THREE.BoxGeometry(7, .7, 36), w); wing.position.set(2, 7, 0); pl.add(wing);
     const tail = new THREE.Mesh(new THREE.BoxGeometry(4, 7, .6), r); tail.position.set(-13, 10, 0); pl.add(tail); const ts = new THREE.Mesh(new THREE.BoxGeometry(4, .5, 12), w); ts.position.set(-13, 7, 0); pl.add(ts);
@@ -2370,7 +2442,7 @@ function furnMesh(k, home){
   }
   return {g, fw, fd, solid};
 }
-const SPOT = {bed:{n:'Bed', ic:'🛏️'}, mattress:{n:'Bed', ic:'🛏️'}, kingbed:{n:'King-size bed', ic:'🛌'}, bigtv:{n:'Smart TV', ic:'🖥️'}, wardrobe:{n:'Wardrobe', ic:'🚪'}, desk:{n:'Desk & laptop', ic:'💻'}, speaker:{n:'Sound system', ic:'🔊'}, aquarium:{n:'Fish tank', ic:'🐠'}, dresser:{n:'Mirror', ic:'🪞'}, sofa:{n:'Sofa', ic:'🛋️'}, tv:{n:'TV', ic:'📺'}, fridge:{n:'Fridge', ic:'🧊'}, radio:{n:'Radio', ic:'📻'}, dining:{n:'Dining table', ic:'🍽️'}, door:{n:'Front door', ic:'🚪'}};
+const SPOT = {fan:{n:'Standing fan', ic:'🌀'}, plant:{n:'Plant', ic:'🪴'}, rug:{n:'Rug', ic:'🧶'}, chairs:{n:'Armchairs', ic:'🪑'}, table:{n:'Coffee table', ic:'🪵'}, shelf:{n:'Bookshelf', ic:'📚'}, art:{n:'Painting', ic:'🖼️'}, generator:{n:'Generator', ic:'⚡'}, ac:{n:'Air conditioner', ic:'❄️'}, lamp:{n:'Floor lamp', ic:'💡'}, ceilfan:{n:'Ceiling fan', ic:'🌀'}, bed:{n:'Bed', ic:'🛏️'}, mattress:{n:'Bed', ic:'🛏️'}, kingbed:{n:'King-size bed', ic:'🛌'}, bigtv:{n:'Smart TV', ic:'🖥️'}, wardrobe:{n:'Wardrobe', ic:'🚪'}, desk:{n:'Desk & laptop', ic:'💻'}, speaker:{n:'Sound system', ic:'🔊'}, aquarium:{n:'Fish tank', ic:'🐠'}, dresser:{n:'Mirror', ic:'🪞'}, sofa:{n:'Sofa', ic:'🛋️'}, tv:{n:'TV', ic:'📺'}, fridge:{n:'Fridge', ic:'🧊'}, radio:{n:'Radio', ic:'📻'}, dining:{n:'Dining table', ic:'🍽️'}, door:{n:'Front door', ic:'🚪'}};
 function buildInterior(homeId){
   const R = ROOMS[homeId], w = R.w, d = R.d, items = ((S.furn && S.furn[homeId]) || []).slice();
   const sc = new THREE.Scene(); sc.background = new THREE.Color(0x15100c);
@@ -2471,6 +2543,7 @@ function designCmd(c){
   designUI();
 }
 $('#designBar').addEventListener('click', e => { const b = e.target.closest('[data-des]'); if (b) designCmd(b.dataset.des); });
+$('#hornBtn').addEventListener('click', myHorn);
 $('#designBtn').addEventListener('click', () => DES ? endDesign() : startDesign());
 // furniture bought while you are home appears in front of you, ready to place
 function deliverFurn(k, msg){
@@ -2513,10 +2586,15 @@ function interiorMove(ix, iy, dt){
   } else player.moving = false;
   let best = null, bd = 1e9;
   for (const s of INT.spots){ const d = Math.hypot(INT.x - s.x, INT.z - s.z); if (d < (s.r || 14) && d < bd){ bd = d; best = s; } }
-  if (best && best.k === 'counter'){ const t = INT.loc.type, nm = t === 'school' ? "Talk to the teacher · enroll or attend class" : t === 'bank' ? 'Talk to the teller · save or withdraw money' : t === 'club' ? 'Bar & DJ' : t === 'job' ? 'Talk to the manager · work a shift' : ['food','rest','bar'].includes(t) ? 'Order at the counter' : t === 'hotel' ? 'Hotel reception · book a room' : t === 'landmark' ? 'Visitor desk' : 'Counter · ' + INT.loc.n; return {id:'in_counter', k:'counter', n:nm, ic:INT.loc.ic, type:'inside'}; }
+  if (best && best.k === 'counter'){ const t = INT.loc.type, nm = t === 'school' ? "Talk to the teacher · enroll or attend class" : t === 'bank' ? 'Talk to the teller · save or withdraw money' : t === 'club' ? 'Bar & DJ' : t === 'job' ? 'Talk to the manager · work a shift' : ['food','rest','bar'].includes(t) ? 'Order at the counter' : t === 'hotel' ? 'Hotel reception · book a room' : t === 'airport' ? 'Check-in desk · book a flight' : t === 'landmark' ? 'Visitor desk' : 'Counter · ' + INT.loc.n; return {id:'in_counter', k:'counter', n:nm, ic:INT.loc.ic, type:'inside'}; }
   return best ? {id:'in_' + best.k, k:best.k, n: best.k === 'door' && INT.place ? 'Exit to the street' : SPOT[best.k].n, ic:SPOT[best.k].ic, type:'inside'} : null;
 }
 function panelInside(s){
+  const P = panelInside0(s), f = INT && !INT.place && INT.items && INT.items[s.k];
+  if (P && f && ownHomeInside()) (P.acts = P.acts || []).push({l:'✋ Move or turn this', s:'Walk it anywhere in the room', fn:() => { closeModal(); startDesign(); pickItem(f); }});
+  return P;
+}
+function panelInside0(s){
   if (INT && INT.place){ if (s.k === 'door') return {ic:'🚪', t:INT.loc.n, sub:'Go back out to the street.', acts:[{l:'Go outside', primary:true, fn:goOutside}]}; return panelFor(INT.loc); }
   const hm = HOMES[S.inside], have = (S.furn && S.furn[S.inside]) || [];
   const bonus = have.reduce((a, k) => a + (FURN[k].sleep || 0), 0), q = Math.min(100, hm.sleep + bonus);
@@ -2532,6 +2610,10 @@ function panelInside(s){
     case 'radio': return {ic:'📻', t:'Radio', sub:'News, hipco and call-in shows.', acts:[{l:'Listen to the radio', s:'30 min · +4 energy', primary:true, fn:() => busy('📻', 'Listening to the radio…', 'The DJ is reading shout-outs', 1, () => { advance(30); S.energy = clamp(S.energy + 4, 0, 100); })}]};
     case 'dining': return {ic:'🍽️', t:'Dining table', sub:'A proper place to eat with family.', acts:[]};
     case 'kingbed': return panelInside({k:'bed'});
+    case 'ac': return {ic:'❄️', t:'Air conditioner', sub:'Cool air all night. You sleep better.', acts:[]};
+    case 'generator': return {ic:'⚡', t:'Generator', sub:'Light when LEC current goes off.', acts:[]};
+    case 'fan': case 'ceilfan': return {ic:'🌀', t:'Fan', sub:'Small breeze in the hot season.', acts:[]};
+    case 'shelf': return {ic:'📚', t:'Bookshelf', sub:'Your books and WAEC past questions.', acts:[]};
     case 'bigtv': return panelInside({k:'tv'});
     case 'wardrobe': { S.wardrobe = S.wardrobe || []; return {ic:'🚪', t:'Wardrobe', sub:'Change into any outfit you own.', acts:S.wardrobe.map(k => ({l:OUTFITS[k] ? OUTFITS[k].t : k, s:S.look.outfit === k ? 'Wearing now' : 'Tap to wear', dis:S.look.outfit === k, fn:() => { wearOutfit(k); save(); toast('Looking sharp!'); }}))}; }
     case 'desk': return {ic:'💻', t:'Desk & laptop', sub:'Do online work from home: graphic design, typing and social media jobs.', acts:[{l:'Work online', s:'3 hours · -12 energy', p:'+' + money(900), pc:'plus', primary:true, dis:S.energy < 15, fn:() => busy('💻', 'Working online…', pick(['Designing a flyer for a Sinkor shop','Running social media for a brand','Typing reports for a client abroad']), 1.6, () => { advance(180); S.energy = clamp(S.energy - 12, 0, 100); payMomo(900, 'Online work'); toast('💸 L$900 paid to your MoMo', 'good'); checkGoals(); })}]};
@@ -2594,7 +2676,8 @@ function addFlag(x, z, h){
 }
 const FLAGS = [], HOTEL_MATS = [];
 for (const l of LOCS){
-  if (l.type !== 'landmark' && !l.police && l.type !== 'hotel') continue;
+  if (l.type !== 'landmark' && !l.police && l.type !== 'hotel' && l.type !== 'airport') continue;
+  if (l.shape === 'lighthouse'){ const t = new THREE.Mesh(new THREE.CylinderGeometry(6, 10, 80, 14), lam('#fafafa')); t.position.set(l.x + 14, 40, l.y + 14); t.castShadow = true; scene.add(t); for (const y of [18, 48]){ const b = new THREE.Mesh(new THREE.CylinderGeometry(9.6 - y * .045, 10 - y * .045, 9, 14), lam('#c62828')); b.position.set(l.x + 14, y, l.y + 14); scene.add(b); } const lamp = new THREE.Mesh(new THREE.SphereGeometry(3.2, 10, 8), new THREE.MeshBasicMaterial({color:0xfff3b0})); lamp.position.set(l.x + 14, 84, l.y + 14); lamp.scale.setScalar(1.6); scene.add(lamp); continue; }
   if (l.nob){ const ob = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 4, 40, 4), lam('#e0dccf')); ob.position.set(l.x, 20, l.y); ob.castShadow = true; scene.add(ob); addFlag(l.x + 12, l.y + 6, 34); continue; }
   const b = l.b; if (!b) continue; const h = BH.get(b), cx = b.x + b.w/2, cz = b.y + b.h/2;
   if (l.shape === 'dome'){ const d = new THREE.Mesh(new THREE.SphereGeometry(Math.min(b.w, b.h) * .32, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), lam('#f5f5f5')); d.position.set(cx, h + 1.6, cz); d.castShadow = true; scene.add(d);
@@ -2609,6 +2692,10 @@ for (const l of LOCS){
     const top = new THREE.Mesh(new THREE.PlaneGeometry(tw, tw * 96 / 512), new THREE.MeshBasicMaterial({map:tex(c3), transparent:true, side:THREE.DoubleSide})); top.position.set(cx, h + floors * fh + 8, cz + td / 2 + .5); scene.add(top); const top2 = top.clone(); top2.material = top.material.clone(); top2.material.side = THREE.FrontSide; top2.position.z = cz - td / 2 - .5; top2.rotation.y = Math.PI; scene.add(top2); top.material.side = THREE.FrontSide;
     const pool = new THREE.Mesh(new THREE.BoxGeometry(26, .6, 14), lam('#29b6f6')); pool.position.set(cx + b.w / 2 + 18, .3, cz); scene.add(pool);
   }
+  if (l.shape === 'terminal'){ const glass = new THREE.Mesh(new THREE.BoxGeometry(b.w * 1.25, 14, b.h * .8), new THREE.MeshLambertMaterial({color:0x7fb3d5, emissive:0x223344})); glass.position.set(cx, h + 7, cz); glass.castShadow = true; scene.add(glass);
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(b.w * 1.4, 2, b.h * 1.05), lam('#eceff1')); roof.position.set(cx, h + 15, cz); scene.add(roof);
+    const tw = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 4.4, 62, 10), lam('#e0e0e0')); tw.position.set(cx + b.w * .8, 31, cz); tw.castShadow = true; scene.add(tw);
+    const cab = new THREE.Mesh(new THREE.CylinderGeometry(8, 6, 8, 10), new THREE.MeshLambertMaterial({color:0x4fc3f7, emissive:0x113344})); cab.position.set(cx + b.w * .8, 66, cz); scene.add(cab); }
   if (l.shape === 'tower'){ const t = new THREE.Mesh(new THREE.BoxGeometry(b.w * .7, 70, b.h * .7), wallMat); t.position.set(cx, h + 35, cz); t.castShadow = true; scene.add(t); }
   if (l.shape === 'stadium'){ const s = new THREE.Mesh(new THREE.CylinderGeometry(b.w * .62, b.w * .5, 14, 28, 1, true), lam('#9e9e9e', {side:THREE.DoubleSide})); s.position.set(cx, h + 7, cz); s.scale.z = b.h / b.w; s.castShadow = true; scene.add(s);
     const pitch = new THREE.Mesh(new THREE.PlaneGeometry(b.w * .8, b.h * .7), lam('#3c9a3c')); pitch.rotation.x = -Math.PI/2; pitch.position.set(cx, h + 2, cz); scene.add(pitch); }
@@ -2869,13 +2956,34 @@ function soundOn(){ try { if (SND.ctx){ if (SND.ctx.state === 'suspended') SND.c
     const am = SND.crowdAM = c.createGain(); am.gain.value = 1; g.connect(am).connect(master); }
   // club / bar music: a simple four-on-the-floor beat with a bass line
   SND.music = c.createGain(); SND.music.gain.value = 0; SND.music.connect(master); SND.beatT = 0;
+  loadSfx();
 } catch (e) {} }
 function soundToggle(){ SND.on = !SND.on; try { localStorage.setItem('ss_sound', SND.on ? 'on' : 'off'); } catch (e) {} if (SND.master) SND.master.gain.value = SND.on ? 1 : 0; toast(SND.on ? '🔊 Sound on' : '🔇 Sound off'); }
 function thunder(near){ try { const c = SND.ctx; if (!c) return; const src = c.createBufferSource(); src.buffer = SND.buf; const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = near ? 420 : 200; const g = c.createGain(), t = c.currentTime + (near ? .15 : 1.2);
   g.gain.setValueAtTime(0, c.currentTime); g.gain.linearRampToValueAtTime(near ? .55 : .3, t + .05); g.gain.exponentialRampToValueAtTime(.001, t + 2.6); src.connect(f).connect(g).connect(SND.master); src.start(); src.stop(t + 2.8); } catch (e) {} }
 function blip(type, f0, f1, dur, vol, when){ const c = SND.ctx; if (!c) return; const t = c.currentTime + (when || 0), o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.setValueAtTime(f0, t); if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
   g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .01); g.gain.exponentialRampToValueAtTime(.001, t + dur); o.connect(g).connect(SND.master); o.start(t); o.stop(t + dur + .05); }
-function horn(vol, truck){ const f = truck ? 180 : 400 + Math.random() * 80; blip('square', f, 0, truck ? .7 : .28, vol * .5); blip('square', f * 1.26, 0, truck ? .7 : .28, vol * .35); if (!truck && Math.random() < .5) { blip('square', f, 0, .2, vol * .5, .34); blip('square', f * 1.26, 0, .2, vol * .35, .34); } }
+// real recorded sounds (CC0, OpenGameArt, see sfx/CREDITS.txt); the synth above fills in until they load
+const SFX = {};
+function loadSfx(){ const c = SND.ctx; for (const n of ['horn_car','horn_bike','eng_car','eng_truck','eng_moto','traffic','voices','crowd'])
+  fetch('sfx/' + n + '.mp3').then(r => r.arrayBuffer()).then(b => new Promise((ok, no) => c.decodeAudioData(b, ok, no))).then(buf => { SFX[n] = buf; if (Object.keys(SFX).length === 8) sfxReady(); }).catch(() => {}); }
+function loopOf(buf, gain){ const c = SND.ctx, src = c.createBufferSource(), g = c.createGain(); src.buffer = buf; src.loop = true; src.loopStart = .06; src.loopEnd = buf.duration - .06; g.gain.value = 0; src.connect(g).connect(gain || SND.master); src.start(c.currentTime, Math.random() * buf.duration * .8); return {src, g}; }
+function sfxReady(){
+  SND.L = {meCar:loopOf(SFX.eng_car), meTruck:loopOf(SFX.eng_truck), meMoto:loopOf(SFX.eng_moto), car:loopOf(SFX.eng_car), moto:loopOf(SFX.eng_moto), truck:loopOf(SFX.eng_truck), city:loopOf(SFX.traffic), voices:loopOf(SFX.voices), crowd:loopOf(SFX.crowd)};
+  SND.ready = true;
+}
+function playSfx(name, vol, rate, pan){ const c = SND.ctx, b = SFX[name]; if (!c || !b) return false; const src = c.createBufferSource(), g = c.createGain(); src.buffer = b; src.playbackRate.value = rate || 1; g.gain.value = vol;
+  let out = g; if (c.createStereoPanner){ const p = c.createStereoPanner(); p.pan.value = clamp(pan || 0, -1, 1); g.connect(p); out = p; } out.connect(SND.master); src.connect(g); src.start(); return true; }
+// pan a sound at world (x, y) relative to where the camera looks
+const panAt = (x, y) => { const dx = x - S.x, dy = y - S.y, m = Math.hypot(dx, dy) || 1; return (dx * Math.cos(orbit.yaw) - dy * Math.sin(orbit.yaw)) / m * .8; };
+const HORN_KIND = k => k === 'moto' || k === 'keke' ? 'bike' : k === 'lorry' || k === 'bus' || k === 'truck' ? 'truck' : 'car';
+function horn(vol, kind, x, y){
+  const hk = HORN_KIND(kind), pan = x !== undefined ? panAt(x, y) : 0;
+  if (SFX.horn_car){ if (hk === 'bike') playSfx('horn_bike', vol * 3.2, 1.05 + Math.random() * .3, pan); else playSfx('horn_car', vol * 3.4, hk === 'truck' ? .68 + Math.random() * .06 : .92 + Math.random() * .2, pan); return; }
+  const f = hk === 'truck' ? 180 : hk === 'bike' ? 620 : 400 + Math.random() * 80; blip('square', f, 0, hk === 'truck' ? .7 : .28, vol * .5); blip('square', f * 1.26, 0, hk === 'truck' ? .7 : .28, vol * .35);
+}
+function myHorn(){ if (!S || !S.riding || S.inside) return; soundOn(); const k = VEHICLES[S.ride].kind; horn(.22, k);
+  for (const q of people) if (Math.hypot(q.x - S.x, q.y - S.y) < 60){ q.tx = q.x + (q.x - S.x) * .6; q.ty = q.y + (q.y - S.y) * .6; } }
 function kick(t, vol){ const c = SND.ctx, o = c.createOscillator(), g = c.createGain(); o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(40, t + .18); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + .25); o.connect(g).connect(SND.music); o.start(t); o.stop(t + .3); }
 const BASS = [55, 55, 65.4, 49];
 let hornT = 3;
@@ -2883,29 +2991,42 @@ function soundTick(dt){
   const c = SND.ctx; if (!c || !S || S.x < -500) return; const now = c.currentTime, set = (p, v) => p.setTargetAtTime(v, now, .12);
   const inside = !!S.inside, place = inside && INT && INT.place ? INT.loc : null;
   // your own engine
-  const veh = S.riding && !inside ? VEHICLES[S.ride] : null;
-  if (veh){ const k = veh.kind, sp = Math.abs(CAR.spd), rev = sp / (k === 'moto' ? 60 : 85), gear = rev % 1;
+  const veh = S.riding && !inside ? VEHICLES[S.ride] : null, L = SND.ready ? SND.L : null;
+  const sp = Math.abs(CAR.spd), k = veh ? veh.kind : '', moto = k === 'moto' || k === 'keke', heavy = k === 'truck' || k === 'suv' || k === 'gwagon';
+  if (L){ set(SND.me.g.gain, 0);
+    const rev = Math.min(1.4, sp / (moto ? 70 : 95)), gear = (sp / (moto ? 30 : 38)) % 1, rate = .78 + rev * .7 + gear * .28 + (k === 'supercar' || k === 'sports' ? .25 : 0);
+    set(L.meCar.g.gain, veh && !moto && !heavy ? .42 + rev * .25 : 0); set(L.meTruck.g.gain, veh && heavy ? .5 + rev * .25 : 0); set(L.meMoto.g.gain, veh && moto ? .32 + rev * .2 : 0);
+    set(L.meCar.src.playbackRate, rate); set(L.meTruck.src.playbackRate, .8 + rev * .55 + gear * .15); set(L.meMoto.src.playbackRate, (k === 'keke' ? .78 : .9) + rev * .8 + gear * .3);
+  } else if (veh){ const rev = sp / (moto ? 60 : 85), gear = rev % 1;
     const base = k === 'moto' ? 70 : k === 'truck' ? 32 : k === 'keke' ? 62 : k === 'supercar' || k === 'sports' ? 48 : 40;
     set(SND.me.o1.frequency, base * (1 + gear * 1.6 + Math.min(1, rev) * .4)); set(SND.me.o2.frequency, base * .5 * (1 + gear * 1.6));
     set(SND.me.lp.frequency, 380 + sp * 9 + (k === 'supercar' || k === 'sports' ? 600 : 0)); set(SND.me.g.gain, (k === 'supercar' || k === 'sports' ? .09 : .06) + Math.min(.05, sp / 2000));
   } else set(SND.me.g.gain, 0);
-  // traffic around you: nearest car and nearest truck or bus
-  let car = 1e9, truck = 1e9, nearC = null;
-  if (!inside) for (const t of traffic){ const p = roadPoint(t.road, t.s), d = Math.hypot(p.x - S.x, p.y - S.y); if (t.kind === 'lorry' || t.kind === 'bus' || t.kind === 'truck'){ if (d < truck) truck = d; } else if (d < car){ car = d; nearC = t; } }
+  // traffic around you: nearest car, nearest bike and nearest truck or bus
+  let car = 1e9, bike = 1e9, truck = 1e9, nearC = null, nearT = null, nearB = null, many = 0;
+  if (!inside) for (const t of traffic){ const p = roadPoint(t.road, t.s), d = Math.hypot(p.x - S.x, p.y - S.y); if (d < 320) many++;
+    if (t.kind === 'lorry' || t.kind === 'bus' || t.kind === 'truck'){ if (d < truck){ truck = d; nearT = t; } } else if (t.kind === 'moto' || t.kind === 'keke'){ if (d < bike){ bike = d; nearB = t; } } else if (d < car){ car = d; nearC = t; } }
   const fall = (d, r) => Math.max(0, 1 - d / r) ** 2;
-  set(SND.car.g.gain, fall(car, 170) * .07); set(SND.car.o1.frequency, nearC && nearC.kind === 'moto' ? 85 : nearC && nearC.kind === 'keke' ? 66 : 52); set(SND.car.o2.frequency, nearC && nearC.kind === 'moto' ? 42 : 27);
-  set(SND.truck.g.gain, fall(truck, 230) * .12); set(SND.truck.o1.frequency, 26 + Math.sin(now * .7) * 2);
+  if (L){ set(SND.car.g.gain, 0); set(SND.truck.g.gain, 0);
+    set(L.car.g.gain, fall(car, 190) * .45); set(L.car.src.playbackRate, nearC ? .9 + nearC.sp / 260 : 1);
+    set(L.moto.g.gain, fall(bike, 160) * .35); set(L.moto.src.playbackRate, nearB ? (nearB.kind === 'keke' ? .8 : 1) + nearB.sp / 300 : 1);
+    set(L.truck.g.gain, fall(truck, 260) * .6); set(L.truck.src.playbackRate, .72 + Math.sin(now * .5) * .03);
+    const urban = (DISTRICTS.find(d => S.x > d.x && S.x < d.x + d.w && S.y > d.y && S.y < d.y + d.h) || {}).urban;
+    set(L.city.g.gain, inside ? 0 : Math.min(1, many / 10) * (urban ? .3 : .16));
+  } else { set(SND.car.g.gain, fall(Math.min(car, bike), 170) * .07); set(SND.car.o1.frequency, nearC ? 52 : 85); set(SND.truck.g.gain, fall(truck, 230) * .12); }
   // horns, more in busy districts
-  if (!inside && (hornT -= dt) < 0){ hornT = 2 + Math.random() * 7; const busy = (DISTRICTS.find(d => S.x > d.x && S.x < d.x + d.w && S.y > d.y && S.y < d.y + d.h) || {}).urban; const v = Math.max(fall(car, 220), fall(truck, 260) * 1.2);
-    if (v > .05 && Math.random() < (busy ? .8 : .45)) horn(.12 * v, truck < car && truck < 200); }
+  if (!inside && (hornT -= dt) < 0){ hornT = 1.5 + Math.random() * 6; const busy = (DISTRICTS.find(d => S.x > d.x && S.x < d.x + d.w && S.y > d.y && S.y < d.y + d.h) || {}).urban;
+    const opts = [[car, nearC], [bike, nearB], [truck, nearT]].filter(([d, t]) => t && d < 260).sort((a, b) => a[0] - b[0]);
+    if (opts.length && Math.random() < (busy ? .85 : .5)){ const [d, t] = opts[Math.random() < .7 ? 0 : opts.length - 1], p = roadPoint(t.road, t.s); horn(.11 * Math.max(.15, fall(d, 300) * 1.4), t.kind, p.x, p.y); } }
   // people talking: louder where there are more people nearby, and inside busy places
   let crowd = 0;
   if (!inside){ for (const q of people){ const d = Math.abs(q.x - S.x) + Math.abs(q.y - S.y); if (d < 130) crowd += 1 - d / 130; } crowd = Math.min(1, crowd / 4); }
-  else if (place) crowd = ({market:1, food:.6, rest:.65, bar:.8, club:.7, bank:.35, hospital:.4, school:.45, job:.4, hotel:.35, clothes:.4, barber:.5, salon:.5, landmark:.3, dealer:.3, furniture:.3, realty:.2}[place.job === 'market' ? 'market' : place.type]) || .3;
-  set(SND.crowd.gain, crowd * .075 * (1 - WX.level * .4));
-  for (const [f, fq] of SND.formants) set(f.frequency, fq * (.85 + .3 * Math.random()));
-  set(SND.crowdAM.gain, .55 + .45 * Math.abs(Math.sin(now * 5.3) * Math.sin(now * 2.1 + 1)));
-  if (crowd > .2 && Math.random() < dt * crowd * 1.5) blip('triangle', 180 + Math.random() * 160, 140 + Math.random() * 200, .12 + Math.random() * .12, .012 * crowd);
+  else if (place) crowd = ({market:1, food:.6, rest:.65, bar:.8, club:.7, bank:.35, hospital:.4, school:.45, job:.4, hotel:.35, clothes:.4, barber:.5, salon:.5, landmark:.3, dealer:.3, furniture:.3, realty:.2, airport:.6}[place.job === 'market' ? 'market' : place.type]) || .3;
+  const rainK = 1 - WX.level * .4, loud = place && (place.job === 'market' || place.type === 'club' || place.type === 'bar');
+  if (L){ set(SND.crowd.gain, 0); set(L.voices.g.gain, crowd * .55 * rainK); set(L.crowd.g.gain, (loud ? .35 : crowd > .7 ? .12 : 0) * rainK); }
+  else { set(SND.crowd.gain, crowd * .075 * rainK);
+    for (const [f, fq] of SND.formants) set(f.frequency, fq * (.85 + .3 * Math.random()));
+    set(SND.crowdAM.gain, .55 + .45 * Math.abs(Math.sin(now * 5.3) * Math.sin(now * 2.1 + 1))); }
   // music in bars and clubs
   const music = place && (place.type === 'club' ? 1 : place.type === 'bar' ? .55 : 0);
   set(SND.music.gain, (music || 0) * .5);
@@ -3033,6 +3154,9 @@ function render(){
   } else { youMark.visible = false; beam.visible = ring.visible = waiting.visible = false; if (playerMesh) playerMesh.visible = false; for (const k in myRides) myRides[k].visible = false; }
   syncLifeWorld(); flashLights(); syncPeers(Math.min(.05, T - (render.lastT || T))); render.lastT = T;
   for (const f of FLAGS) f.rotation.y = Math.sin(T * 2 + f.position.x) * .15;
+  if (PLANE.jet){ const R = RUNWAYS[1], cyc = (T % 140) / 140; let x = R.x + 70, y = 0, z = R.y + R.h/2;
+    if (cyc > .55){ const k = (cyc - .55) / .45; x += k * k * (R.w + 1600); y = Math.max(0, (x - R.x - R.w * .55) * .16); }
+    PLANE.jet.position.set(x, y, z); PLANE.jet.rotation.z = y > 0 ? .1 : 0; PLANE.jet.visible = cyc < .99; }
   if (PLANE.g){ const cyc = (T % 90) / 90, L = RUNWAY.w; PLANE.prop.rotation.x = T * 30; let x = RUNWAY.x + 40, y = 0;
     if (cyc > .6){ const k = (cyc - .6) / .4; x += k * k * (L + 900); y = Math.max(0, (x - RUNWAY.x - L * .7) * .18); }
     PLANE.g.position.set(x, y, RUNWAY.y + RUNWAY.h/2); PLANE.g.rotation.z = y > 0 ? .12 : 0; PLANE.g.visible = cyc < .985; }
@@ -3144,7 +3268,7 @@ function loop(now){
   if ((frame++ % 6) === 0) drawMini();
   requestAnimationFrame(loop);
 }
-if (location.search.includes('debug')) window.__ss = {traffic, roadPoint, get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR, get CAR(){ return CAR; }, offRoad, giveVehicle, nearestRoad, WX, rollWeather, get orbit(){ return orbit; }, goInside, deliverFurn, designCmd, get DES(){ return DES; }, SND};
+if (location.search.includes('debug')) window.__ss = {traffic, roadPoint, get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR, get CAR(){ return CAR; }, offRoad, giveVehicle, nearestRoad, WX, rollWeather, get orbit(){ return orbit; }, goInside, deliverFurn, designCmd, get DES(){ return DES; }, SND, SFX, fly, LOC, panelFor};
 showIntro(false);
 requestAnimationFrame(loop);
 addEventListener('beforeunload', save);
