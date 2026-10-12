@@ -533,6 +533,15 @@ for (const d of DISTRICTS){ d.x *= K; d.y *= K; d.w *= K; d.h *= K; }
 for (const r of ROADS) r.p = r.p.map(([x, y]) => [x * K, y * K]);
 for (const l of LOCS){ l.x *= K; l.y *= K; }
 const PLANE = {t:0};
+function jetMesh(){ const jet = new THREE.Group(), w = lam('#f7f7f7'), bl = lam('#0d47a1');
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(5, 4.4, 74, 14).rotateZ(Math.PI/2), w); body.position.y = 11; jet.add(body);
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(5, 12, 8, 0, Math.PI), w); nose.rotation.y = -Math.PI/2; nose.position.set(37, 11, 0); jet.add(nose);
+    const wing = new THREE.Mesh(new THREE.BoxGeometry(16, 1, 80), w); wing.position.set(2, 9, 0); jet.add(wing);
+    for (const z of [-18, 18]){ const en = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 9, 12).rotateZ(Math.PI/2), lam('#9e9e9e')); en.position.set(6, 6, z); jet.add(en); }
+    const fin = new THREE.Mesh(new THREE.BoxGeometry(10, 16, 1), bl); fin.position.set(-32, 20, 0); jet.add(fin); const ts = new THREE.Mesh(new THREE.BoxGeometry(8, 1, 28), w); ts.position.set(-33, 12, 0); jet.add(ts);
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(74, 1.4, 10.2), bl); stripe.position.set(0, 9.5, 0); jet.add(stripe);
+    for (let i = 0; i < 12; i++){ for (const z of [-5.05, 5.05]){ const wdw = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.4, .2), new THREE.MeshBasicMaterial({color:0x1c2a33})); wdw.position.set(-22 + i * 4, 13, z); jet.add(wdw); } }
+    jet.traverse(m => m.castShadow = true); return jet; }
 const RUNWAYS = [{x:1820 * K, y:1112 * K, w:250 * K, h:34}, {x:4180 * K, y:1470 * K, w:860 * K, h:54, big:1}, {x:5570 * K, y:1150 * K, w:260 * K, h:30}];
 const RUNWAY = RUNWAYS[0];
 const onRunway = (x, y, w, h, pad) => RUNWAYS.some(r => x < r.x + r.w + pad && x + w > r.x - pad && y < r.y + r.h + pad && y + h > r.y - pad);
@@ -1667,7 +1676,55 @@ function panelAirport(l){
     acts:[{l:`✈️ Fly to ${l.city}`, s: busyNow ? 'Finish your job or ride first' : 'Your car stays parked here', p:money(fare), pc:'minus', primary:true, dis: !!busyNow || !canPay(fare), fn:() => fly(l, to, fare)},
       {l:'More cities', s:'Harper, Zwedru and Voinjama are coming soon', dis:true, fn:() => {}}]};
 }
+/* ---------- flying: watch the plane take off, cruise and land ---------- */
+let FLIGHT = null;
+function flightPath(fromId){
+  const A = RUNWAYS[1], B = RUNWAYS[2], ya = A.y + A.h/2, yb = B.y + B.h/2, V = THREE.Vector3;
+  const pts = fromId === 'ria'
+    ? [[A.x + 60, 0, ya], [A.x + A.w * .55, 0, ya], [A.x + A.w + 120, 70, ya + 10], [5230 * K, 230, 1640 * K], [5700 * K, 270, 1830 * K], [6160 * K, 240, 1580 * K], [6170 * K, 150, 1250 * K], [6000 * K, 55, yb], [B.x + B.w - 10, 0, yb], [B.x + 40, 0, yb]]
+    : [[B.x + 20, 0, yb], [B.x + B.w * .75, 0, yb], [B.x + B.w + 160, 70, yb - 10], [6150 * K, 230, 950 * K], [5650 * K, 270, 860 * K], [5180 * K, 240, 1150 * K], [5330 * K, 130, ya], [A.x + A.w + 200, 50, ya], [A.x + A.w - 20, 0, ya], [A.x + A.w * .45, 0, ya]];
+  return new THREE.CatmullRomCurve3(pts.map(([x, y, z]) => new V(x, 0, z)), false, 'centripetal', .4);
+}
+const flyBar = document.createElement('div'); flyBar.className = 'card design'; flyBar.hidden = true; flyBar.style.bottom = 'auto'; flyBar.style.top = 'calc(env(safe-area-inset-top,0px) + 12px)';
+flyBar.innerHTML = '<b id="flyT"></b><div class="prog" style="width:220px"><i id="flyP"></i></div><div class="row"><button data-fly="skip">⏩ Skip to landing</button></div>'; document.body.appendChild(flyBar);
+flyBar.addEventListener('click', e => { if (e.target.closest('[data-fly]') && FLIGHT) FLIGHT.s = FLIGHT.len - 1; });
 function fly(from, to, fare){
+  spend(fare, true); closeModal(); S.riding = false; if (S.inside){ goOutside(); }
+  const curve = flightPath(from.id), len = curve.getLength(), jet = jetMesh(); scene.add(jet);
+  const A = RUNWAYS[1], B = RUNWAYS[2], lift = from.id === 'ria' ? A.w * .6 : B.w * .78, roll = from.id === 'ria' ? B.w * .8 : A.w * .5;
+  FLIGHT = {from, to, curve, len, s:0, v:0, jet, yaw:0, bank:0, lift, td: len - roll, alt:0}; orbit.dist = 230; orbit.pitch = .32;
+  toast(`✈️ Boarding at ${from.n}. Fasten your seatbelt!`, 'gold'); flyBar.hidden = false; soundOn();
+}
+const _fp = new THREE.Vector3(), _ft = new THREE.Vector3();
+function flightTick(dt){
+  const F = FLIGHT, end = F.len - F.s, vmax = 95;
+  F.v = Math.min(vmax, Math.sqrt(2 * 9 * F.s) + 6, Math.sqrt(2 * 7 * Math.max(0, end)) + 2);
+  F.s = Math.min(F.len, F.s + F.v * dt);
+  const u = F.s / F.len; F.curve.getPointAt(u, _fp); F.curve.getTangentAt(Math.min(.999, u + .002), _ft);
+  // height: climb after lift-off, cruise, then a long glide down to touchdown
+  const sm = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); }, altAt = q => 270 * sm((q - F.lift) / 900) * (1 - sm((q - (F.td - 1150)) / 1150));
+  const alt = altAt(F.s), pitch = Math.atan2(altAt(F.s + 4) - alt, 4);
+  _fp.y = alt; F.jet.position.copy(_fp); F.alt = alt;
+  const yaw = Math.atan2(_ft.x, _ft.z), dy = ((yaw - F.yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI; F.yaw = yaw;
+  F.bank = lerp(F.bank, clamp(-dy / Math.max(dt, .001) * .45, -.6, .6), .05);
+  F.jet.rotation.set(0, 0, 0); F.jet.lookAt(_fp.x + _ft.x, _fp.y + _ft.y, _fp.z + _ft.z); F.jet.rotateY(-Math.PI/2); F.jet.rotateZ(pitch); F.jet.rotateX(F.bank);
+  // you are on board: the map, the clock and the camera follow the plane
+  S.x = _fp.x; S.y = _fp.z; cam.x = S.x; cam.y = S.y;
+  if (performance.now() - lastLook > 1500){ const want = Math.atan2(-_ft.x, -_ft.z); orbit.yaw += (((want - orbit.yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI) * Math.min(1, dt * 1.5); }
+  orbit.dist = lerp(orbit.dist, _fp.y > 40 ? 330 : 230, dt * .5);
+  const ph = F.s < F.lift ? (F.v < 30 ? 'Rolling down the runway' : 'Taking off!') : F.s > F.td ? 'Touchdown! Slowing down' : F.s > F.td - 1150 ? 'Coming in to land' : alt < 250 ? 'Climbing over the bush' : (F.from.id === 'ria' ? 'Cruising along the coast to Grand Bassa' : 'Cruising back to Margibi');
+  $('#flyT').textContent = `✈️ ${F.from.id === 'ria' ? 'RIA → Buchanan' : 'Buchanan → RIA'} · ${ph}`; $('#flyP').style.width = Math.round(u * 100) + '%';
+  if (SND.L){ if (!SND.jet){ SND.jet = loopOf(SFX.eng_truck); SND.jetW = loopOf(SFX.traffic); } const now = SND.ctx.currentTime;
+    SND.jet.g.gain.setTargetAtTime(.25 + F.v / vmax * .45, now, .2); SND.jet.src.playbackRate.setTargetAtTime(1.1 + F.v / vmax * 1.3, now, .2); SND.jetW.g.gain.setTargetAtTime(F.v / vmax * .5, now, .3); }
+  if (F.s >= F.len - .5 && F.v < 3.5) landFlight();
+}
+function landFlight(){
+  const F = FLIGHT, to = F.to; scene.remove(F.jet); FLIGHT = null; flyBar.hidden = true;
+  if (SND.jet){ SND.jet.g.gain.value = 0; SND.jetW.g.gain.value = 0; }
+  placeAt(to.x, to.y); faceFrom(to); orbit.dist = 175; orbit.pitch = .78; S.visited = S.visited || []; if (!S.visited.includes(to.id)) S.visited.push(to.id);
+  toast(to.id === 'buch_air' ? '🛬 Welcome to Buchanan, Grand Bassa County! The port city on Waterhouse Bay.' : '🛬 Welcome back to Roberts International Airport!', 'gold'); hud(); save(); checkGoals();
+}
+function flyOld(from, to, fare){
   spend(fare, true); closeModal(); S.riding = false; if (S.inside){ S.inside = null; INT = null; }
   busy('✈️', `Flying to ${to.n}…`, pick(['Cruising over Grand Bassa at 10,000 ft','The flight attendant brings cold water','You can see the coast and the rubber farms below']), 2.4, () => {
     advance(35); placeAt(to.x, to.y); faceFrom(to); S.visited = S.visited || []; if (!S.visited.includes(to.id)) S.visited.push(to.id);
@@ -1797,7 +1854,7 @@ function doAction(){
   openModal(() => n.type === 'inside' ? panelInside(n) : panelFor(n));
 }
 function toggleRide(){
-  if (!S || S.inside || AUTO) return;
+  if (!S || S.inside || AUTO || FLIGHT) return;
   if (S.duty){ S.ride = S.duty; if (!S.riding && hitsSolid(S.x, S.y, 12)) return toast('Step away from the building.', 'bad'); S.riding = !S.riding; return hud(); }
   if (!S.vehicles.length){ toast('You don\'t own a vehicle yet. Visit Somalia Drive Motors.', 'bad'); return; }
   if (!S.ride) S.ride = S.vehicles[0];
@@ -1851,6 +1908,7 @@ function update(dt){
   if (S.energy <= 0 && !AUTO) return faint();
   autoTick(dt); mpTick();
   if (actTick()){ player.moving = false; if ((tAcc += dt) > .25){ tAcc = 0; hud(); } return; }
+  if (FLIGHT){ flightTick(dt); near = null; player.moving = false; if ((tAcc += dt) > .25){ tAcc = 0; hud(); } return; }
   if (S.down){ player.moving = false; near = null; if ((tAcc += dt) > .25){ tAcc = 0; hud(); } return; }
   if (!S.inside && !S.riding && !AUTO && (S.hitCD = (S.hitCD || 0) - dt) <= 0){
     for (const c of traffic){ const p = roadPoint(c.road, c.s), off = c.road.w/4 * c.dir; const cx = p.x + Math.cos(p.a + Math.PI/2) * off, cy = p.y + Math.sin(p.a + Math.PI/2) * off;
@@ -2043,15 +2101,8 @@ const ROADMATS = [];
     for (let x = R.x + 14; x < R.x + R.w - 14; x += 26){ const d = new THREE.Mesh(new THREE.BoxGeometry(14, .2, 2), new THREE.MeshBasicMaterial({color:0xf2f2f2})); d.position.set(x + 7, .6, R.y + R.h/2); scene.add(d); }
     if (R.big) for (const z of [R.y + 4, R.y + R.h - 4]){ const e = new THREE.Mesh(new THREE.BoxGeometry(R.w, .2, 1.2), new THREE.MeshBasicMaterial({color:0xf2f2f2})); e.position.set(R.x + R.w/2, .6, z); scene.add(e); } }
   // a passenger jet at RIA
-  { const jet = new THREE.Group(), w = lam('#f7f7f7'), bl = lam('#0d47a1'), R = RUNWAYS[1];
-    const body = new THREE.Mesh(new THREE.CylinderGeometry(5, 4.4, 74, 14).rotateZ(Math.PI/2), w); body.position.y = 11; jet.add(body);
-    const nose = new THREE.Mesh(new THREE.SphereGeometry(5, 12, 8, 0, Math.PI), w); nose.rotation.y = -Math.PI/2; nose.position.set(37, 11, 0); jet.add(nose);
-    const wing = new THREE.Mesh(new THREE.BoxGeometry(16, 1, 80), w); wing.position.set(2, 9, 0); jet.add(wing);
-    for (const z of [-18, 18]){ const en = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 9, 12).rotateZ(Math.PI/2), lam('#9e9e9e')); en.position.set(6, 6, z); jet.add(en); }
-    const fin = new THREE.Mesh(new THREE.BoxGeometry(10, 16, 1), bl); fin.position.set(-32, 20, 0); jet.add(fin); const ts = new THREE.Mesh(new THREE.BoxGeometry(8, 1, 28), w); ts.position.set(-33, 12, 0); jet.add(ts);
-    const stripe = new THREE.Mesh(new THREE.BoxGeometry(74, 1.4, 10.2), bl); stripe.position.set(0, 9.5, 0); jet.add(stripe);
-    for (let i = 0; i < 12; i++){ for (const z of [-5.05, 5.05]){ const wdw = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.4, .2), new THREE.MeshBasicMaterial({color:0x1c2a33})); wdw.position.set(-22 + i * 4, 13, z); jet.add(wdw); } }
-    jet.traverse(m => m.castShadow = true); jet.position.set(R.x + 70, 0, R.y + R.h/2); scene.add(jet); PLANE.jet = jet; }
+  { const R = RUNWAYS[1], jet = jetMesh();
+    jet.position.set(R.x + 70, 0, R.y + R.h/2); scene.add(jet); PLANE.jet = jet; }
   { const R = RUNWAY; const pl = new THREE.Group(), w = lam('#f5f5f5'), r = lam('#c62828');
     const body = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2, 30, 10).rotateZ(Math.PI/2), w); body.position.y = 6; pl.add(body);
     const wing = new THREE.Mesh(new THREE.BoxGeometry(7, .7, 36), w); wing.position.set(2, 7, 0); pl.add(wing);
@@ -3097,7 +3148,7 @@ const _sky = new THREE.Color();
 function render(){
   T = performance.now() / 1000;
   if (S && S.inside && INT){ renderInterior(); return; }
-  const tx = cam.x, tz = cam.y, ty = S ? groundY(S.x, S.y) : 0;
+  const tx = cam.x, tz = cam.y, ty = S ? (FLIGHT ? FLIGHT.alt : groundY(S.x, S.y)) : 0;
   const cp = Math.cos(orbit.pitch), sp = Math.sin(orbit.pitch);
   if (ACT && orbit.dist > 90) orbit.dist = lerp(orbit.dist, 90, .05);
   const shk = CAR.shake * 3; if (shk > 0) { cam.x += (Math.random() - .5) * shk; cam.y += (Math.random() - .5) * shk; }
@@ -3137,7 +3188,7 @@ function render(){
   // player
   if (S && S.x > -500){
     ensurePlayer();
-    const veh = S.riding ? VEHICLES[S.ride] : null, gy = groundY(S.x, S.y);
+    const veh = S.riding && !FLIGHT ? VEHICLES[S.ride] : null, gy = groundY(S.x, S.y);
     for (const k in myRides) myRides[k].visible = false;
     if (veh){
       if (!myRides[S.ride]) { myRides[S.ride] = vehicleMesh(veh.kind, veh.c); scene.add(myRides[S.ride]); }
@@ -3145,9 +3196,9 @@ function render(){
       if (veh.kind === 'moto'){ playerMesh.visible = true; playerMesh.position.set(S.x - Math.cos(player.a) * 1, gy + 4, S.y - Math.sin(player.a) * 1); playerMesh.rotation.y = -player.a; animPerson(playerMesh, 0, false); }
       else playerMesh.visible = false;
     } else {
-      playerMesh.visible = true; playerMesh.position.set(S.x, gy, S.y); playerMesh.rotation.y = -player.a; animPerson(playerMesh, player.step, player.moving); poseFor(playerMesh, ACT, S.down);
+      playerMesh.visible = !FLIGHT; playerMesh.position.set(S.x, gy, S.y); playerMesh.rotation.y = -player.a; animPerson(playerMesh, player.step, player.moving); poseFor(playerMesh, ACT, S.down);
     }
-    youMark.visible = true; youMark.position.set(S.x, gy + 30 + Math.sin(T * 3) * 1.5, S.y); youMark.rotation.y = T * 2;
+    youMark.visible = !FLIGHT; youMark.position.set(S.x, gy + 30 + Math.sin(T * 3) * 1.5, S.y); youMark.rotation.y = T * 2;
     const home = LOC[HOMES[S.home].loc]; homeBeam.position.set(home.x, 60, home.y);
     const g = S.gig; beam.visible = ring.visible = !!g; waiting.visible = !!(g && g.kind === 'passenger' && g.stage === 'pick');
     if (g){ const pulse = 1 + Math.sin(T * 5) * .12; beam.position.set(g.x, 130, g.y); ring.position.set(g.x, groundY(g.x, g.y) + 1.2, g.y); ring.scale.setScalar(pulse); if (waiting.visible){ waiting.position.set(g.x + 8, 0, g.y); waiting.rotation.y = T; } }
@@ -3268,7 +3319,7 @@ function loop(now){
   if ((frame++ % 6) === 0) drawMini();
   requestAnimationFrame(loop);
 }
-if (location.search.includes('debug')) window.__ss = {traffic, roadPoint, get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR, get CAR(){ return CAR; }, offRoad, giveVehicle, nearestRoad, WX, rollWeather, get orbit(){ return orbit; }, goInside, deliverFurn, designCmd, get DES(){ return DES; }, SND, SFX, fly, LOC, panelFor};
+if (location.search.includes('debug')) window.__ss = {traffic, roadPoint, get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR, get CAR(){ return CAR; }, offRoad, giveVehicle, nearestRoad, WX, rollWeather, get orbit(){ return orbit; }, goInside, deliverFurn, designCmd, get DES(){ return DES; }, SND, SFX, fly, LOC, panelFor, get FLIGHT(){ return FLIGHT; }};
 showIntro(false);
 requestAnimationFrame(loop);
 addEventListener('beforeunload', save);
