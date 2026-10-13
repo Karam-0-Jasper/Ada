@@ -2249,10 +2249,10 @@ function fly(from, to, fare){
 // clouds along the route, some below your cruising height and some you fly through
 let CLOUD_TEX = null, FLY_CLOUD_MAT = null;
 function flightClouds(F){
-  CLOUD_TEX = CLOUD_TEX || canvasTex(128, 128, (x) => { for (let i = 0; i < 9; i++){ const cx = 30 + Math.random() * 68, cy = 46 + Math.random() * 36, r = 18 + Math.random() * 22, g = x.createRadialGradient(cx, cy, 2, cx, cy, r); g.addColorStop(0, 'rgba(255,255,255,.95)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 128, 128); } });
+  CLOUD_TEX = CLOUD_TEX || canvasTex(128, 128, (x) => { for (let i = 0; i < 9; i++){ const cx = 30 + Math.random() * 68, cy = 46 + Math.random() * 36, r = 18 + Math.random() * 22, g = x.createRadialGradient(cx, cy, 2, cx, cy, r); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(.62, 'rgba(255,255,255,.92)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 128, 128); } });
   const grp = new THREE.Group(), P = new THREE.Vector3(), N = COARSE ? 45 : 80;
   for (let i = 0; i < N; i++){ F.curve.getPointAt(.08 + Math.random() * .84, P); const side = (Math.random() - .5) * 1600, y = 450 + Math.random() * 900;
-    FLY_CLOUD_MAT = FLY_CLOUD_MAT || new THREE.SpriteMaterial({map:CLOUD_TEX, transparent:true, depthWrite:false, opacity:.8, fog:false});
+    FLY_CLOUD_MAT = FLY_CLOUD_MAT || new THREE.SpriteMaterial({map:CLOUD_TEX, transparent:true, depthWrite:false, opacity:.95, fog:false});
     for (let k = 0; k < 3; k++){ const sp = new THREE.Sprite(FLY_CLOUD_MAT);
       const sc = 160 + Math.random() * 220; sp.scale.set(sc * 1.6, sc, 1); sp.position.set(P.x + side + (Math.random() - .5) * 200, y + (Math.random() - .5) * 60, P.z + (Math.random() - .5) * 600); grp.add(sp); } }
   scene.add(grp); F.clouds = grp;
@@ -5038,7 +5038,7 @@ sunDisc.scale.setScalar(420); moonDisc.scale.setScalar(200); scene.add(sunDisc, 
 // drifting clouds
 // soft, evenly white puffs: not lit by the coloured sun, just a gentle grey underneath
 const CLOUDS = [], cloudMat = new THREE.MeshBasicMaterial({color:0xffffff, vertexColors:true, transparent:true, opacity:.9, fog:false, depthWrite:false});
-const puffGeo = r => { const g = new THREE.IcosahedronGeometry(r, 2), p = g.attributes.position, col = []; for (let i = 0; i < p.count; i++){ const v = .84 + .16 * clamp((p.getY(i) / r + .6) / 1.4, 0, 1); col.push(v, v, v * 1.01); } g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); return g; };
+const puffGeo = r => { const g = new THREE.IcosahedronGeometry(r, 2), p = g.attributes.position, col = []; for (let i = 0; i < p.count; i++){ const v = .95 + .05 * clamp((p.getY(i) / r + .6) / 1.4, 0, 1); col.push(v, v, v * 1.01); } g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); return g; };
 for (let i = 0; i < 26; i++){ const g = new THREE.Group(), n = 3 + (i % 4);
   for (let k = 0; k < n; k++){ const m = new THREE.Mesh(puffGeo(60 + Math.random() * 45), cloudMat); m.position.set(k * 80 - n * 40 + Math.random() * 20, Math.random() * 30, (Math.random() - .5) * 70); m.scale.y = .55; g.add(m); }
   g.userData = {ox:(Math.random() - .5) * 2400, oz:(Math.random() - .5) * 2400, y:480 + Math.random() * 140}; CLOUDS.push(g); scene.add(g); }
@@ -5229,8 +5229,9 @@ function weatherTick(dt, tx, tz, dark){
   const wetK = Math.min(1, lv * 1.4); for (const [m, dry, wetC] of ROADMATS) m.color.copy(dry).lerp(wetC, wetK);
   // clouds drift across the sky with the wind
   const shown = Math.round(4 + WX.cloud * (CLOUDS.length - 4)), grey = 1 - Math.min(.62, lv * .6) - dark * .55;
-  { const h = hour(), warm = clamp(1 - Math.min(Math.abs(h - 6.4), Math.abs(h - 18.3)) / 1.3, 0, 1) * (1 - dark) * .1, g0 = Math.max(.3, grey);
-    cloudMat.color.setRGB(g0, g0 * (1 - warm * .5), g0 * (1 - warm) + dark * .04); cloudMat.opacity = .78 + WX.cloud * .14; if (FLY_CLOUD_MAT) FLY_CLOUD_MAT.color.copy(cloudMat.color); }
+  // clouds stay white: only a little grey in heavy rain and dimmer at night
+  { const g0 = clamp(1 - lv * .25 - dark * .45, .45, 1);
+    cloudMat.color.setRGB(g0, g0, g0); cloudMat.opacity = .95; if (FLY_CLOUD_MAT) FLY_CLOUD_MAT.color.copy(cloudMat.color); }
   CLOUDS.forEach((g, i) => { const u = g.userData; g.visible = i < shown; if (!g.visible) return; u.ox += (wx * 14 + 3) * dt; u.oz += wz * 14 * dt;
     const rx = ((u.ox - tx) % 2400 + 3600) % 2400 - 1200, rz = ((u.oz - tz) % 2400 + 3600) % 2400 - 1200; g.position.set(tx + rx, u.y, tz + rz); });
   // a passing cloud dims the sunshine now and then
