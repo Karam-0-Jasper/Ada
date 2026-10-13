@@ -1285,13 +1285,13 @@ Object.assign(JOBS, {
   manager:     {t:'Office manager', wage:7000, e:24, f:20, req:'mba', verb:'Running meetings', ic:'👔'},
   police:      {t:'Police officer (desk duty)', wage:2200, e:28, f:24, req:'police', verb:'Taking reports at the station', ic:'👮🏾'}
 });
-JOBS.dev.req = ['degree','it'];
+JOBS.dev.req = ['degree', 'it', 'compsci'];
 Object.assign(COURSES, {
   medicine:    {t:'Medical degree (MD)', place:'medschool', fee:120000, n:12, req:'degree', ic:'🩺'},
   engineering: {t:'Engineering diploma', place:'stella', fee:40000, n:8, req:'waec', ic:'⚙️'},
   business:    {t:'Business degree', place:'ameu', fee:45000, n:8, req:'waec', ic:'📈'},
   it:          {t:'Computer science degree', place:'umu', fee:50000, n:9, req:'waec', ic:'🖥️'},
-  compsci:     {t:'Diploma in Computing', place:'bluecrest', fee:38000, n:7, req:'waec', ic:'💻'},
+  compsci:     {t:'BSc in Computing', place:'bluecrest', fee:6000, semFee:6000, sem:8, cps:2, n:16, req:'waec', ic:'💻', hours:s => s <= 4 ? [9, 12.5] : [14, 17]},   // 8 semesters, 2 classes each, pay each semester
   mba:         {t:'MBA', place:'cuttington', fee:80000, n:8, req:['business','degree'], ic:'🎓'},
   police:      {t:'Police training certificate', place:'academy', fee:8000, n:5, req:'waec', ic:'🚔'},
   agric:       {t:'BSc Agriculture', place:'fendall', fee:30000, n:8, req:'waec', ic:'🌱'}
@@ -2401,6 +2401,7 @@ function panelFor(l){
     }
     case 'school': {
       const c = COURSES[l.course], done = S.certs.includes(l.course), prog = S.enrolled[l.course];
+      if (c.sem) return panelSemester(l, c, h);
       const need = !hasReq(c.req), open = h >= 8 && h < 18;
       const acts = [];
       if (done) acts.push({l:'🎓 You graduated', s:'Certificate is in your phone', dis:true});
@@ -2452,15 +2453,36 @@ function panelFor(l){
   }
   return {t:l.n, acts:[]};
 }
+// universities that go by semesters (BlueCrest): register and pay for each semester, finish its classes, get your results, move up
+const fmtHour = x => { const hh = Math.floor(x), mm = Math.round((x - hh) * 60); return `${(hh + 11) % 12 + 1}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'AM' : 'PM'}`; };
+function panelSemester(l, c, h){
+  const id = l.course, done = S.certs.includes(id), prog = S.enrolled[id], paid = (S.semPaid || {})[id] || 0, cps = c.cps, sems = c.sem;
+  const need = !hasReq(c.req);
+  const semNow = prog === undefined ? 1 : Math.min(sems, Math.floor(prog / cps) + 1), inSem = prog === undefined ? 0 : prog % cps, semsDone = prog === undefined ? 0 : Math.floor(prog / cps);
+  const acts = [], res = (S.semRes && S.semRes[id]) || [], [from, to] = c.hours ? c.hours(semNow) : [8, 18], open = h >= from - .5 && h < to - .5, hrs = `${fmtHour(from)} – ${fmtHour(to)}`;
+  if (done) acts.push({l:'🎓 You graduated', s:`${c.t} · your degree is in your phone`, dis:true});
+  else if (prog === undefined || (inSem === 0 && paid < semNow)) acts.push({l:`📝 Register for Semester ${semNow} of ${sems}`, s: need ? `Needs ${reqName(c.req)} first` : `${cps} classes this semester · semester fee`, p:money(c.semFee), pc:'minus', primary:!need && canPay(c.semFee), dis: need || !canPay(c.semFee),
+    fn:() => { spend(c.semFee); S.semPaid = S.semPaid || {}; S.semPaid[id] = semNow; if (S.enrolled[id] === undefined) S.enrolled[id] = 0; toast(`✅ Registered for Semester ${semNow} at ${l.n}! Go to class.`, 'gold'); save(); }});
+  else { const why = !open ? `Semester ${semNow} classes run ${hrs}` : S.energy < 15 ? 'Too tired for class' : S.food < 10 ? 'Too hungry for class' : '';
+    acts.push({l:`📚 Semester ${semNow}: go to class (${inSem + 1} of ${cps})`, s: why || `Class until ${fmtHour(to)} · -15 energy${inSem + 1 === cps ? ' · last class, then your semester results' : ''}`, primary:!why, dis:!!why, fn:() => attendClass(id)}); }
+  const track = Array.from({length:sems}, (_, i) => { const n = i + 1, st = done || n <= semsDone ? 'ok' : n === semNow && prog !== undefined ? 'gold' : '';
+    return `<span class="chip ${st}">${st === 'ok' ? '✓' : st === 'gold' ? '📖' : '🔒'} Sem ${n}${res[i] ? ' · ' + res[i] : ''}</span>`; }).join('');
+  return {ic:c.ic, t:l.n, sub: done ? `You graduated with a <b>${c.t}</b>. Well done!` : prog === undefined ? `Study for a <b>${c.t}</b>: ${sems} semesters, then you graduate.` : `<b>${c.t}</b> · Semester ${semNow} of ${sems}${inSem ? ` · ${inSem} of ${cps} classes done` : ''}.`,
+    body:`<div class="facts"><span class="chip ${open ? 'ok' : ''}">🕘 Semesters 1–4: 9:00 AM – 12:30 PM</span><span class="chip ${open ? 'ok' : ''}">🕑 Semesters 5–8: 2:00 PM – 5:00 PM</span></div><div class="facts" style="margin-top:6px"><span class="chip">Semester fee ${money(c.semFee)}</span><span class="chip">${cps} classes a semester</span><span class="chip">Total ${money(c.semFee * sems)}</span>${c.req ? `<span class="chip ${need ? 'no' : 'ok'}">Needs ${reqName(c.req)}</span>` : ''}</div>
+      <div class="facts" style="margin-top:6px">${track}</div>${prog !== undefined && !done ? `<div class="prog"><i style="width:${prog / c.n * 100}%"></i></div>` : ''}`, acts};
+}
 function attendClass(cid){
   const c = COURSES[cid];
   const seat = INT && INT.place && INT.seats && INT.seats.length ? pick(INT.seats) : null;
   if (seat){ INT.x = seat.x; INT.z = seat.z; INT.a = -Math.PI/2; }
-  activity('class', `${c.ic} In class: ${c.t}…`, 5, () => {
-    advance(240); S.energy = clamp(S.energy - (S.studied ? 8 : 15), 0, 100); S.food = clamp(S.food - 10, 0, 100); S.studied = false;
+  const sem = c.sem ? Math.floor((S.enrolled[cid] || 0) / c.cps) + 1 : 0, to = c.hours ? c.hours(sem)[1] : 0, mins = c.hours ? Math.max(60, Math.round(to * 60 - S.min % 1440)) : 240;
+  activity('class', `${c.ic} In class: ${c.t}${sem ? ' · Semester ' + sem : ''}…`, 5, () => {
+    advance(mins); S.energy = clamp(S.energy - (S.studied ? 8 : 15), 0, 100); S.food = clamp(S.food - 10, 0, 100); S.studied = false;
     S.enrolled[cid]++; S.stats.classes++;
+    if (c.sem && S.enrolled[cid] % c.cps === 0){ const k = S.enrolled[cid] / c.cps, g = pick(['A', 'A-', 'B+', 'B', 'B+', 'A']); S.semRes = S.semRes || {}; (S.semRes[cid] = S.semRes[cid] || [])[k - 1] = g;
+      if (k < c.sem) toast(`🎉 Semester ${k} complete! Your grade: ${g}. Register for Semester ${k + 1} to continue.`, 'gold'); }
     if (S.enrolled[cid] >= c.n){ S.certs.push(cid); delete S.enrolled[cid]; toast(`🎓 You graduated: ${c.t}! New jobs are open.`, 'gold'); confetti(); }
-    else toast(`Class done. ${S.enrolled[cid]} of ${c.n}.`, 'good');
+    else if (!(c.sem && S.enrolled[cid] % c.cps === 0)) toast(c.sem ? `Class done. Semester ${Math.floor(S.enrolled[cid] / c.cps) + 1}: ${S.enrolled[cid] % c.cps} of ${c.cps} classes.` : `Class done. ${S.enrolled[cid]} of ${c.n}.`, 'good');
   });
 }
 function sleep(hm){
@@ -5443,7 +5465,7 @@ function loop(now){
   if ((frame++ % 6) === 0) drawMini();
   requestAnimationFrame(loop);
 }
-if (location.search.includes("debug")) window.__ss = {personMesh, animPerson, randomLook, sleepInBed, setDev, devOn, showMorning, get ACT(){ return ACT; }, scene, gamesScreen, startGame, gameAction, get GAMEP(){ return GAMEP; }, paintScreen, applyPaintAll, BLD, get PAINT(){ return PAINT; }, CLUB, CLUB_SONGS, openPhone, trafficTick, get RUSH(){ return RUSH; }, flightPath, sail, panelFerry, panelAirport, JETTY, DOCKED, RWY, coastY, BH, CANOES, PLANE, regionOf, BUSH_WALLS, CORRIDORS, traffic, roadPoint, get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR, get CAR(){ return CAR; }, offRoad, giveVehicle, nearestRoad, WX, rollWeather, get orbit(){ return orbit; }, goInside, deliverFurn, designCmd, get DES(){ return DES; }, SND, SFX, fly, LOC, panelFor, get FLIGHT(){ return FLIGHT; }, MP, tourHome, useStairs, cookAt, takeBath, HOME_DISHES, invOf, sellItem, deliverFurn, cam, people, LOTS, parkMyCar, peopleTick, buildPlace, buildInterior, canEnter, roomAt};
+if (location.search.includes("debug")) window.__ss = {attendClass, personMesh, animPerson, randomLook, sleepInBed, setDev, devOn, showMorning, get ACT(){ return ACT; }, scene, gamesScreen, startGame, gameAction, get GAMEP(){ return GAMEP; }, paintScreen, applyPaintAll, BLD, get PAINT(){ return PAINT; }, CLUB, CLUB_SONGS, openPhone, trafficTick, get RUSH(){ return RUSH; }, flightPath, sail, panelFerry, panelAirport, JETTY, DOCKED, RWY, coastY, BH, CANOES, PLANE, regionOf, BUSH_WALLS, CORRIDORS, traffic, roadPoint, get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR, get CAR(){ return CAR; }, offRoad, giveVehicle, nearestRoad, WX, rollWeather, get orbit(){ return orbit; }, goInside, deliverFurn, designCmd, get DES(){ return DES; }, SND, SFX, fly, LOC, panelFor, get FLIGHT(){ return FLIGHT; }, MP, tourHome, useStairs, cookAt, takeBath, HOME_DISHES, invOf, sellItem, deliverFurn, cam, people, LOTS, parkMyCar, peopleTick, buildPlace, buildInterior, canEnter, roomAt};
 showIntro(false);
 requestAnimationFrame(loop);
 addEventListener('beforeunload', save);
