@@ -413,7 +413,7 @@ const JOBS = {
   mechanic:{t:'Mechanic',        wage:1300,  e:34, f:25, req:'voc', verb:'Fixing engines at the garage', ic:'🔧'},
   clerk:   {t:'Office clerk',    wage:1800,  e:24, f:20, req:'waec', verb:'Typing invoices on Broad Street', ic:'🗂️'},
   nurse:   {t:'Nurse',           wage:3000,  e:32, f:24, req:'nursing', verb:'Caring for patients on the ward', ic:'🩺'},
-  dev:     {t:'Software developer', wage:6000,  e:26, f:20, req:'degree', verb:'Building apps at the tech hub', ic:'💻'}
+  dev:     {t:'Software developer', wage:6000,  e:26, f:20, req:['degree', 'it', 'compsci'], verb:'Building apps at the tech hub', ic:'💻'}
 };
 const COURSES = {
   waec:    {t:'WAEC (high school)', place:'nightschool', fee:5000,  n:6, ic:'📘'},
@@ -507,6 +507,7 @@ const LOCS = [
   {id:'ameu', n:'AME University (Camp Johnson Rd)', ic:'📈', x:828, y:1400, type:'school', course:'business', roof:'#4527a0', big:1},
   {id:'umu', n:'United Methodist University', ic:'🖥️', x:470, y:1395, type:'school', course:'it', roof:'#1a237e'},
   {id:'medschool', n:'UL College of Medicine (Congo Town)', ic:'🩺', x:2372, y:1330, type:'school', course:'medicine', roof:'#0d47a1'},
+  {id:'bluecrest', n:'BlueCrest University', ic:'💻', x:2290, y:1398, type:'school', course:'compsci', roof:'#0d47a1', wall:'#e3f2fd', big:1, shape:'campus', floors:5},
   {id:'cuttington', n:'Cuttington Graduate School (Congo Town)', ic:'🎓', x:2450, y:1428, type:'school', course:'mba', roof:'#3e2723'},
   {id:'academy', n:'National Police Training Academy', ic:'🚔', x:3120, y:1392, type:'school', course:'police', roof:'#1b2a49', big:1},
   {id:'fendall', n:'UL Fendall Campus', ic:'🌱', x:3893, y:560, type:'school', course:'agric', roof:'#33691e', big:1},
@@ -1290,6 +1291,7 @@ Object.assign(COURSES, {
   engineering: {t:'Engineering diploma', place:'stella', fee:40000, n:8, req:'waec', ic:'⚙️'},
   business:    {t:'Business degree', place:'ameu', fee:45000, n:8, req:'waec', ic:'📈'},
   it:          {t:'Computer science degree', place:'umu', fee:50000, n:9, req:'waec', ic:'🖥️'},
+  compsci:     {t:'Diploma in Computing', place:'bluecrest', fee:38000, n:7, req:'waec', ic:'💻'},
   mba:         {t:'MBA', place:'cuttington', fee:80000, n:8, req:['business','degree'], ic:'🎓'},
   police:      {t:'Police training certificate', place:'academy', fee:8000, n:5, req:'waec', ic:'🚔'},
   agric:       {t:'BSc Agriculture', place:'fendall', fee:30000, n:8, req:'waec', ic:'🌱'}
@@ -4398,7 +4400,7 @@ function addFlag(x, z, h){
 }
 const FLAGS = [], HOTEL_MATS = [];
 for (const l of LOCS){
-  if (l.type !== 'landmark' && !l.police && l.type !== 'hotel' && l.type !== 'airport') continue;
+  if (l.type !== 'landmark' && !l.police && l.type !== 'hotel' && l.type !== 'airport' && l.shape !== 'campus') continue;
   if (l.shape === 'lighthouse'){ const t = new THREE.Mesh(new THREE.CylinderGeometry(6, 10, 80, 14), lam('#fafafa')); t.position.set(l.x + 14, 40, l.y + 14); t.castShadow = true; scene.add(t); for (const y of [18, 48]){ const b = new THREE.Mesh(new THREE.CylinderGeometry(9.6 - y * .045, 10 - y * .045, 9, 14), lam('#c62828')); b.position.set(l.x + 14, y, l.y + 14); scene.add(b); } const lamp = new THREE.Mesh(new THREE.SphereGeometry(3.2, 10, 8), new THREE.MeshBasicMaterial({color:0xfff3b0})); lamp.position.set(l.x + 14, 84, l.y + 14); lamp.scale.setScalar(1.6); scene.add(lamp); continue; }
   if (l.nob){ const ob = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 4, 40, 4), lam('#e0dccf')); ob.position.set(l.x, 20, l.y); ob.castShadow = true; scene.add(ob); addFlag(l.x + 12, l.y + 6, 34); continue; }
   const b = l.b; if (!b) continue; const h = BH.get(b), cx = b.x + b.w/2, cz = b.y + b.h/2;
@@ -4418,6 +4420,23 @@ for (const l of LOCS){
     const roof = new THREE.Mesh(new THREE.BoxGeometry(b.w * 1.4, 2, b.h * 1.05), lam('#eceff1')); roof.position.set(cx, h + 15, cz); scene.add(roof);
     const tw = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 4.4, 62, 10), lam('#e0e0e0')); tw.position.set(cx + b.w * .8, 31, cz); tw.castShadow = true; scene.add(tw);
     const cab = new THREE.Mesh(new THREE.CylinderGeometry(8, 6, 8, 10), new THREE.MeshLambertMaterial({color:0x4fc3f7, emissive:0x113344})); cab.position.set(cx + b.w * .8, 66, cz); scene.add(cab); }
+  // a modern storey building: glass and white floors, a blue crown with the name, a canopy over the entrance
+  if (l.shape === 'campus'){
+    const floors = l.floors || 5, fh = 10, tw = b.w * .9, td = b.h * .82;
+    const gl = canvasTex(64, 64, (x) => { x.fillStyle = '#eceff1'; x.fillRect(0, 0, 64, 64); x.fillStyle = '#4a90c8'; x.fillRect(0, 10, 64, 40); x.fillStyle = '#9cc9ec'; for (let k = 0; k < 4; k++) x.fillRect(2 + k * 16, 12, 12, 36); x.fillStyle = '#0d47a1'; x.fillRect(0, 54, 64, 4); });
+    gl.wrapS = gl.wrapT = THREE.RepeatWrapping; gl.repeat.set(Math.round(tw / 14), floors);
+    const tower = new THREE.Mesh(new THREE.BoxGeometry(tw, floors * fh, td), new THREE.MeshLambertMaterial({map:gl, emissive:0xbfe3ff, emissiveMap:gl, emissiveIntensity:0})); tower.position.set(cx, h + floors * fh / 2, cz); tower.castShadow = true; scene.add(tower); HOTEL_MATS.push(tower.material);
+    const crown = new THREE.Mesh(new THREE.BoxGeometry(tw + 3, 5, td + 3), lam('#0d47a1')); crown.position.set(cx, h + floors * fh + 2.5, cz); crown.castShadow = true; scene.add(crown);
+    const name = canvasTex(512, 96, (x) => { x.fillStyle = '#0d47a1'; x.fillRect(0, 0, 512, 96); x.fillStyle = '#ffffff'; x.font = 'bold 50px Arial, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('BlueCrest University', 256, 50); });
+    for (const sd of [1, -1]){ const sg = new THREE.Mesh(new THREE.PlaneGeometry(tw * .92, tw * .92 * 96 / 512), new THREE.MeshBasicMaterial({map:name})); sg.position.set(cx, h + floors * fh + 13, cz + sd * (td / 2 + .6)); if (sd < 0) sg.rotation.y = Math.PI; scene.add(sg);
+      const bk = new THREE.Mesh(new THREE.BoxGeometry(tw * .94, tw * .94 * 96 / 512 + 1, 1), lam('#0a3577')); bk.position.set(cx, h + floors * fh + 13, cz + sd * (td / 2)); scene.add(bk); }
+    // satellite dish and antenna for the computer labs, an entrance canopy on four columns
+    const dish = new THREE.Mesh(new THREE.SphereGeometry(5, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2.6), lam('#eceff1', {side:THREE.DoubleSide})); dish.position.set(cx - tw / 3, h + floors * fh + 8, cz - td / 4); dish.rotation.x = -.9; scene.add(dish);
+    const ant = new THREE.Mesh(new THREE.CylinderGeometry(.4, .6, 22, 6), lam('#90a4ae')); ant.position.set(cx + tw / 3, h + floors * fh + 16, cz); scene.add(ant);
+    const fx = l.x - cx, fz = l.y - cz, along = Math.abs(fx) > Math.abs(fz), ex = along ? Math.sign(fx) * (b.w / 2 + 7) : 0, ez = along ? 0 : Math.sign(fz) * (b.h / 2 + 7);
+    const can = new THREE.Mesh(new THREE.BoxGeometry(along ? 14 : 30, 1.4, along ? 30 : 14), lam('#0d47a1')); can.position.set(cx + ex, 18, cz + ez); can.castShadow = true; scene.add(can);
+    for (const k of [-1, 1]) for (const j of [0, 1]){ const col = new THREE.Mesh(new THREE.CylinderGeometry(.7, .7, 18, 8), lam('#ffffff')); col.position.set(cx + ex + (along ? (j ? 5 : -5) * Math.sign(fx) : k * 12), 9, cz + ez + (along ? k * 12 : (j ? 5 : -5) * Math.sign(fz))); scene.add(col); }
+  }
   if (l.shape === 'tower'){ const t = new THREE.Mesh(new THREE.BoxGeometry(b.w * .7, 70, b.h * .7), wallMat); t.position.set(cx, h + 35, cz); t.castShadow = true; scene.add(t); }
   if (l.shape === 'stadium'){ const s = new THREE.Mesh(new THREE.CylinderGeometry(b.w * .62, b.w * .5, 14, 28, 1, true), lam('#9e9e9e', {side:THREE.DoubleSide})); s.position.set(cx, h + 7, cz); s.scale.z = b.h / b.w; s.castShadow = true; scene.add(s);
     const pitch = new THREE.Mesh(new THREE.PlaneGeometry(b.w * .8, b.h * .7), lam('#3c9a3c')); pitch.rotation.x = -Math.PI/2; pitch.position.set(cx, h + 2, cz); scene.add(pitch); }
@@ -4674,7 +4693,9 @@ function buildPlace(l){
   const t = l.type;
   if (t === 'school'){
     const bb = new THREE.Mesh(new THREE.PlaneGeometry(50, 22), new THREE.MeshBasicMaterial({map:chalkboard(COURSES[l.course] ? COURSES[l.course].t : l.n)})); bb.position.set(-w/2 + 30, 18, -d/2 + .2); g.add(bb);
-    for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++){ const x = -w/2 + 22 + c * (w - 44) / 3, z = -4 + r * 16; if (Math.abs(x) < 16) continue; box(12, 1, 7, '#a1887f', x, 7, z, g); box(1, 7, 1, '#6d4c41', x, 3.5, z, g); box(7, 1, 6, '#5d4037', x, 4, z + 6, g); solid(x, z, 12, 7);
+    const comp = l.course === 'compsci' || l.course === 'it';
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++){ const x = -w/2 + 22 + c * (w - 44) / 3, z = -4 + r * 16; if (Math.abs(x) < 16) continue; box(12, 1, 7, comp ? '#eceff1' : '#a1887f', x, 7, z, g); box(1, 7, 1, '#6d4c41', x, 3.5, z, g); box(7, 1, 6, '#5d4037', x, 4, z + 6, g); solid(x, z, 12, 7);
+      if (comp){ box(7, 4.6, .5, '#1a1a1a', x, 10.4, z - 2.2, g); box(6.2, 3.8, .2, '#42a5f5', x, 10.5, z - 1.9, g, true); box(1, 1.4, 1, '#333', x, 7.9, z - 2.4, g); box(5, .3, 2, '#424242', x, 7.65, z + .8, g); }
       if (Math.random() < .45){ const s = staff(sc, x, z + 7, Math.PI/2, npcs); s.position.y = -2; s.rotation.y = Math.PI/2; } else seats.push({x, z:z + 7}); }
     hangPictures(g, ['map','abc','math','solar','flag','motto'], w, d);
   } else if (l.hosp){
