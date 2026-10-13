@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#14100E">
-<title>Monrovia Life</title>
+<title>Monrovia Living</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap">
@@ -201,6 +201,17 @@ button{cursor:pointer;border:0;background:none;padding:0}
 /* intro */
 .intro{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;background:radial-gradient(80% 60% at 50% 30%,rgba(229,57,44,.25),transparent 70%),rgba(10,7,5,.55)}
 .intro .card{width:min(460px,100%);padding:24px;display:flex;flex-direction:column;gap:16px;max-height:calc(100vh - 32px);overflow:auto}
+.gm-top{display:flex;justify-content:space-between;align-items:center;margin:8px 2px;font-size:14px}.gm-top span{opacity:.7;font-size:12px}
+.gm-canvas{display:block;width:100%;max-width:300px;margin:0 auto;border-radius:14px;touch-action:none}
+.gm-pad{display:grid;grid-template-columns:repeat(3,56px);grid-template-areas:". u ." "l g r" ". d .";gap:6px;justify-content:center;margin:10px 0}
+.gm-pad button{height:46px;border-radius:12px;border:0;background:#26323d;color:#fff;font-size:18px}.gm-pad [data-game=u]{grid-area:u}.gm-pad [data-game=l]{grid-area:l}.gm-pad [data-game=go]{grid-area:g;background:#1e8e5a}.gm-pad [data-game=r]{grid-area:r}.gm-pad [data-game=d]{grid-area:d}
+.gm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;width:100%;margin:6px 0}.gm-card{aspect-ratio:1;border-radius:12px;border:0;background:linear-gradient(160deg,#3a4c5e,#1f2b36);font-size:28px;color:#000}
+.gm-card.open{background:#fff8e1}.gm-card.found{background:#c8e6c9;opacity:.85}
+.gm-xo{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;width:100%;max-width:280px;margin:8px auto}.gm-cell{aspect-ratio:1;border-radius:14px;border:0;background:#eceff1;font-size:40px}
+.gm-win{text-align:center;font-weight:700;font-size:16px;padding:14px 0}
+.paint-pv{display:block;width:100%;max-width:320px;margin:10px auto;background:#bfe3ff;border-radius:14px}
+.paint-sw{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;width:100%;margin:10px 0}.paint-sw button,.paint-any{aspect-ratio:1;border-radius:50%;border:2px solid #0002;padding:0}.paint-sw button.on{outline:3px solid #1e8e5a;outline-offset:2px}
+.paint-any{display:flex;align-items:center;justify-content:center;font-size:18px;position:relative;overflow:hidden;background:conic-gradient(red,orange,yellow,lime,cyan,blue,magenta,red)}.paint-any input{position:absolute;inset:0;opacity:0;cursor:pointer}
 .logo{font-family:var(--font-display);font-weight:800;font-size:clamp(46px,12vw,64px);line-height:.85;letter-spacing:-.02em}
 .logo span{color:var(--gold);display:inline-block;animation:wig 2.4s ease-in-out infinite}
 @keyframes wig{50%{transform:rotate(-4deg) translateY(-3px)}}
@@ -228,7 +239,7 @@ button{cursor:pointer;border:0;background:none;padding:0}
 </style>
 </head>
 <body>
-<canvas id="game" aria-label="Monrovia Life game world"></canvas>
+<canvas id="game" aria-label="Monrovia Living game world"></canvas>
 <canvas id="fx" aria-hidden="true"></canvas>
 <div id="labels" aria-hidden="true"></div>
 
@@ -271,7 +282,7 @@ button{cursor:pointer;border:0;background:none;padding:0}
 <div class="intro" id="intro">
   <div class="card">
     <div class="flag"><i></i>Monrovia · Liberia</div>
-    <div class="logo">Monrovia<br><span>Life.</span></div>
+    <div class="logo">Monrovia<br><span>Living.</span></div>
     <p>You just reached Duala with <b style="color:var(--ink)">L$1,500</b> and big dreams. Hustle at Waterside, ride for Hot &amp; Fresh, go to school, buy a pen-pen, then a car, then your own house. Small small, you will reach.</p>
     <div id="introNew" style="display:flex;flex-direction:column;gap:14px">
       <div class="field"><label for="pname">Your name</label><input id="pname" maxlength="16" value="Tayo" placeholder="e.g. Tayo" autocomplete="off"></div>
@@ -632,8 +643,18 @@ function fuselageSkin(kind){
     x.fillStyle = '#f7f7f7'; x.fillRect(0, 0, W, H);
     x.fillStyle = jet ? '#0d47a1' : '#1b3a6b'; x.fillRect(W * .62, 0, W * .26, H);                       // belly
     for (const [u, c, t] of [[-.035, '#BF0A30', .022], [.535, '#BF0A30', .022], [-.008, '#0d47a1', .016], [.508, '#0d47a1', .016]]){ x.fillStyle = c; x.fillRect(((u + 1) % 1) * W, 0, t * W, H); }
-    for (const u of [.055, .445]){ x.fillStyle = '#18232c';
-      for (let i = 0; i < nWin; i++){ const v = .1 + i * (.78 / nWin); if (jet && (i === 1 || i === nWin - 2)) continue; if (x.roundRect){ x.beginPath(); x.roundRect(u * W - 9, v * H, 18, H / len * 1.15, 6); x.fill(); } else x.fillRect(u * W - 9, v * H, 18, H / len * 1.15); }
+    // windows with passengers in them: a lit cabin, heads and shoulders in the seats (round the barrel, "up" is +x on the right side, -x on the left)
+    const SKINS = ['#4a2c17', '#5d3a1a', '#7a4a26', '#8d5524', '#a8693a', '#c68642'], HAIR = ['#120c08', '#1e1410', '#2b1d14'], SHIRT = ['#c62828', '#1565c0', '#2e7d32', '#f9a825', '#6a1b9a', '#ffffff', '#ef6c00'];
+    let rs = kind === 'jet' ? 7 : 3; const rr = () => (rs = (rs * 16807) % 2147483647) / 2147483647;
+    for (const u of [.055, .445]){ const up = u < .25 ? 1 : -1, wh = 24, wl = H / len * 1.3;
+      for (let i = 0; i < nWin; i++){ const v = .1 + i * (.78 / nWin); if (jet && (i === 1 || i === nWin - 2)) continue;
+        const x0 = u * W - wh / 2, y0 = v * H; x.save(); x.beginPath(); if (x.roundRect) x.roundRect(x0, y0, wh, wl, 7); else x.rect(x0, y0, wh, wl); x.fillStyle = '#18232c'; x.fill(); x.clip();
+        x.fillStyle = '#4b5d6b'; x.fillRect(x0, y0, wh, wl);                                                   // the lit cabin behind the glass
+        if (rr() < .82){ const cx = u * W - up * 3, cy = y0 + wl / 2;                                           // somebody in this seat
+          x.fillStyle = SHIRT[(rr() * SHIRT.length) | 0]; x.beginPath(); x.ellipse(cx - up * 11, cy, 8, 9, 0, 0, 7); x.fill();
+          x.fillStyle = SKINS[(rr() * SKINS.length) | 0]; x.beginPath(); x.ellipse(cx, cy, 6, 5.4, 0, 0, 7); x.fill();
+          x.fillStyle = HAIR[(rr() * HAIR.length) | 0]; x.beginPath(); x.ellipse(cx + up * 3.6, cy, 3, 5.2, 0, 0, 7); x.fill(); }
+        x.fillStyle = 'rgba(255,255,255,.18)'; x.fillRect(x0 + (up > 0 ? wh - 6 : 2), y0, 4, wl); x.restore(); }
       x.fillStyle = '#c9ced2'; for (const v of [.04, .93]) x.fillRect(u * W - 12, v * H, 24, H / len * 2.2); }  // doors
     const title = (u, rot) => { x.save(); x.translate(u * W, H * .5); x.rotate(rot); x.fillStyle = '#0d47a1'; x.font = `bold ${jet ? 38 : 30}px Arial, sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('LIBERIA', 0, 0);
       x.translate(x.measureText('LIBERIA').width / 2 + 34, -15); x.scale(.11, .11); flagDraw(x, 380, 260); x.restore(); };
@@ -1187,6 +1208,8 @@ function phoneScreen(){
   if (phoneApp === 'talk') return talkScreen();
   if (phoneApp === 'shop') return shopScreen();
   if (phoneApp === 'jobs') return jobsScreen();
+  if (phoneApp === 'games') return gamesScreen();
+  if (phoneApp === 'paint') return paintScreen();
   if (phoneApp === 'ourride') return ourrideScreen();
   if (phoneApp === 'homes') return homesScreen(`<button class="pback" data-app="home">‹ Apps</button>`);
   if (phoneApp === 'settings') return {t:'Settings', ic:'⚙️', body:`<button class="pback" data-app="home">‹ Apps</button><div class="list" style="font-size:14px;line-height:1.45;color:var(--muted)">
@@ -1442,6 +1465,7 @@ function panelClub(l){
   if (!paid) acts.push({l:'Pay entry', s: open ? 'The DJ is going hard tonight' : 'Opens at 8 PM', p:money(500), pc:'minus', primary:open, dis:!open || !canPay(500), fn:() => { spend(500); S.clubPaid = l.id + ':' + S.day; toast('You are in! Enjoy the night.', 'gold'); }});
   else {
     acts.push({l:'Dance all night', s:'2 hours · -10 energy, big fun', primary:true, fn:() => busy('🪩', 'Dancing at ' + l.n + '…', pick(['The DJ just dropped the hottest hipco song','Everybody is doing the latest dance','Afrobeats is on full blast']), 1.6, () => { advance(120); S.energy = clamp(S.energy - 10, 0, 100); S.fun = (S.fun || 0) + 1; toast('What a night! You danced like a star.', 'gold'); checkGoals(); })});
+    acts.push({l:'🎧 Ask the DJ for a song', s:'Now playing: ' + CLUB_SONGS[CLUB.song].n, p:money(200), pc:'minus', dis:!canPay(200), fn:() => { spend(200); clubSong((CLUB.song + 1) % CLUB_SONGS.length, true); soundOn(); }});
     acts.push({l:'Cold drink at the bar', p:money(300), pc:'minus', dis:!canPay(300), fn:() => { spend(300); S.energy = clamp(S.energy + 3, 0, 100); toast('Ice cold!'); }});
     acts.push({l:'Book a VIP table', s:'Bottle service with your crew', p:money(6000), pc:'minus', dis:!canPay(6000), fn:() => { spend(6000); busy('🍾', 'VIP table…', 'Sparklers, bottles, the whole club is looking', 1.4, () => { advance(90); toast('You are the big man of the night!', 'gold'); }); }});
   }
@@ -1460,7 +1484,7 @@ function mpStart(){
   try {
     const sb = window.supabase.createClient(MP_URL, MP_KEY, {auth:{persistSession:false}, realtime:{params:{eventsPerSecond:15}}});
     MP.ch = sb.channel('smallsmall-world', {config:{broadcast:{self:false}, presence:{key:MP.id}}});
-    MP.ch.on('broadcast', {event:'pos'}, ({payload:p}) => { if (!p || typeof p.id !== 'string' || p.id === MP.id) return; const peer = mpPeer(p.id); Object.assign(peer.t, {x:+p.x || 0, y:+p.y || 0, a:+p.a || 0, rd:p.rd ? String(p.rd) : '', mv:!!p.mv, in:!!p.in}); peer.seen = performance.now(); });
+    MP.ch.on('broadcast', {event:'pos'}, ({payload:p}) => { if (!p || typeof p.id !== 'string' || p.id === MP.id) return; const peer = mpPeer(p.id); Object.assign(peer.t, {x:+p.x || 0, y:+p.y || 0, a:+p.a || 0, rd:p.rd ? String(p.rd) : '', mv:!!p.mv, in:!!p.in, fl:['jet', 'prop', 'boat'].includes(p.fl) ? p.fl : '', h:clamp(+p.h || 0, 0, 400), ya:+p.ya || 0}); peer.seen = performance.now(); });
     MP.ch.on('broadcast', {event:'money'}, ({payload:m}) => { if (!m || m.to !== MP.id || typeof m.id !== 'string' || !S) return; const n = Math.floor(+m.n); if (!(n > 0 && n <= 1e8)) return;
       const who = cleanText(m.name).slice(0, 16) || 'A player'; S.momo = (S.momo || 0) + n; logTx(n, 'Received from ' + who); toast(`💸 ${who} sent you ${money(n)} on MoMo!`, 'gold'); save(); hud(); });
     MP.ch.on('broadcast', {event:'chat'}, ({payload:m}) => { if (!m || typeof m.id !== 'string') return; if (m.to && m.to !== MP.id) return; mpReceive(m); });
@@ -1481,7 +1505,7 @@ function mpTick(){
   if (!MP.online || !S) return;
   const who = S.name + JSON.stringify(S.look); if (who !== MP.lastWho){ MP.lastWho = who; mpTrack(); }
   const now = performance.now(); if (now - MP.sentAt < 120) return;
-  const pos = {id:MP.id, x:Math.round(S.x), y:Math.round(S.y), a:+player.a.toFixed(2), rd: S.riding ? S.ride : (S.inCar && AUTO ? AUTO.kind : ''), mv:player.moving, in:!!S.inside};
+  const pos = {id:MP.id, x:Math.round(S.x), y:Math.round(S.y), a:+player.a.toFixed(2), rd: S.riding ? S.ride : (S.inCar && AUTO ? AUTO.kind : ''), mv:player.moving, in:!!S.inside, fl: FLIGHT ? (FLIGHT.boat ? 'boat' : FLIGHT.kind) : '', h: FLIGHT ? Math.round(FLIGHT.alt) : 0, ya: FLIGHT ? +FLIGHT.jet.rotation.y.toFixed(2) : 0};
   const key = JSON.stringify(pos); if (key === MP.lastPos && now - MP.sentAt < 2000) return;
   MP.lastPos = key; MP.sentAt = now; MP.ch.send({type:'broadcast', event:'pos', payload:pos}).catch(() => {});
 }
@@ -1545,6 +1569,8 @@ APPS.push(
   {id:'me', t:'Me', ic:'🙂', bg:'linear-gradient(160deg,#6b7f93,#34495e)'},
   {id:'myhome', t:'My Home', ic:'🏠', bg:'linear-gradient(160deg,#2ed1b0,#11866f)'},
   {id:'homes', t:'LibHomes', ic:'🏘️', bg:'linear-gradient(160deg,#ffb74d,#e65100)'},
+  {id:'paint', t:'Paint Shop', ic:'🎨', bg:'linear-gradient(160deg,#ff8ad8,#7b2ff7)'},
+  {id:'games', t:'Games', ic:'🎮', bg:'linear-gradient(160deg,#4dd0e1,#1a237e)'},
   {id:'settings', t:'Settings', ic:'⚙️', bg:'linear-gradient(160deg,#9aa0a6,#5f6368)'}
 );
 const DOCK = ['talk','ourride','momo','maps'];
@@ -1583,6 +1609,137 @@ function shopScreen(){
       return own ? {l:o.t, s: S.look.outfit === k ? 'Wearing now' : 'In your wardrobe · tap to wear', p:'Wear', dis:S.look.outfit === k, fn:() => { wearOutfit(k); save(); }}
                  : {l:o.t, s:o.dress ? 'Dress' : 'Shirt & trousers', p:money(o.p + fee), pc:'minus', dis:!canPay(o.p + fee), fn:() => { spend(o.p + fee, true); S.wardrobe.push(k); wearOutfit(k); toast(`📦 Your ${o.t} arrived. Looking fresh!`, 'gold'); save(); checkGoals(); }}; })};
 }
+/* ---------- phone games: Snake, Memory Match and X & O ---------- */
+let GAMEP = null, gameTimer = null;
+const GAMES = {snake:{t:'Palm Nut Snake', ic:'🐍', d:'Eat the palm nuts, don\'t bite yourself'}, memory:{t:'Market Match', ic:'🥭', d:'Find the pairs of market goods'}, xo:{t:'X & O', ic:'❌', d:'Beat the phone at tic-tac-toe'}};
+const hiOf = k => ((S.hi || {})[k]) || 0, setHi = (k, v, low) => { S.hi = S.hi || {}; if (!S.hi[k] || (low ? v < S.hi[k] : v > S.hi[k])){ S.hi[k] = v; return true; } return false; };
+function gamesScreen(){
+  if (!GAMEP) return {t:'Games', sub:'Quick games to pass the time in traffic. Your best scores are saved.', body:'',
+    acts:Object.entries(GAMES).map(([k, g]) => ({l:`${g.ic} ${g.t}`, s:g.d, p: k === 'memory' ? (hiOf(k) ? `Best ${hiOf(k)} moves` : 'New') : k === 'xo' ? `${(S.hi && S.hi.xoW) || 0} wins` : (hiOf(k) ? `Best ${hiOf(k)}` : 'New'), fn:() => startGame(k)}))};
+  const back = '<button class="pback" data-game="quit">‹ Games</button>';
+  if (GAMEP.g === 'snake'){
+    setTimeout(snakeBind, 0);
+    return {t:GAMES.snake.t, body: back + `<div class="gm-top"><b>Score <span id="snkS">${GAMEP.score}</span></b><span>Best ${hiOf('snake')}</span></div>
+      <canvas id="snk" width="280" height="280" class="gm-canvas"></canvas>
+      <div class="gm-pad"><button data-game="u" aria-label="Up">▲</button><button data-game="l" aria-label="Left">◀</button><button data-game="go">${GAMEP.over ? '↻' : GAMEP.run ? '❚❚' : '▶'}</button><button data-game="r" aria-label="Right">▶</button><button data-game="d" aria-label="Down">▼</button></div>
+      <div class="sub" style="text-align:center">Arrow keys, WASD or swipe on the board</div>`, acts:[]};
+  }
+  if (GAMEP.g === 'memory'){
+    const done = GAMEP.cards.every(c => c.found);
+    return {t:GAMES.memory.t, body: back + `<div class="gm-top"><b>Moves ${GAMEP.moves}</b><span>${hiOf('memory') ? 'Best ' + hiOf('memory') : 'First game'}</span></div>
+      <div class="gm-grid">${GAMEP.cards.map((c, i) => `<button class="gm-card ${c.open || c.found ? 'open' : ''} ${c.found ? 'found' : ''}" data-game="m${i}">${c.open || c.found ? c.e : ''}</button>`).join('')}</div>
+      ${done ? `<div class="gm-win">🎉 All pairs in ${GAMEP.moves} moves!</div>` : ''}`, acts: done ? [{l:'Play again', primary:true, fn:() => startGame('memory')}] : []};
+  }
+  const B = GAMEP.b, msg = GAMEP.win === 'X' ? '🎉 You win!' : GAMEP.win === 'O' ? '📱 The phone wins' : GAMEP.win === 'draw' ? '🤝 Draw' : 'Your turn: you are ❌';
+  return {t:GAMES.xo.t, body: back + `<div class="gm-top"><b>${msg}</b><span>W ${(S.hi && S.hi.xoW) || 0} · L ${(S.hi && S.hi.xoL) || 0} · D ${(S.hi && S.hi.xoD) || 0}</span></div>
+    <div class="gm-xo">${B.map((v, i) => `<button class="gm-cell" data-game="x${i}" ${v || GAMEP.win ? 'disabled' : ''}>${v === 'X' ? '❌' : v === 'O' ? '⭕' : ''}</button>`).join('')}</div>`,
+    acts: GAMEP.win ? [{l:'Play again', primary:true, fn:() => startGame('xo')}] : []};
+}
+function startGame(k){
+  stopSnake();
+  if (k === 'snake') GAMEP = {g:'snake', body:[[7, 7], [6, 7], [5, 7]], dir:[1, 0], next:[1, 0], food:[11, 7], score:0, run:false, over:false};
+  if (k === 'memory'){ const E = ['🥭', '🍍', '🌽', '🐟', '🥥', '🌶️', '🍌', '🥜'], cards = [...E, ...E].map(e => ({e, open:false, found:false})); for (let i = cards.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [cards[i], cards[j]] = [cards[j], cards[i]]; } GAMEP = {g:'memory', cards, moves:0, lock:false}; }
+  if (k === 'xo') GAMEP = {g:'xo', b:Array(9).fill(''), win:null};
+}
+function gameAction(a){
+  if (!GAMEP) return;
+  if (a === 'quit'){ stopSnake(); GAMEP = null; return renderModal(); }
+  if (GAMEP.g === 'snake'){
+    const D = {u:[0, -1], d:[0, 1], l:[-1, 0], r:[1, 0]};
+    if (D[a]){ turnSnake(D[a]); if (!GAMEP.run && !GAMEP.over) runSnake(); return; }
+    if (a === 'go'){ if (GAMEP.over){ startGame('snake'); renderModal(); runSnake(); } else if (GAMEP.run) stopSnake(true); else runSnake(); const b = document.querySelector('[data-game="go"]'); if (b) b.textContent = GAMEP.run ? '❚❚' : '▶'; }
+    return;
+  }
+  if (GAMEP.g === 'memory' && a[0] === 'm'){ const c = GAMEP.cards[+a.slice(1)]; if (!c || GAMEP.lock || c.open || c.found) return;
+    c.open = true; const open = GAMEP.cards.filter(q => q.open && !q.found);
+    if (open.length === 2){ GAMEP.moves++; if (open[0].e === open[1].e){ open.forEach(q => { q.found = true; q.open = false; }); blipOk(); if (GAMEP.cards.every(q => q.found) && setHi('memory', GAMEP.moves, true)) toast(`🏆 New best: ${GAMEP.moves} moves!`, 'gold'); }
+      else { GAMEP.lock = true; setTimeout(() => { if (!GAMEP || GAMEP.g !== 'memory') return; open.forEach(q => q.open = false); GAMEP.lock = false; renderModal(); }, 750); } }
+    return renderModal(); }
+  if (GAMEP.g === 'xo' && a[0] === 'x'){ const i = +a.slice(1), B = GAMEP.b; if (B[i] || GAMEP.win) return; B[i] = 'X'; GAMEP.win = xoWinner(B); if (!GAMEP.win){ B[xoMove(B)] = 'O'; GAMEP.win = xoWinner(B); }
+    if (GAMEP.win){ S.hi = S.hi || {}; const k = GAMEP.win === 'X' ? 'xoW' : GAMEP.win === 'O' ? 'xoL' : 'xoD'; S.hi[k] = (S.hi[k] || 0) + 1; if (GAMEP.win === 'X') blipOk(); save(); }
+    return renderModal(); }
+}
+const blipOk = () => { if (SND.ctx){ blip('sine', 660, 0, .12, .08); blip('sine', 990, 0, .14, .07, .1); } };
+const XO_LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
+function xoWinner(B){ for (const [a, b, c] of XO_LINES) if (B[a] && B[a] === B[b] && B[a] === B[c]) return B[a]; return B.every(v => v) ? 'draw' : null; }
+// the phone plays fair but not perfect: win if it can, block you, else take the middle, a corner, anything
+function xoMove(B){ const free = B.map((v, i) => v ? -1 : i).filter(i => i >= 0);
+  for (const who of ['O', 'X']) for (const i of free){ const t = B.slice(); t[i] = who; if (xoWinner(t) === who && (who === 'O' || Math.random() < .85)) return i; }
+  if (!B[4]) return 4; const corners = [0, 2, 6, 8].filter(i => !B[i]); return pick(corners.length && Math.random() < .7 ? corners : free); }
+// snake: a 14 x 14 board, one step every 130 ms
+function turnSnake(d){ const c = GAMEP.dir; if (d[0] === -c[0] && d[1] === -c[1]) return; GAMEP.next = d; }
+function runSnake(){ if (!GAMEP || GAMEP.g !== 'snake' || GAMEP.over) return; GAMEP.run = true; clearInterval(gameTimer); gameTimer = setInterval(snakeStep, 130); const b = document.querySelector('[data-game="go"]'); if (b) b.textContent = '❚❚'; }
+function stopSnake(pause){ clearInterval(gameTimer); gameTimer = null; if (GAMEP && GAMEP.g === 'snake') GAMEP.run = false; }
+function snakeStep(){
+  const cv = document.getElementById('snk'); if (!GAMEP || GAMEP.g !== 'snake' || !cv || $('#scrim').hidden){ stopSnake(); return; }
+  const G = GAMEP, N = 14; G.dir = G.next; const h = [G.body[0][0] + G.dir[0], G.body[0][1] + G.dir[1]];
+  if (h[0] < 0 || h[1] < 0 || h[0] >= N || h[1] >= N || G.body.some(([x, y]) => x === h[0] && y === h[1])){
+    G.over = true; stopSnake(); if (SND.ctx) blip('sawtooth', 220, 80, .4, .08); if (setHi('snake', G.score)) toast(`🏆 New best snake score: ${G.score}!`, 'gold'); save(); drawSnake(); const b = document.querySelector('[data-game="go"]'); if (b) b.textContent = '↻'; return; }
+  G.body.unshift(h);
+  if (h[0] === G.food[0] && h[1] === G.food[1]){ G.score++; if (SND.ctx) blip('square', 880, 0, .06, .05); const e = document.getElementById('snkS'); if (e) e.textContent = G.score;
+    do { G.food = [Math.floor(Math.random() * N), Math.floor(Math.random() * N)]; } while (G.body.some(([x, y]) => x === G.food[0] && y === G.food[1])); }
+  else G.body.pop();
+  drawSnake();
+}
+function drawSnake(){
+  const cv = document.getElementById('snk'); if (!cv || !GAMEP) return; const x = cv.getContext('2d'), N = 14, s = cv.width / N, G = GAMEP;
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++){ x.fillStyle = (i + j) % 2 ? '#7cb342' : '#8bc34a'; x.fillRect(i * s, j * s, s, s); }
+  x.fillStyle = '#e65100'; x.beginPath(); x.arc((G.food[0] + .5) * s, (G.food[1] + .5) * s, s * .38, 0, 7); x.fill(); x.fillStyle = '#ffb74d'; x.beginPath(); x.arc((G.food[0] + .38) * s, (G.food[1] + .38) * s, s * .12, 0, 7); x.fill();
+  G.body.forEach(([bx, by], i) => { x.fillStyle = i ? '#1b5e20' : '#0d3b10'; const p = i ? 2 : 1; x.fillRect(bx * s + p, by * s + p, s - p * 2, s - p * 2); });
+  const [hx, hy] = G.body[0]; x.fillStyle = '#fff'; x.fillRect(hx * s + s * .25, hy * s + s * .25, 3, 3); x.fillRect(hx * s + s * .62, hy * s + s * .25, 3, 3);
+  if (G.over || !G.run){ x.fillStyle = 'rgba(0,0,0,.45)'; x.fillRect(0, 0, cv.width, cv.height); x.fillStyle = '#fff'; x.font = 'bold 20px Arial, sans-serif'; x.textAlign = 'center';
+    x.fillText(G.over ? `Game over · ${G.score}` : 'Tap ▶ or an arrow', cv.width / 2, cv.height / 2); }
+}
+function snakeBind(){
+  const cv = document.getElementById('snk'); if (!cv || cv.bound) return; cv.bound = true; drawSnake();
+  let sx = 0, sy = 0; cv.addEventListener('touchstart', e => { const t = e.touches[0]; sx = t.clientX; sy = t.clientY; }, {passive:true});
+  cv.addEventListener('touchend', e => { const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy; if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) return gameAction('go');
+    gameAction(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'r' : 'l') : (dy > 0 ? 'd' : 'u')); });
+  cv.addEventListener('click', () => { if (!('ontouchstart' in window)) gameAction('go'); });
+}
+// keys go to the snake while it is on screen
+addEventListener('keydown', e => { if (!GAMEP || GAMEP.g !== 'snake' || !document.getElementById('snk') || $('#scrim').hidden) return;
+  const k = {ArrowUp:'u', w:'u', W:'u', ArrowDown:'d', s:'d', S:'d', ArrowLeft:'l', a:'l', A:'l', ArrowRight:'r', d:'r', D:'r', ' ':'go'}[e.key];
+  if (k){ e.preventDefault(); e.stopImmediatePropagation(); gameAction(k); } }, true);
+/* ---------- Paint Shop app: paint your house any colour, outside and inside ---------- */
+const PAINT_PARTS = {out:{t:'Outside walls', ic:'🏠', base:3000}, roof:{t:'Roof', ic:'🛖', base:2500}, in:{t:'Inside walls', ic:'🛋️', base:2500}, floor:{t:'Floors', ic:'🟫', base:3000}};
+const SWATCH = ['#f4ead8', '#ffffff', '#fff3c4', '#ffd54f', '#ffb74d', '#ff8a65', '#e57373', '#f48fb1', '#ce93d8', '#9fa8da', '#64b5f6', '#4dd0e1', '#80cbc4', '#a5d6a7', '#c5e1a5', '#bcaaa4', '#8d6e63', '#90a4ae', '#455a64', '#263238',
+  '#BF0A30', '#002868', '#1b5e20', '#e65100'];
+let PAINT = {home:null, part:'out', c:null};
+const paintable = () => (S.owned || []).filter(h => h !== 'auntie' && HOMES[h]);
+const paintCost = (h, part) => Math.round(PAINT_PARTS[part].base * (1 + (HOMES[h].price || 0) / 1500000) / 100) * 100;
+function paintNow(h, part){ const P = (S.paint && S.paint[h]) || {}, l = LOC[HOMES[h].loc], b = l && l.b, col = ROOMS[h] || ROOMS.paynes;
+  return P[part] || (part === 'out' ? (b ? b.wall : '#f4ead8') : part === 'roof' ? (b ? b.roof : '#8d969b') : part === 'in' ? col.wall : col.floor); }
+function paintScreen(){
+  const homes = paintable();
+  if (!homes.length) return {t:'Paint Shop', sub:'Buy or rent your own place first, then paint it any colour you like.', body:'<div class="gm-win">🎨 No house to paint yet</div>', acts:[{l:'🏘️ Look at houses on LibHomes', primary:true, fn:() => { phoneApp = 'homes'; }}]};
+  if (!homes.includes(PAINT.home)) PAINT.home = homes.includes(S.home) ? S.home : homes[0];
+  const h = PAINT.home, part = PAINT.part, cur = PAINT.c || paintNow(h, part), cost = paintCost(h, part), same = cur.toLowerCase() === paintNow(h, part).toLowerCase();
+  const pv = k => PAINT.part === k && PAINT.c ? PAINT.c : paintNow(h, k);
+  // a little picture of the house with the colours you picked
+  const svg = `<svg viewBox="0 0 300 150" class="paint-pv" aria-label="Preview of your house colours">
+    <rect x="0" y="118" width="300" height="32" fill="#7cb342"/><polygon points="40,62 130,18 220,62" fill="${pv('roof')}" stroke="#0003"/><rect x="52" y="62" width="156" height="58" fill="${pv('out')}" stroke="#0003"/>
+    <rect x="118" y="82" width="24" height="38" fill="#5d4037"/><rect x="66" y="76" width="32" height="22" fill="#90caf9" stroke="#fff" stroke-width="2"/><rect x="162" y="76" width="32" height="22" fill="#90caf9" stroke="#fff" stroke-width="2"/>
+    <rect x="232" y="26" width="60" height="94" rx="6" fill="${pv('in')}" stroke="#0003"/><rect x="232" y="96" width="60" height="24" rx="4" fill="${pv('floor')}"/><text x="262" y="20" font-size="11" text-anchor="middle" fill="currentColor">inside</text></svg>`;
+  return {t:'Paint Shop', sub:'Pick a colour and the painters come today. Bright, bold, or calm: your house, your colours.', body:
+    `<div class="seg">${homes.map(k => `<button data-paint="h:${k}" aria-selected="${k === h}">${esc(HOMES[k].t.replace(/'s house| house| home| villa| mansion| duplex| beach house/i, ''))}</button>`).join('')}</div>
+     ${svg}
+     <div class="seg">${Object.entries(PAINT_PARTS).map(([k, p]) => `<button data-paint="p:${k}" aria-selected="${k === part}">${p.ic} ${p.t}</button>`).join('')}</div>
+     <div class="paint-sw">${SWATCH.map(c => `<button data-paint="c:${c}" style="background:${c}" aria-label="Colour ${c}" class="${c.toLowerCase() === cur.toLowerCase() ? 'on' : ''}"></button>`).join('')}
+       <label class="paint-any" title="Any colour you want">🌈<input type="color" id="paintAny" value="${cur}"></label></div>`,
+    acts:[{l:`🎨 Paint the ${PAINT_PARTS[part].t.toLowerCase()}`, s: same ? 'Pick a new colour first' : `${HOMES[h].t} · the painters finish in a few hours`, p:money(cost), pc:'minus', primary:true, dis: same || !canPay(cost),
+      fn:() => { spend(cost, true); const c = cur; busy('🎨', 'Painters at work…', `Painting the ${PAINT_PARTS[part].t.toLowerCase()} at ${HOMES[h].t}`, 2.2, () => {
+        advance(180); S.paint = S.paint || {}; S.paint[h] = {...(S.paint[h] || {}), [part]: c}; PAINT.c = null; applyPaintAll(); save();
+        toast(`🎨 Done! Your ${PAINT_PARTS[part].t.toLowerCase()} look brand new.`, 'gold'); if (S.inside === h && (part === 'in' || part === 'floor')) goInside(h); }); }},
+      ...(S.paint && S.paint[h] && S.paint[h][part] ? [{l:'↩️ Back to the original colour', s:'Free: the painters wash it back', fn:() => { delete S.paint[h][part]; PAINT.c = null; applyPaintAll(); save(); if (S.inside === h && (part === 'in' || part === 'floor')) goInside(h); toast('Back to the original colour.'); }}] : [])]};
+}
+const paintedCol = homeId => { const base = ROOMS[homeId] || ROOMS.paynes, P = S && S.paint && S.paint[homeId]; return P ? {...base, wall:P.in || base.wall, floor:P.floor || base.floor} : base; };
+// repaint the houses out in the street (the city's buildings are instanced: change just this house's colour)
+const BLD = {}; let paintFor = null;
+function applyPaintAll(){ if (!BLD.walls) return; const C = new THREE.Color();
+  for (const id in HOMES){ const l = LOC[HOMES[id].loc], b = l && l.b; if (!b || b.wi === undefined) continue; const P = (S && S.paint && S.paint[id]) || {};
+    BLD.walls.setColorAt(b.wi, C.set(P.out || b.wall)); if (b.ri !== undefined) BLD.roofs.setColorAt(b.ri, C.set(P.roof || b.roof)); if (b.fi !== undefined) BLD.flats.setColorAt(b.fi, C.set(P.roof || b.roof)); }
+  for (const m of [BLD.walls, BLD.roofs, BLD.flats]) if (m.instanceColor) m.instanceColor.needsUpdate = true; }
 function jobsScreen(){
   const rows = [];
   for (const l of LOCS) for (const id of (l.jobs || [])){ const j = JOBS[id]; rows.push({l, id, j, ok:hasReq(j.req)}); }
@@ -1783,13 +1940,16 @@ function renderModal(){
   if ($('#pmap')) drawPhoneMap();
 }
 function closeModal(){ $('#scrim').hidden = true; modalRender = null; }
+$('#scrim').addEventListener('change', e => { if (e.target.id === 'paintAny'){ PAINT.c = e.target.value; renderModal(); } });
 $('#scrim').addEventListener('click', e => {
   if (e.target === $('#scrim') || e.target.closest('[data-close]')) return closeModal();
   const tab = e.target.closest('[data-tab]'); if (tab){ phoneTab = tab.dataset.tab; renderModal(); return; }
   if (e.target.closest('[data-homebar]')){ if (phoneApp === 'home') return closeModal(); phoneApp = 'home'; renderModal(); return; }
   const tk = e.target.closest('[data-talk]'); if (tk){ talkTab = tk.dataset.talk; renderModal(); return; }
   const shp = e.target.closest('[data-shop]'); if (shp){ shopTab = shp.dataset.shop; renderModal(); return; }
-  const app = e.target.closest('[data-app]'); if (app){ phoneApp = app.dataset.app; renaming = false; momoTo = null; renderModal(); $('#modal').scrollTop = 0; return; }
+  const gm = e.target.closest('[data-game]'); if (gm){ gameAction(gm.dataset.game); return; }
+  const pt = e.target.closest('[data-paint]'); if (pt){ const [k, v] = [pt.dataset.paint.slice(0, 1), pt.dataset.paint.slice(2)]; if (k === 'h'){ PAINT.home = v; PAINT.c = null; } else if (k === 'p'){ PAINT.part = v; PAINT.c = null; } else PAINT.c = v; renderModal(); return; }
+  const app = e.target.closest('[data-app]'); if (app){ if (app.dataset.app === 'home' || phoneApp !== app.dataset.app){ stopSnake(); GAMEP = null; } phoneApp = app.dataset.app; renaming = false; momoTo = null; renderModal(); $('#modal').scrollTop = 0; return; }
   const rt = e.target.closest('[data-rtab]'); if (rt){ rideTab = rt.dataset.rtab; renderModal(); return; }
   const sc2 = e.target.closest('[data-scat]'); if (sc2){ shopCat = sc2.dataset.scat; shopSel = null; renderModal(); return; }
   const oc = e.target.closest('[data-optc]'); if (oc && shopSel){ shopSel.c = oc.dataset.optc; renderModal(); return; }
@@ -2088,13 +2248,39 @@ function flightTick(dt){
   $('#flyT').textContent = `${F.kind === 'jet' ? '✈️' : '🛩️'} ${AIR_SHORT[F.from.id]} → ${name} · ${ph}`; $('#flyP').style.width = Math.round(u * 100) + '%';
   if (SND.L){ if (!SND.jet){ SND.jet = loopOf(SFX.eng_truck); SND.jetW = loopOf(SFX.traffic); } const now = SND.ctx.currentTime, pr = F.kind === 'jet' ? 1 : 1.5;
     SND.jet.g.gain.setTargetAtTime(.25 + F.v / vmax * .45, now, .2); SND.jet.src.playbackRate.setTargetAtTime((1.1 + F.v / vmax * 1.3) * pr, now, .2); SND.jetW.g.gain.setTargetAtTime(F.v / vmax * .5, now, .3); }
+  planeSounds(F, alt);
   if (F.s >= F.len - .5 && F.v < 3.5) landFlight();
 }
+/* ---------- plane sounds: engines spooling up, the roar of take-off, wheels up, tyres on touchdown, reverse thrust ---------- */
+function planeAudio(){ const c = SND.ctx; if (!c || !SND.buf || !SND.master) return null; if (SND.pl) return SND.pl;
+  const roar = c.createBufferSource(); roar.buffer = SND.buf; roar.loop = true; const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 300; const rg = c.createGain(); rg.gain.value = 0; roar.connect(lp).connect(rg).connect(SND.master); roar.start();
+  const o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 600; const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2400; bp.Q.value = 4; const og = c.createGain(); og.gain.value = 0; o.connect(bp).connect(og).connect(SND.master); o.start();
+  return SND.pl = {rg, lp, o, bp, og}; }
+const chime = () => { if (!SND.ctx) return; blip('sine', 880, 0, .7, .07); blip('sine', 660, 0, .9, .07, .38); };
+function planeSounds(F, alt){
+  const A = planeAudio(); if (!A) return; const now = SND.ctx.currentTime, jet = F.kind === 'jet', k = F.v / F.vmax, set = (p, v, tc) => p.setTargetAtTime(v, now, tc || .25);
+  if (!F.snd){ F.snd = 1; chime(); toast(jet ? '🔔 "Cabin crew, prepare for take-off."' : '🔔 "Seatbelts on, we are ready to go."'); A.o.type = jet ? 'sawtooth' : 'square'; }
+  const roll = F.s < F.lift + 260, rev = F.s > F.td && F.v > 14;
+  set(A.rg.gain, (jet ? .16 : .1) + k * .22 + (roll ? .38 * k : 0) + (rev ? .5 : 0));
+  set(A.lp.frequency, 260 + k * (roll || rev ? 1500 : 650), .35);
+  set(A.o.frequency, jet ? 650 + k * 1800 + (rev ? 600 : 0) : 85 + k * 70, .5); set(A.bp.frequency, jet ? 2600 : 400, .5); set(A.og.gain, jet ? .018 + k * .03 : .045 + k * .03, .3);
+  if (!F.gearUp && alt > 32){ F.gearUp = 1; kickAt(.4); }
+  if (!F.desc && F.s > F.td - 1350){ F.desc = 1; chime(); toast('🔔 "We are starting our descent. Please return to your seat."'); }
+  if (!F.touch && F.s > F.td){ F.touch = 1; const t = SND.ctx.currentTime; noiseHit(t, 3400, .32, .32); noiseHit(t + .18, 3000, .26, .24); kickAt(.55); }
+}
+const kickAt = v => { try { const c = SND.ctx, o = c.createOscillator(), g = c.createGain(), t = c.currentTime; o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(38, t + .2); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + .3); o.connect(g).connect(SND.master); o.start(t); o.stop(t + .35); } catch (e) {} };
+// planes taking off at RIA and Spriggs Payne can be heard from the ground
+function groundPlaneSounds(){
+  const A = SND.L && planeAudio(); if (!A || FLIGHT || !S || S.x < -500) return; const now = SND.ctx.currentTime; let best = 0, jet = true;
+  for (const [pl, j] of [[PLANE.jet, true], [PLANE.g, false]]){ if (!pl || !pl.visible) continue; const u = pl.userData, mv = Math.abs(pl.position.x - (u.lx ?? pl.position.x)); u.lx = pl.position.x;
+    if (mv < .05) continue; const d = Math.hypot(pl.position.x - S.x, pl.position.z - S.y, pl.position.y * .6), v = Math.max(0, 1 - d / (j ? 1100 : 700)) * (S.inside ? .2 : 1); if (v > best){ best = v; jet = j; } }
+  A.rg.gain.setTargetAtTime(best * (jet ? .55 : .3), now, .4); A.lp.frequency.setTargetAtTime(500 + best * 900, now, .4); A.o.type = jet ? 'sawtooth' : 'square';
+  A.o.frequency.setTargetAtTime(jet ? 1400 : 120, now, .5); A.bp.frequency.setTargetAtTime(jet ? 2600 : 400, now, .5); A.og.gain.setTargetAtTime(best * (jet ? .03 : .05), now, .4); }
 const runwayBusy = id => !!(FLIGHT && !FLIGHT.boat && (FLIGHT.from.id === id || FLIGHT.to.id === id));
 function landFlight(){
   const F = FLIGHT, to = F.to; scene.remove(F.jet); FLIGHT = null; flyBar.hidden = true; if (FLY_SHADOW) FLY_SHADOW.visible = false;
   if (F.boat){ const d = DOCKED[F.from.id]; if (d) d.visible = true; if (F.cabin){ S.energy = clamp(S.energy + 25, 0, 100); toast('😴 You slept in your cabin. +25 energy.', 'good'); } }
-  if (SND.jet){ SND.jet.g.gain.value = 0; SND.jetW.g.gain.value = 0; } if (SND.sea) SND.sea.g.gain.value = 0;
+  if (SND.jet){ SND.jet.g.gain.value = 0; SND.jetW.g.gain.value = 0; } if (SND.sea) SND.sea.g.gain.value = 0; if (SND.pl){ SND.pl.rg.gain.value = 0; SND.pl.og.gain.value = 0; }
   placeAt(to.x, to.y); faceFrom(to); orbit.dist = 175; orbit.pitch = .78; S.visited = S.visited || []; if (!S.visited.includes(to.id)) S.visited.push(to.id);
   toast(WELCOME[to.id] || `Welcome to ${to.n}!`, 'gold'); hud(); save(); checkGoals();
 }
@@ -2120,6 +2306,7 @@ function sail(from, to, fare, cabin){
   spend(fare, true); closeModal(); if (S.riding && !S.duty) parkMyCar(); S.riding = false; if (S.inside) goOutside();
   const curve = seaLane(from.id, to.id), len = curve.getLength(), boat = ferryMesh(); scene.add(boat); if (DOCKED[from.id]) DOCKED[from.id].visible = false;
   FLIGHT = {boat:true, from, to, curve, len, s:0, v:0, jet:boat, yaw:Math.PI / 2, bank:0, alt:6, cabin}; orbit.dist = 210; orbit.pitch = .42;
+  if (SND.pl){ SND.pl.rg.gain.value = 0; SND.pl.og.gain.value = 0; }
   toast(`⛴️ All aboard at ${from.n}! The ferry is pulling away from the jetty.`, 'gold'); flyBar.hidden = false; soundOn();
 }
 function boatTick(dt){
@@ -2707,14 +2894,14 @@ const BH = new Map();
     const urban = !b.loc && b.w > 34 && b.h > 28 && rr() < .5;
     const h = b.loc ? (b.loc.storeys ? 24 * b.loc.storeys : b.loc.big ? 38 : 28) : b.ind ? 14 + rr()*10 : urban ? 22 + rr()*30 : 10 + rr()*12;
     BH.set(b, h);
-    P.set(b.x + b.w/2, 0, b.y + b.h/2); Sc.set(b.w, h, b.h); M.compose(P, Q, Sc); walls.setMatrixAt(i, M); walls.setColorAt(i, C.set(b.wall));
+    P.set(b.x + b.w/2, 0, b.y + b.h/2); Sc.set(b.w, h, b.h); M.compose(P, Q, Sc); walls.setMatrixAt(i, M); walls.setColorAt(i, C.set(b.wall)); b.wi = i;
     if (urban || b.ind || (b.loc && b.loc.big)){
-      P.set(b.x + b.w/2, h, b.y + b.h/2); Sc.set(b.w - 2, 1.6, b.h - 2); M.compose(P, Q, Sc); flats.setMatrixAt(fi, M); flats.setColorAt(fi++, C.set(b.roof));
+      P.set(b.x + b.w/2, h, b.y + b.h/2); Sc.set(b.w - 2, 1.6, b.h - 2); M.compose(P, Q, Sc); flats.setMatrixAt(fi, M); b.fi = fi; flats.setColorAt(fi++, C.set(b.roof));
     } else {
-      P.set(b.x + b.w/2, h, b.y + b.h/2); Sc.set(b.w * 1.08, Math.min(b.w, b.h) * .38, b.h * 1.08); M.compose(P, Q, Sc); roofs.setMatrixAt(ri, M); roofs.setColorAt(ri++, C.set(b.roof));
+      P.set(b.x + b.w/2, h, b.y + b.h/2); Sc.set(b.w * 1.08, Math.min(b.w, b.h) * .38, b.h * 1.08); M.compose(P, Q, Sc); roofs.setMatrixAt(ri, M); b.ri = ri; roofs.setColorAt(ri++, C.set(b.roof));
     }
   });
-  roofs.count = ri; flats.count = fi;
+  roofs.count = ri; flats.count = fi; BLD.walls = walls; BLD.roofs = roofs; BLD.flats = flats;
   for (const m of [walls, roofs, flats]){ m.castShadow = m.receiveShadow = true; m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; scene.add(m); }
 }
 // landmark signs facing the street
@@ -2786,17 +2973,44 @@ for (const l of LOCS){
 {
   const palms = trees.filter(t => t.palm), bushes = trees.filter(t => !t.palm);
   const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), P = new THREE.Vector3(), Sc = new THREE.Vector3(), C = new THREE.Color(), E = new THREE.Euler();
-  const trunkG = new THREE.CylinderGeometry(.6, 1, 1, 6).translate(0, .5, 0);
-  const pT = new THREE.InstancedMesh(trunkG, lam('#7a5a3a'), palms.length);
-  const crownG = new THREE.ConeGeometry(1, 1, 7).rotateX(Math.PI).translate(0, -.5, 0);
-  const pC = new THREE.InstancedMesh(crownG, lam('#2f8a35', {flatShading:true}), palms.length);
-  palms.forEach((t, i) => { const h = 20 + t.r * .9; E.set((Math.sin(t.a) * .12), 0, Math.cos(t.a) * .12); Q.setFromEuler(E);
-    P.set(t.x, 0, t.y); Sc.set(1.3, h, 1.3); M.compose(P, Q, Sc); pT.setMatrixAt(i, M);
-    Q.identity(); P.set(t.x + Math.sin(t.a) * h * .12, h + 2, t.y + Math.cos(t.a) * h * .12); Sc.set(t.r * 1.5, 4, t.r * 1.5); M.compose(P, Q, Sc); pC.setMatrixAt(i, M); pC.setColorAt(i, C.setHSL(.32 + Math.sin(t.a)*.02, .55, .32 + (t.r % 3) * .03)); });
-  const bT = new THREE.InstancedMesh(trunkG, lam('#5e4128'), bushes.length);
-  const bC = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), lam('#2e6b2a', {flatShading:true}), bushes.length);
-  bushes.forEach((t, i) => { Q.identity(); P.set(t.x, 0, t.y); Sc.set(1.6, 7, 1.6); M.compose(P, Q, Sc); bT.setMatrixAt(i, M);
-    P.set(t.x, 7 + t.r * .7, t.y); Sc.set(t.r, t.r * .9, t.r); E.set(0, t.a, 0); Q.setFromEuler(E); M.compose(P, Q, Sc); bC.setMatrixAt(i, M); bC.setColorAt(i, C.setHSL(.29 + (t.r % 4) * .012, .5, .26 + (t.a % 1) * .06)); });
+  // helpers to build one merged, vertex-coloured geometry from several parts
+  const parts = (list) => { const pos = [], nor = [], col = [];
+    for (const [g0, c] of list){ const g = g0.index ? g0.toNonIndexed() : g0; const P2 = g.attributes.position.array, N = g.attributes.normal.array, cc = new THREE.Color(c);
+      for (let k = 0; k < P2.length; k++){ pos.push(P2[k]); nor.push(N[k]); } for (let k = 0; k < P2.length / 3; k++){ const sh = typeof c === 'function' ? c(P2[k * 3], P2[k * 3 + 1], P2[k * 3 + 2]) : cc; col.push(sh.r, sh.g, sh.b); } }
+    const out = new THREE.BufferGeometry(); out.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); out.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); out.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); return out; };
+  // palm: a trunk that leans and bends, ringed bark
+  let PALM_TOP = [0, 1];
+  const palmTrunk = (() => { const L = []; let x = 0, y = 0; const N = 6; for (let k = 0; k < N; k++){ const ang = .05 + k * .05, hh = 1 / N, r0 = .042 - k * .003, r1 = .039 - k * .003;
+      L.push([new THREE.CylinderGeometry(r1, r0, hh * 1.04, 8).translate(0, hh / 2, 0).rotateZ(-ang).translate(x, y, 0), k % 2 ? '#8a6a48' : '#76583a']); x += Math.sin(ang) * hh; y += Math.cos(ang) * hh; }
+    PALM_TOP = [x, y]; return parts(L); })();
+  // palm crown: drooping fronds with a fold down the middle, and a bunch of coconuts
+  const palmCrown = (() => { const pos = [], nor = [], col = [], leaf = new THREE.Color('#2f8a35'), tip = new THREE.Color('#5aa53a'), nut = new THREE.Color('#6d4c2f');
+    const tri = (a, b, c, k) => { for (const v of [a, b, c]){ pos.push(...v); } const n = new THREE.Vector3().subVectors(new THREE.Vector3(...b), new THREE.Vector3(...a)).cross(new THREE.Vector3().subVectors(new THREE.Vector3(...c), new THREE.Vector3(...a))).normalize(); for (let q = 0; q < 3; q++){ nor.push(n.x, n.y, n.z); const cc = leaf.clone().lerp(tip, k); col.push(cc.r, cc.g, cc.b); } };
+    const F = 10, SEG = 6;
+    for (let f = 0; f < F; f++){ const th = f / F * Math.PI * 2 + (f % 2) * .2, up = f % 3 === 0 ? .35 : 0, dx = Math.cos(th), dz = Math.sin(th), px = -dz, pz = dx;
+      const pt = (s, side) => { const w = .16 * Math.sin(Math.PI * Math.min(1, s * 1.1)) + .02, y = (.3 + up) * s - (1.05 - up) * s * s; return [dx * s + px * w * side, y - Math.abs(side) * w * .5, dz * s + pz * w * side]; };
+      for (let k = 0; k < SEG; k++){ const a = k / SEG, b = (k + 1) / SEG, m0 = pt(a, 0), m1 = pt(b, 0);
+        for (const sd of [-1, 1]){ const e0 = pt(a, sd), e1 = pt(b, sd); tri(m0, e0, m1, a); tri(e0, e1, m1, b); } } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    const nuts = []; for (let k = 0; k < 4; k++){ const a = k * 1.6; nuts.push([new THREE.SphereGeometry(.07, 6, 5).translate(Math.cos(a) * .07, -.1, Math.sin(a) * .07), '#6d4c2f']); }
+    const ng = parts(nuts), merged = new THREE.BufferGeometry();
+    for (const key of ['position', 'normal', 'color']) merged.setAttribute(key, new THREE.Float32BufferAttribute([...g.attributes[key].array, ...ng.attributes[key].array], 3)); return merged; })();
+  const pT = new THREE.InstancedMesh(palmTrunk, new THREE.MeshLambertMaterial({vertexColors:true}), palms.length);
+  const pC = new THREE.InstancedMesh(palmCrown, new THREE.MeshLambertMaterial({vertexColors:true, side:THREE.DoubleSide}), palms.length);
+  palms.forEach((t, i) => { const h = 20 + t.r * .9; E.set(0, t.a, 0); Q.setFromEuler(E);
+    P.set(t.x, 0, t.y); Sc.set(h, h, h); M.compose(P, Q, Sc); pT.setMatrixAt(i, M);
+    const bx = PALM_TOP[0] * h, ox = Math.cos(t.a) * bx, oz = -Math.sin(t.a) * bx; P.set(t.x + ox, PALM_TOP[1] * h, t.y + oz); E.set(0, t.a * 3.1, 0); Q.setFromEuler(E); const cr = t.r * 1.45; Sc.set(cr, cr * .9, cr); M.compose(P, Q, Sc); pC.setMatrixAt(i, M);
+    pC.setColorAt(i, C.setHSL(.27 + Math.sin(t.a) * .03, .45, .62 + (t.r % 3) * .05)); });
+  // leafy trees: a trunk with two limbs and a crown of several clumps, darker underneath, sunlit on top
+  const leafyTrunk = parts([[new THREE.CylinderGeometry(.42, .7, 1, 7).translate(0, .5, 0), '#5e4128'], [new THREE.CylinderGeometry(.18, .3, .55, 5).translate(0, .27, 0).rotateZ(.7).translate(.05, .7, 0), '#5e4128'], [new THREE.CylinderGeometry(.16, .28, .5, 5).translate(0, .25, 0).rotateZ(-.65).rotateY(2).translate(0, .62, .05), '#5e4128']]);
+  const shade = (x, y, z) => new THREE.Color().setHSL(.27, .55, .2 + clamp((y + .6) / 1.6, 0, 1) * .22 + Math.sin(x * 7 + z * 5) * .02);
+  const leafyCrown = parts([[new THREE.IcosahedronGeometry(.78, 0), shade], [new THREE.IcosahedronGeometry(.6, 0).translate(.62, -.12, .2), shade], [new THREE.IcosahedronGeometry(.58, 0).translate(-.55, -.08, -.35), shade],
+    [new THREE.IcosahedronGeometry(.55, 0).translate(-.1, .42, .5), shade], [new THREE.IcosahedronGeometry(.5, 0).translate(.2, .5, -.45), shade]]);
+  const bT = new THREE.InstancedMesh(leafyTrunk, new THREE.MeshLambertMaterial({vertexColors:true}), bushes.length);
+  const bC = new THREE.InstancedMesh(leafyCrown, new THREE.MeshLambertMaterial({vertexColors:true, flatShading:true}), bushes.length);
+  bushes.forEach((t, i) => { const tall = (t.a * 7) % 1 < .25, th = tall ? 11 + t.r * .4 : 7 + t.r * .15; E.set(0, t.a, 0); Q.setFromEuler(E); P.set(t.x, 0, t.y); Sc.set(1.7, th, 1.7); M.compose(P, Q, Sc); bT.setMatrixAt(i, M);
+    P.set(t.x, th + t.r * .55, t.y); Sc.set(t.r * (tall ? 1.15 : 1), t.r * (tall ? .62 : .82), t.r * (tall ? 1.15 : 1)); M.compose(P, Q, Sc); bC.setMatrixAt(i, M);
+    bC.setColorAt(i, C.setHSL(.24 + (t.r % 4) * .02, .35, .78 + (t.a % 1) * .2)); });
   for (const m of [pT, pC, bT, bC]){ m.castShadow = true; scene.add(m); }
 }
 
@@ -2869,6 +3083,11 @@ function ferryMesh(){
   // orange lifeboats, railings, the name on the bow
   for (const s of [-1, 1]){ add(new THREE.CapsuleGeometry(1.1, 5.5, 4, 10).rotateZ(Math.PI/2), lam('#ff6d00'), -9, 16.6, s * 5.4);
     add(new THREE.BoxGeometry(56, .3, .3), lam('#eceff1'), -3, 6.9, s * 7.9); for (let x = -30; x <= 24; x += 6) add(new THREE.BoxGeometry(.25, 2.2, .25), lam('#eceff1'), x, 5.9, s * 7.9); }
+  // passengers on deck, leaning on the rails and looking at the sea
+  const SH = ['#c62828', '#1565c0', '#2e7d32', '#f9a825', '#6a1b9a', '#ffffff', '#ef6c00', '#00838f'], SK = ['#4a2c17', '#5d3a1a', '#8d5524', '#a8693a'];
+  [[-26, -5.5], [-24, 5], [-19, -7.2], [15, 4.8], [18, -4.6], [20, 2.4], [-28, 1], [14, -1.5], [-14, 7.2], [-3, -7.2], [4, 7.2]].forEach(([px, pz], i) => {
+    add(new THREE.CylinderGeometry(.85, 1, 3.4, 8), lam(SH[i % SH.length]), px, 7.8, pz); add(new THREE.CylinderGeometry(.55, .6, 2.2, 6), lam('#263238'), px, 6, pz);
+    add(new THREE.SphereGeometry(.8, 10, 8), lam(SK[i % SK.length]), px, 10.3, pz); });
   const name = canvasTex(256, 48, (x, W, H) => { x.fillStyle = '#ffffff'; x.font = 'bold 26px Arial, sans-serif'; x.textBaseline = 'middle'; x.fillText('MV MONROVIA STAR', 6, H / 2); });
   for (const s of [-1, 1]){ const m = add(new THREE.PlaneGeometry(20, 3.6), new THREE.MeshBasicMaterial({map:name, transparent:true, depthWrite:false}), 15, 2.4, s * 8.56); if (s < 0) m.rotation.y = Math.PI; }
   // Liberian flag at the stern
@@ -3538,7 +3757,7 @@ function houseShell(R, F, fi, ox, col, fg){
 const STAGE = {living:[['sofa'], ['bigtv', {sz:55}], ['table'], ['bigpalm'], ['vase', {c:'#e91e63'}], ['chandelier', {c:'#d4af37'}]], bed:[['kingbed'], ['wardrobe'], ['lamp'], ['ac']], kitchen:[['dining']], room:[['mattress'], ['tv'], ['fan']]};
 function buildInterior(homeId, opts){
   opts = opts || {};
-  const plan = planOf(homeId), col = ROOMS[homeId] || ROOMS.paynes, Wmax = Math.max(...plan.floors.map(f => f.W)), Dmax = Math.max(...plan.floors.map(f => f.D)), pitch = Wmax + 140;
+  const plan = planOf(homeId), col = paintedCol(homeId), Wmax = Math.max(...plan.floors.map(f => f.W)), Dmax = Math.max(...plan.floors.map(f => f.D)), pitch = Wmax + 140;
   const sc = new THREE.Scene(); sc.background = new THREE.Color(0x15100c);
   const hl = new THREE.HemisphereLight(0xfff4e0, 0x4a3a2a, 1.05); sc.add(hl);
   const dl = new THREE.DirectionalLight(0xfff0dd, 1.1); dl.position.set(Wmax * .3, 160, Dmax * .6); dl.castShadow = true; dl.shadow.mapSize.set(1024, 1024);
@@ -4525,7 +4744,10 @@ function syncPeers(dt){
     if (!p.mesh || p.lookKey !== lookKey){ if (p.mesh) scene.remove(p.mesh); p.mesh = personMesh(p.look || randomLook()); p.lookKey = lookKey; scene.add(p.mesh); }
     const vk = p.t.rd && VEHICLES[p.t.rd] ? VEHICLES[p.t.rd].kind : (p.t.rd || '');
     if (p.carKind !== vk){ if (p.car) scene.remove(p.car); p.car = vk ? vehicleMesh(vk, (VEHICLES[p.t.rd] && VEHICLES[p.t.rd].c) || '#1E8E5A') : null; if (p.car) scene.add(p.car); p.carKind = vk; }
-    const gy = groundY(p.x, p.y), hide = p.t.in || (S && S.inside);
+    // flying or on the ferry: show their plane or boat, not a person walking in the sky
+    if (p.airKind !== (p.t.fl || '')){ if (p.air) scene.remove(p.air); p.airKind = p.t.fl || ''; p.air = p.airKind === 'jet' ? jetMesh() : p.airKind === 'prop' ? propMesh() : p.airKind === 'boat' ? ferryMesh() : null; if (p.air) scene.add(p.air); }
+    if (p.air){ p.air.visible = !(S && S.inside); p.air.position.set(p.x, p.airKind === 'boat' ? 1 : (p.t.h || 0), p.y); p.air.rotation.set(0, p.t.ya || 0, 0); aircraftTick(p.air, p.t.h || 0, T, 0); }
+    const gy = groundY(p.x, p.y), hide = p.t.in || (S && S.inside) || !!p.air;
     p.mesh.visible = !hide && (!p.car || vk === 'moto'); if (p.car) p.car.visible = !hide;
     p.mesh.position.set(p.x, gy + (vk === 'moto' ? 4 : 0), p.y); p.mesh.rotation.y = -p.a; animPerson(p.mesh, performance.now() / 110, p.t.mv && !vk);
     if (p.car){ p.car.position.set(p.x, gy, p.y); p.car.rotation.y = -p.a; }
@@ -4624,7 +4846,7 @@ function soundOn(){ try { if (SND.ctx){ if (SND.ctx.state === 'suspended') SND.c
     for (const [fq, q, v] of [[420, 6, .9], [1150, 8, .6], [2400, 9, .3]]){ const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = fq; f.Q.value = q; const fg = c.createGain(); fg.gain.value = v; noise().connect(f).connect(fg).connect(g); SND.formants.push([f, fq]); }
     const am = SND.crowdAM = c.createGain(); am.gain.value = 1; g.connect(am).connect(master); }
   // club / bar music: a simple four-on-the-floor beat with a bass line
-  SND.music = c.createGain(); SND.music.gain.value = 0; SND.music.connect(master); SND.beatT = 0;
+  SND.music = c.createGain(); SND.music.gain.value = 0; SND.musicLP = c.createBiquadFilter(); SND.musicLP.type = 'lowpass'; SND.musicLP.frequency.value = 18000; SND.music.connect(SND.musicLP).connect(master); SND.beatT = 0;
   { const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 2600; f.Q.value = 6; const f2 = c.createBiquadFilter(); f2.type = 'peaking'; f2.frequency.value = 1400; f2.gain.value = 8; const g = SND.skidG = c.createGain(); g.gain.value = 0; noise().connect(f).connect(f2).connect(g).connect(master); }
   loadSfx();
 } catch (e) {} }
@@ -4701,8 +4923,11 @@ function soundTick(dt){
   if (SND.skidG) set(SND.skidG.gain, veh && CAR.skid ? .16 + Math.min(.12, CAR.drift / 300) : 0);
   // music: bars and clubs, or the car radio while you drive
   const club = place && (place.type === 'club' ? 1 : place.type === 'bar' ? .55 : 0), radio = veh && RADIO.st ? .7 : 0;
-  const music = club || radio, st = club ? STATIONS[1] : STATIONS[RADIO.st];
-  set(SND.music.gain, (music || 0) * .5);
+  // the club can be heard from the street at night, muffled through the walls
+  let outside = 0; const hh = hour(); if (!inside && !radio && (hh >= 20 || hh < 4)) for (const l of LOCS) if (l.type === 'club'){ const d = dist(S.x, S.y, l.x, l.y); if (d < 220) outside = Math.max(outside, (1 - d / 220) * .7); }
+  if (club && place.type === 'club'){ CLUB.t += dt; if (CLUB.t > 95) clubSong((CLUB.song + 1) % CLUB_SONGS.length, true); }
+  const music = club || radio || outside, st = club || outside ? CLUB_SONGS[CLUB.song] : STATIONS[RADIO.st];
+  set(SND.music.gain, (music || 0) * .5); set(SND.musicLP.frequency, outside && !club && !radio ? 520 : 18000);
   if (music){ const step = 60 / st.bpm / 2; if (SND.beatT < now) SND.beatT = now + .05;
     while (SND.beatT < now + .3){ const t = SND.beatT, n = SND.stepN = ((SND.stepN || 0) + 1) % 32, w = t - now;
       if (n % 4 === 0 || (st.kick2 && n % 16 === 10)) kick(t, .55);
@@ -4710,6 +4935,11 @@ function soundTick(dt){
       if (st.hat) noiseHit(t, 8000, .03, (n % 2 ? .05 : .03) * music);
       if (n % 2) blip(st.bassWave || 'sawtooth', st.bass[(n >> 3) % 4], 0, step * .9, .06 * music, w);
       if (st.chord && (n % 8 === 3 || n % 8 === 6)) for (const f of st.chord[(n >> 3) % 4]) blip('triangle', f, 0, st.pad ? step * 3.5 : step * .7, (st.pad ? .02 : .025) * music, w);
+      if (st.lead && st.lead[n] >= 0) blip(st.leadWave || 'square', st.scale[st.lead[n]], 0, step * (st.legato ? 1.6 : .75), .024 * music, w);
+      if (st.clap && n % 8 === 4) noiseHit(t, 1300, .09, .2 * music);
+      if (st.snare && n % 16 === 8) noiseHit(t, 2200, .14, .24 * music);
+      if (st.shaker) noiseHit(t, 9500, .025, (n % 2 ? .035 : .06) * music);
+      if (st.log && (n % 8 === 3 || n % 8 === 6 || n % 16 === 14)){ const f = st.bass[(n >> 3) % 4] * 2; blip('sine', f * 1.4, f, step * 1.6, .2 * music, w); }
       SND.beatT += step; } }
 }
 // car radio (made-up stations)
@@ -4718,6 +4948,21 @@ const STATIONS = [{n:'Off'},
   {n:'📻 Afro Wave 104.5', bpm:108, hat:1, kick2:1, bass:[61.7, 73.4, 55, 65.4], chord:[[247, 294, 370], [294, 370, 440], [220, 277, 330], [262, 330, 392]], bassWave:'square'},
   {n:'📻 Sunday Gospel 88.7', bpm:84, bass:[65.4, 87.3, 98, 65.4], chord:[[262, 330, 392], [349, 440, 523], [392, 494, 587], [262, 330, 392]], pad:1, bassWave:'triangle'}];
 const RADIO = {st:0};
+// club music: the DJ plays a set of made-up Liberian and West African party songs
+const PENTA = [220, 261.6, 293.7, 329.6, 392, 440, 523.3, 587.3, 659.3, 784];
+const CLUB_SONGS = [
+  {n:'Afrobeats · "Monrovia Sweet"', bpm:104, hat:1, kick2:1, clap:1, shaker:1, bass:[55, 65.4, 73.4, 49], chord:[[220, 262, 330], [262, 330, 392], [294, 370, 440], [196, 247, 294]], scale:PENTA,
+    lead:[5, -1, 6, 5, -1, 4, 3, -1, 4, -1, 5, -1, 3, 2, -1, -1, 5, -1, 6, 7, -1, 6, 5, -1, 4, -1, 3, 4, -1, 2, -1, -1]},
+  {n:'Hipco · "Small Small We Reach"', bpm:98, hat:1, snare:1, bass:[55, 55, 65.4, 49], chord:[[220, 277, 330], [220, 277, 330], [262, 330, 392], [196, 247, 294]], scale:PENTA, leadWave:'sawtooth',
+    lead:[3, 3, -1, 4, 5, -1, 4, 3, 2, -1, 2, 3, -1, -1, 0, -1, 3, 3, -1, 4, 5, -1, 7, 6, 5, -1, 4, 3, -1, -1, 2, -1]},
+  {n:'Amapiano · "Log Drum Waterside"', bpm:112, shaker:1, clap:1, log:1, bass:[49, 49, 55, 41.2], chord:[[196, 247, 294], [196, 247, 294], [220, 262, 330], [175, 220, 262]], pad:1, scale:PENTA, leadWave:'triangle', legato:1,
+    lead:[7, -1, -1, -1, 6, -1, 5, -1, -1, -1, 4, -1, 5, -1, -1, -1, 7, -1, -1, 8, -1, 7, 6, -1, 5, -1, -1, -1, 4, -1, -1, -1]},
+  {n:'Dancehall · "Red Light Riddim"', bpm:92, snare:1, hat:1, kick2:1, bass:[61.7, 61.7, 73.4, 55], chord:[[247, 294, 370], [247, 294, 370], [294, 370, 440], [220, 277, 330]], scale:PENTA, leadWave:'square',
+    lead:[4, -1, 4, -1, 5, 4, -1, 2, -1, -1, 3, -1, 4, -1, -1, -1, 4, -1, 4, -1, 6, 5, -1, 4, -1, -1, 3, -1, 2, -1, -1, -1]},
+  {n:'Highlife · "Mamba Point Sunset"', bpm:118, hat:1, shaker:1, bass:[65.4, 87.3, 98, 65.4], chord:[[262, 330, 392], [349, 440, 523], [392, 494, 587], [262, 330, 392]], scale:[262, 294, 330, 392, 440, 523, 587, 659, 784, 880], leadWave:'triangle',
+    lead:[0, 2, 4, 2, 5, 4, 2, 4, 3, 5, 7, 5, 4, 2, 0, -1, 0, 2, 4, 2, 5, 4, 2, 4, 6, 5, 4, 2, 1, 0, -1, -1]}];
+const CLUB = {song:0, t:0};
+function clubSong(i, announce){ CLUB.song = i; CLUB.t = 0; if (announce && S && S.inside && INT && INT.place && INT.loc.type === 'club') toast('🎶 The DJ drops: ' + CLUB_SONGS[i].n, 'gold'); }
 function radioNext(){ if (!S || !S.riding) return toast('Get in your car to use the radio.'); soundOn(); RADIO.st = (RADIO.st + 1) % STATIONS.length; toast(RADIO.st ? `${STATIONS[RADIO.st].n} · press Q to change` : '📻 Radio off'); }
 function noiseHit(t, f, dur, vol){ const c = SND.ctx; if (!c) return; const n = c.createBufferSource(); n.buffer = SND.buf; const fl = c.createBiquadFilter(); fl.type = f > 4000 ? 'highpass' : 'bandpass'; fl.frequency.value = f; const g = c.createGain();
   g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur); n.connect(fl).connect(g).connect(SND.music); n.start(t, Math.random()); n.stop(t + dur + .02); }
@@ -4839,6 +5084,8 @@ function render(){
   // traffic
   for (const c of traffic){ if ((c.rush && !c.on) || c.wx === undefined){ c.mesh.visible = false; continue; } c.mesh.visible = true; const x = c.wx, z = c.wy;
     c.mesh.position.set(x, groundY(x, z), z); c.mesh.rotation.y = -c.ya; }
+  if (S && paintFor !== S){ paintFor = S; applyPaintAll(); }
+  groundPlaneSounds();
   syncPeople(); brakeLights(); parkedTick(); carLightsTick(dark); bubblesTick(); canoesTick(T); dockedTick(T);
   // player
   if (S && S.x > -500){
@@ -4979,7 +5226,7 @@ function loop(now){
   if ((frame++ % 6) === 0) drawMini();
   requestAnimationFrame(loop);
 }
-if (location.search.includes("debug")) window.__ss = {trafficTick, get RUSH(){ return RUSH; }, flightPath, sail, panelFerry, panelAirport, JETTY, DOCKED, RWY, coastY, BH, CANOES, PLANE, regionOf, BUSH_WALLS, CORRIDORS, traffic, roadPoint, get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR, get CAR(){ return CAR; }, offRoad, giveVehicle, nearestRoad, WX, rollWeather, get orbit(){ return orbit; }, goInside, deliverFurn, designCmd, get DES(){ return DES; }, SND, SFX, fly, LOC, panelFor, get FLIGHT(){ return FLIGHT; }, MP, tourHome, useStairs, cookAt, takeBath, HOME_DISHES, invOf, sellItem, deliverFurn, cam, people, LOTS, parkMyCar, peopleTick, buildPlace, buildInterior, canEnter, roomAt};
+if (location.search.includes("debug")) window.__ss = {scene, gamesScreen, startGame, gameAction, get GAMEP(){ return GAMEP; }, paintScreen, applyPaintAll, BLD, get PAINT(){ return PAINT; }, CLUB, CLUB_SONGS, openPhone, trafficTick, get RUSH(){ return RUSH; }, flightPath, sail, panelFerry, panelAirport, JETTY, DOCKED, RWY, coastY, BH, CANOES, PLANE, regionOf, BUSH_WALLS, CORRIDORS, traffic, roadPoint, get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR, get CAR(){ return CAR; }, offRoad, giveVehicle, nearestRoad, WX, rollWeather, get orbit(){ return orbit; }, goInside, deliverFurn, designCmd, get DES(){ return DES; }, SND, SFX, fly, LOC, panelFor, get FLIGHT(){ return FLIGHT; }, MP, tourHome, useStairs, cookAt, takeBath, HOME_DISHES, invOf, sellItem, deliverFurn, cam, people, LOTS, parkMyCar, peopleTick, buildPlace, buildInterior, canEnter, roomAt};
 showIntro(false);
 requestAnimationFrame(loop);
 addEventListener('beforeunload', save);
