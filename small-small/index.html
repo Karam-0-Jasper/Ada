@@ -318,18 +318,18 @@ import * as THREE from './three.module.min.js';
    WORLD DATA — a stylised Montserrado County
    ========================================================= */
 const K = 1.25; // the city was scaled up: data below is in the original units, multiplied by K after
-const W = 6900 * K, H = 1900 * K;
+const W = 8300 * K, H = 1900 * K;   // the south-east coast (Sinoe, Maryland) was added east of Buchanan
 const MPP = 2.5; // metres per world pixel (for distances shown to the player)
 
 const WATER = [
-  {k:'ocean', p:[[0,0],[210,0],[220,250],[235,500],[240,800],[230,940],[200,1100],[150,1180],[130,1280],[160,1380],[260,1480],[500,1540],[900,1580],[1400,1612],[1900,1640],[2400,1668],[2900,1690],[3400,1702],[4000,1722],[4600,1736],[5200,1748],[5480,1752],[5720,1738],[6000,1702],[6300,1694],[6600,1722],[6900,1735],[6900,1900],[0,1900]]},
+  {k:'ocean', p:[[0,0],[210,0],[220,250],[235,500],[240,800],[230,940],[200,1100],[150,1180],[130,1280],[160,1380],[260,1480],[500,1540],[900,1580],[1400,1612],[1900,1640],[2400,1668],[2900,1690],[3400,1702],[4000,1722],[4600,1736],[5200,1748],[5480,1752],[5720,1738],[6000,1702],[6300,1694],[6600,1722],[6900,1735],[7100,1748],[7400,1736],[7700,1746],[8000,1730],[8300,1722],[8300,1900],[0,1900]]},
   {k:'river', n:'Mesurado River', p:[[180,930],[600,900],[1000,880],[1500,860],[2000,895],[2400,930],[2620,975],[2700,1030],[2640,1085],[2200,1062],[1700,1050],[1200,1078],[900,1098],[600,1115],[180,1112]]},
   {k:'river', n:'St. Paul River', p:[[180,240],[800,236],[1400,276],[2000,328],[2500,400],[2640,460],[2600,505],[2000,420],[1400,372],[800,344],[180,372]]},
   {k:'river', n:'St. John River', p:[[5410,0],[5490,0],[5505,500],[5480,1000],[5510,1400],[5520,1770],[5400,1770],[5390,1400],[5420,1000],[5395,500]]},
   {k:'river', n:'Stockton Creek', p:[[1872,372],[1958,380],[2012,905],[1928,900]]}
 ];
 const ISLANDS = [[[655,958],[760,948],[792,1000],[742,1042],[668,1036]]];
-const BRIDGES = [{x:670,y:872,w:60,h:266,n:'Gabriel Tucker Bridge'},{x:1874,y:584,w:144,h:72,n:'Somalia Drive Bridge'},{x:990,y:222,w:60,h:166,n:'St. Paul Bridge'}];
+const BRIDGES = [{x:5370,y:1268,w:170,h:44,n:'St. John River Bridge (Buchanan Highway)'}, {x:5370,y:223,w:170,h:44,n:'St. John River Bridge (Gbarnga Highway)'}, {x:670,y:872,w:60,h:266,n:'Gabriel Tucker Bridge'},{x:1874,y:584,w:144,h:72,n:'Somalia Drive Bridge'},{x:990,y:222,w:60,h:166,n:'St. Paul Bridge'}];
 
 const DISTRICTS = [
   {n:'Mamba Point', x:150,y:1150,w:300,h:330, c:'#a9c98a', d:.5},
@@ -357,7 +357,10 @@ const DISTRICTS = [
   {n:'Gbarnga', x:5600,y:175,w:540,h:390, c:'#c2b997', d:.6, urban:1},
   {n:'Suakoko', x:5580,y:575,w:580,h:175, c:'#a8c784', d:.3},
   {n:'Ganta', x:6320,y:185,w:540,h:390, c:'#c9bea9', d:.65, urban:1},
-  {n:'Sanniquellie Road', x:6300,y:585,w:580,h:165, c:'#9dc47c', d:.28}
+  {n:'Sanniquellie Road', x:6300,y:585,w:580,h:165, c:'#9dc47c', d:.28},
+  // the south-east coast: Greenville (Sinoe) and Harper (Maryland), reached by ferry
+  {n:'Greenville', x:7070,y:1400,w:480,h:300, c:'#c2b997', d:.6, urban:1},
+  {n:'Harper', x:7720,y:1400,w:540,h:300, c:'#c9bea9', d:.65, urban:1}
 ];
 
 const ROADS = [
@@ -402,7 +405,16 @@ const ROADS = [
   {n:'Ganta Main Street', w:24, t:'paved', main:1, p:[[6300,350],[6500,362],[6700,342],[6880,370]]},
   {n:'Guinea Border Road', w:20, t:'paved', p:[[6690,343],[6720,195]]},
   {n:'Sanniquellie Road', w:16, t:'dirt', p:[[6450,360],[6430,560],[6480,720]]},
-  {t:'dirt', w:14, p:[[6400,356],[6390,195]]}
+  {t:'dirt', w:14, p:[[6400,356],[6390,195]]},
+  // highways between the regions, over the St. John River, so buses (and you) can drive up country
+  {n:'Monrovia–Buchanan Highway', w:24, t:'paved', main:1, p:[[4820,1392],[5050,1335],[5350,1290],[5560,1290],[5600,1240]]},
+  {n:'Gbarnga Highway', w:24, t:'paved', main:1, p:[[3950,350],[4500,280],[5100,245],[5560,245],[5560,340]]},
+  {n:'Gbarnga–Ganta Highway', w:22, t:'paved', main:1, p:[[6150,360],[6230,356],[6300,350]]},
+  {n:'Buchanan–Gbarnga Road', w:18, t:'paved', p:[[5920,720],[6020,900],[6060,1100],[6100,1420]]},
+  {n:'Greenville Main Street', w:22, t:'paved', main:1, p:[[7080,1600],[7300,1612],[7540,1592]]},
+  {t:'dirt', w:14, p:[[7300,1612],[7320,1430]]},
+  {n:'Harper Main Street', w:22, t:'paved', main:1, p:[[7740,1592],[8000,1604],[8240,1584]]},
+  {n:'Maryland Avenue', w:14, t:'dirt', p:[[8000,1604],[8020,1430]]}
 ];
 
 ROADS.forEach(r => r.w = Math.round(r.w * (r.t === 'paved' ? (r.main ? 2.5 : 2.1) : 1.8)));   // wide roads: room for two cars side by side each way
@@ -571,8 +583,30 @@ const LOCS = [
   {id:'ria_grill', n:'Runway Grill & Bar', ic:'🍗', x:4790, y:1364, type:'rest', roof:'#4e342e'},
   {id:'ria_cafe', n:'Harbel Coffee & Bread', ic:'☕', x:4300, y:1318, type:'food', roof:'#6d4c41'},
   // ferries along the coast: Mamba Point <-> Buchanan
-  {id:'ferry_mon', n:'Monrovia Ferry Terminal (Mamba Point)', ic:'⛴️', x:352, y:1446, type:'ferry', nob:1, to:'ferry_buch', city:'Monrovia'},
-  {id:'ferry_buch', n:'Buchanan Ferry Jetty', ic:'⛴️', x:6330, y:1662, type:'ferry', nob:1, to:'ferry_mon', city:'Buchanan'},
+  {id:'ferry_mon', n:'Monrovia Ferry Terminal (Mamba Point)', ic:'⛴️', x:352, y:1446, type:'ferry', nob:1, city:'Monrovia'},
+  {id:'ferry_buch', n:'Buchanan Ferry Jetty', ic:'⛴️', x:6330, y:1662, type:'ferry', nob:1, city:'Buchanan'},
+  {id:'ferry_gv', n:'Greenville Port Jetty', ic:'⛴️', x:7200, y:1658, type:'ferry', nob:1, city:'Greenville'},
+  {id:'ferry_hp', n:'Harper Ferry Jetty', ic:'⛴️', x:8120, y:1652, type:'ferry', nob:1, city:'Harper'},
+  // bus stations: ride the road up country
+  {id:'bus_mon', n:'Red Light Bus Station', ic:'🚌', x:3440, y:1172, type:'bus', nob:1, city:'Monrovia'},
+  {id:'bus_buch', n:'Buchanan Bus Station', ic:'🚌', x:5700, y:1302, type:'bus', nob:1, city:'Buchanan'},
+  {id:'bus_gb', n:'Gbarnga Bus Station', ic:'🚌', x:5605, y:318, type:'bus', nob:1, city:'Gbarnga'},
+  {id:'bus_gn', n:'Ganta Bus Station', ic:'🚌', x:6850, y:394, type:'bus', nob:1, city:'Ganta'},
+  // Sinoe County: Greenville
+  {id:'gv_mkt', n:'Greenville Market', ic:'🐟', x:7400, y:1565, type:'job', job:'market', roof:'#0277bd', big:1},
+  {id:'gv_cook', n:'Sinoe Cookshop', ic:'🍛', x:7150, y:1565, type:'food', roof:'#d35400'},
+  {id:'gv_hosp', n:'F.J. Grante Memorial Hospital (Greenville)', ic:'🏥', x:7340, y:1470, type:'job', jobs:['cleaner','aide','nurse','doctor'], roof:'#eeeeee', heal:1, hosp:1},
+  {id:'gv_hotel', n:'Greenville Guest House', ic:'🏨', x:7480, y:1648, type:'hotel', roof:'#5d4037', big:1, shape:'hotel', floors:2, room:3000},
+  {id:'t_gv', n:'Greenville Taxi Park', ic:'🚕', x:7255, y:1640, type:'taxi', nob:1},
+  {id:'gas9', n:'Total Greenville', ic:'⛽', x:7530, y:1560, type:'gas', brand:'total', nob:1, price:110},
+  // Maryland County: Harper
+  {id:'hp_mkt', n:'Harper Market', ic:'🍍', x:7850, y:1565, type:'job', job:'market', roof:'#c62828', big:1},
+  {id:'hp_cook', n:'Maryland Cookshop', ic:'🍲', x:8180, y:1560, type:'food', roof:'#bf360c'},
+  {id:'hp_hosp', n:'J.J. Dossen Memorial Hospital (Harper)', ic:'🏥', x:8070, y:1470, type:'job', jobs:['cleaner','aide','nurse','doctor'], roof:'#eeeeee', heal:1, hosp:1},
+  {id:'hp_tubman', n:'William V.S. Tubman University', ic:'🎓', x:7880, y:1465, type:'landmark', roof:'#1a237e', big:1},
+  {id:'hp_hotel', n:'Harper Beach Hotel', ic:'🏨', x:7790, y:1648, type:'hotel', roof:'#00695c', big:1, shape:'hotel', floors:3, room:3500},
+  {id:'t_hp', n:'Harper Taxi Park', ic:'🚕', x:7985, y:1640, type:'taxi', nob:1},
+  {id:'cape_palmas', n:'Cape Palmas Lighthouse', ic:'🗼', x:8235, y:1676, type:'landmark', nob:1, shape:'lighthouse'},
   // Bong County: Gbarnga
   {id:'gb_air', n:'Gbarnga Airstrip', ic:'🛩️', x:5800, y:212, type:'airport', roof:'#b0bec5', big:1, city:'Gbarnga'},
   {id:'gb_mkt', n:'Gbarnga Central Market', ic:'🍍', x:5960, y:308, type:'job', job:'market', roof:'#c62828', big:1},
@@ -767,8 +801,8 @@ const CORRIDORS = RUNWAYS.flatMap(r => [{x:r.x - 650, y:r.y - 46, w:650, h:r.h +
 const inCorridor = (x, y, w, h) => CORRIDORS.some(c => x < c.x + c.w && x + w > c.x && y < c.y + c.h && y + h > c.y);
 const RUNWAY = RUNWAYS[0];
 const onRunway = (x, y, w, h, pad) => RUNWAYS.some(r => x < r.x + r.w + pad && x + w > r.x - pad && y < r.y + r.h + pad && y + h > r.y - pad);
-const REG_X = 5300 * K, regionOf = (x, y) => x <= REG_X ? 'mont' : (y === undefined || y > 870 * K) ? 'bassa' : x < 6235 * K ? 'bong' : 'nimba';
-const REGION_NAME = {mont:'Montserrado', bassa:'Grand Bassa', bong:'Bong County', nimba:'Nimba County'};
+const REG_X = 5300 * K, regionOf = (x, y) => x <= REG_X ? 'mont' : x > 6960 * K ? (x < 7640 * K ? 'sinoe' : 'maryland') : (y === undefined || y > 870 * K) ? 'bassa' : x < 6235 * K ? 'bong' : 'nimba';
+const REGION_NAME = {mont:'Montserrado', bassa:'Grand Bassa', bong:'Bong County', nimba:'Nimba County', sinoe:'Sinoe County', maryland:'Maryland County'};
 
 const FIRST = ['Comfort','Moses','Fatu','Jartu','Kebeh','Siafa','Mamie','Garmai','Varney','Musu','Sekou','Korto','Tenneh','Yassah','Prince','Blessing','Gbessay','Momo','Hawa','Augustine'];
 const LAST = ['Kollie','Doe','Kamara','Johnson','Tarpeh','Flomo','Kpoto','Sackor','Cooper','Gbala','Togba','Massaquoi','Dolo','Nyumah','Kiazolu','Freeman'];
@@ -966,7 +1000,18 @@ for (const d of DISTRICTS){
 for (const r of RUNWAYS) addSolid({x:r.x - 6, y:r.y - 6, w:r.w + 12, h:r.h + 12});
 // thick bush between Harbel and the St. John River, and between the counties up country: you fly or take the ferry
 const BUSH_WALL = {x:5130 * K, y:0, w:270 * K, h:H};
-const BUSH_WALLS = [BUSH_WALL, {x:5520 * K, y:770 * K, w:1380 * K, h:215 * K, n:220}, {x:6185 * K, y:0, w:100 * K, h:770 * K, n:160}];
+const BUSH_WALLS = (() => {
+  const raw = [BUSH_WALL, {x:5520 * K, y:770 * K, w:1380 * K, h:215 * K, n:220}, {x:6185 * K, y:0, w:100 * K, h:770 * K, n:160},
+    {x:6900 * K, y:0, w:150 * K, h:H, n:200}, {x:7050 * K, y:0, w:1250 * K, h:1360 * K, n:420}, {x:7570 * K, y:1360 * K, w:120 * K, h:540 * K, n:90}];
+  // a highway cuts a gap through the bush (trees and the wall) where it passes
+  const out = [];
+  for (const w of raw){ const tall = w.h > w.w, gaps = [];
+    for (const r of ROADS){ let lo = Infinity, hi = -Infinity; for (let s0 = 0; s0 <= r.len; s0 += 8){ const p = roadPoint(r, s0); if (p.x > w.x && p.x < w.x + w.w && p.y > w.y && p.y < w.y + w.h){ const v = tall ? p.y : p.x; lo = Math.min(lo, v); hi = Math.max(hi, v); } }
+      if (lo < hi || lo === hi) if (isFinite(lo)) gaps.push([lo - r.w / 2 - 14, hi + r.w / 2 + 14]); }
+    gaps.sort((a, b) => a[0] - b[0]); let start = tall ? w.y : w.x; const end = tall ? w.y + w.h : w.x + w.w, area = w.w * w.h;
+    const piece = (a, b) => { if (b - a < 4) return; const pc = tall ? {x:w.x, y:a, w:w.w, h:b - a} : {x:a, y:w.y, w:b - a, h:w.h}; pc.n = Math.round((w === BUSH_WALL ? 520 : w.n) * (pc.w * pc.h) / area); pc.main = w === BUSH_WALL; out.push(pc); };
+    for (const [a, b] of gaps){ piece(start, Math.max(start, a)); start = Math.max(start, b); } piece(start, end); }
+  return out; })();
 BUSH_WALLS.forEach(addSolid);
 const RIA_CLEAR = {x:5650, y:1660, r:470}, FERRY_SPOTS = LOCS.filter(l => l.type === 'ferry');
 // trees (palms near the coast, round bush trees inland), ground patches
@@ -978,7 +1023,7 @@ for (let i = 0, t = 0; i < 1700 && t < 9000; t++){
   trees.push({x, y, r: 9 + R() * 9, palm: coastal || R() < .35, a: R() * 6.28}); i++;
 }
 // bush around RIA (kept back from the terminal) and the forest walls between the regions
-for (const d of [...DISTRICTS.filter(d => d.bush), ...BUSH_WALLS]) for (let i = 0, t = 0, wall = BUSH_WALLS.includes(d); i < (d === BUSH_WALL ? 520 : wall ? d.n : 260) && t < 5000; t++){
+for (const d of [...DISTRICTS.filter(d => d.bush), ...BUSH_WALLS]) for (let i = 0, t = 0, wall = BUSH_WALLS.includes(d); i < (wall ? d.n : 260) && t < 5000; t++){
   const x = d.x + R() * d.w, y = d.y + R() * d.h; if (isWater(x, y) || inCorridor(x - 12, y - 12, 24, 24) || onRunway(x - 12, y - 12, 24, 24, 60)) continue;
   if (!wall && (hitsSolid(x, y, 14) || dist(x, y, RIA_CLEAR.x, RIA_CLEAR.y) < RIA_CLEAR.r)) continue; const n = nearestRoad(x, y); if (n.d < n.r.w/2 + 14) continue;
   trees.push({x, y, r: 11 + R() * 12, palm: R() < .18, a: R() * 6.28}); i++;
@@ -1808,7 +1853,7 @@ const SKINS = ['#5a3825','#7a4a2c','#3e2618','#8d5a3b'];
 const people = [];
 const COARSE = matchMedia('(pointer: coarse)').matches;
 // busy places pull more people: markets, parks, taxi parks, schools, beaches, the airport
-const HOT = l => l.job === 'market' ? 7 : l.type === 'park' ? 6 : l.type === 'taxi' ? 4 : l.beach || l.type === 'beach' ? 4 : l.type === 'school' || l.type === 'airport' || l.type === 'telco' || l.type === 'ferry' ? 3 : ['food','rest','bar','club','clothes','barber','salon','gas'].includes(l.type) ? 2 : l.type === 'home' ? 0 : 1;
+const HOT = l => l.job === 'market' ? 7 : l.type === 'park' ? 6 : l.type === 'taxi' ? 4 : l.beach || l.type === 'beach' ? 4 : l.type === 'school' || l.type === 'airport' || l.type === 'telco' || l.type === 'ferry' ? 3 : l.type === 'bus' ? 5 : ['food','rest','bar','club','clothes','barber','salon','gas'].includes(l.type) ? 2 : l.type === 'home' ? 0 : 1;
 const crowdSpots = LOCS.flatMap(l => Array(HOT(l)).fill(l));
 const urbanAddr = ADDR.filter(a => (DISTRICTS.find(d => a.x > d.x && a.x < d.x + d.w && a.y > d.y && a.y < d.y + d.h) || {}).urban);
 const offRoad = (x, y) => { const n = nearestRoad(x, y); return n.d > n.r.w / 2 + 6; };
@@ -2194,7 +2239,10 @@ const WELCOME = {
   gb_air:'🛬 Welcome to Gbarnga, Bong County! Home of Cuttington University and Phebe Hospital.',
   gn_air:'🛬 Welcome to Ganta, Nimba County! The busy market town near the Guinea border.',
   ferry_buch:'⛴️ Welcome to Buchanan! The ferry is tied up at the jetty.',
-  ferry_mon:'⛴️ Welcome back to Monrovia! The ferry is tied up at Mamba Point.'
+  ferry_mon:'⛴️ Welcome back to Monrovia! The ferry is tied up at Mamba Point.',
+  ferry_gv:'⛴️ Welcome to Greenville, Sinoe County! The fishing port on the south-east coast.',
+  ferry_hp:'⛴️ Welcome to Harper, Maryland County! Home of Tubman University and Cape Palmas.',
+  bus_mon:'🚌 Welcome to Red Light, Monrovia! Busy busy.', bus_buch:'🚌 Welcome to Buchanan, Grand Bassa County!', bus_gb:'🚌 Welcome to Gbarnga, Bong County!', bus_gn:'🚌 Welcome to Ganta, Nimba County!'
 };
 const routesFrom = id => id === 'ria' || id === 'airfield' ? ['buch_air', 'gb_air', 'gn_air'] : AIRPORTS.filter(a => a !== id);
 function flightInfo(fromId, toId){
@@ -2259,7 +2307,7 @@ function flightClouds(F){
 }
 const _fp = new THREE.Vector3(), _ft = new THREE.Vector3();
 function flightTick(dt){
-  const F = FLIGHT; if (F.boat) return boatTick(dt);
+  const F = FLIGHT; if (F.boat) return boatTick(dt); if (F.bus) return busTick(dt);
   const end = F.len - F.s, vmax = F.vmax;
   F.v = Math.min(vmax, Math.sqrt(2 * 9 * F.s) + 6, Math.sqrt(2 * 7 * Math.max(0, end)) + 2);
   F.s = Math.min(F.len, F.s + F.v * dt);
@@ -2310,9 +2358,10 @@ function groundPlaneSounds(){
     if (mv < .05) continue; const d = Math.hypot(pl.position.x - S.x, pl.position.z - S.y, pl.position.y * .6), v = Math.max(0, 1 - d / (j ? 1100 : 700)) * (S.inside ? .2 : 1); if (v > best){ best = v; jet = j; } }
   A.rg.gain.setTargetAtTime(best * (jet ? .55 : .3), now, .4); A.lp.frequency.setTargetAtTime(500 + best * 900, now, .4); A.o.type = jet ? 'sawtooth' : 'square';
   A.o.frequency.setTargetAtTime(jet ? 1400 : 120, now, .5); A.bp.frequency.setTargetAtTime(jet ? 2600 : 400, now, .5); A.og.gain.setTargetAtTime(best * (jet ? .03 : .05), now, .4); }
-const runwayBusy = id => !!(FLIGHT && !FLIGHT.boat && (FLIGHT.from.id === id || FLIGHT.to.id === id));
+const runwayBusy = id => !!(FLIGHT && !FLIGHT.boat && !FLIGHT.bus && (FLIGHT.from.id === id || FLIGHT.to.id === id));
 function landFlight(){
   const F = FLIGHT, to = F.to; scene.remove(F.jet); if (F.clouds) scene.remove(F.clouds); FLIGHT = null; flyBar.hidden = true; if (FLY_SHADOW) FLY_SHADOW.visible = false; camera.far = 3200; camera.updateProjectionMatrix();
+  if (F.bus && SND.jetW) SND.jetW.g.gain.value = 0;
   if (F.boat){ const d = DOCKED[F.from.id]; if (d) d.visible = true; if (F.cabin){ S.energy = clamp(S.energy + 25, 0, 100); toast('😴 You slept in your cabin. +25 energy.', 'good'); } }
   if (SND.jet){ SND.jet.g.gain.value = 0; SND.jetW.g.gain.value = 0; } if (SND.sea) SND.sea.g.gain.value = 0; if (SND.pl){ SND.pl.rg.gain.value = 0; SND.pl.og.gain.value = 0; }
   placeAt(to.x, to.y); faceFrom(to); orbit.dist = 175; orbit.pitch = .78; S.visited = S.visited || []; if (!S.visited.includes(to.id)) S.visited.push(to.id);
@@ -2329,12 +2378,49 @@ function seaLane(fromId, toId){
   return new THREE.CatmullRomCurve3(pts.map(([x, z]) => new THREE.Vector3(x, 0, z)), false, 'centripetal', .5);
 }
 function panelFerry(l){
-  const to = LOC[l.to], have = S.money + (S.momo || 0), onRide = AUTO && AUTO.phase === 'trip', h = hour(), open = h >= 6 && h < 20;
-  const opt = (lab, sub, fare, cabin) => ({l:lab, s: onRide ? 'Wait until your OurRide drops you off' : !open ? 'The ferry runs from 6 AM to 8 PM' : have < fare ? `You need ${money(fare)} · you have ${money(have)}` : sub, p:money(fare), pc:'minus', dis: !!onRide || !open || have < fare,
-    fn:() => { if (S.duty) endDuty(); if (S.gig){ S.gig = null; toast('Your job was cancelled so you can catch the ferry.'); } sail(l, to, fare, cabin); }});
-  const acts = [opt(`⛴️ Deck seat to ${to.city}`, 'Sit outside in the sea breeze · about 3 hours', 2500, false), opt(`🛏️ Cabin with AC to ${to.city}`, 'Sleep on the way · +25 energy', 5000, true)];
-  acts[0].primary = true;
-  return {ic:l.ic, t:l.n, sub:`The coastal ferry to ${to.city}. Watch the coast go by from the deck.`, body:'<div class="facts"><span class="chip">🕕 6 AM – 8 PM</span><span class="chip">🦺 Life jackets</span><span class="chip">🥤 Snack bar on board</span></div>', acts};
+  const have = S.money + (S.momo || 0), onRide = AUTO && AUTO.phase === 'trip', h = hour(), open = h >= 6 && h < 20;
+  const acts = [];
+  for (const to of LOCS.filter(o => o.type === 'ferry' && o.id !== l.id)){
+    const d = Math.abs(to.x - l.x), fare = Math.round((1200 + d * .19) / 100) * 100, hrs = Math.max(1, Math.round(d / 1900));
+    const opt = (lab, sub, f, cabin) => ({l:lab, s: onRide ? 'Wait until your OurRide drops you off' : !open ? 'The ferry runs from 6 AM to 8 PM' : have < f ? `You need ${money(f)} · you have ${money(have)}` : sub, p:money(f), pc:'minus', dis: !!onRide || !open || have < f,
+      fn:() => { if (S.duty) endDuty(); if (S.gig){ S.gig = null; toast('Your job was cancelled so you can catch the ferry.'); } sail(l, to, f, cabin); }});
+    acts.push(opt(`⛴️ Deck seat to ${to.city}`, `About ${hrs} hour${hrs > 1 ? 's' : ''} along the coast · sea breeze`, fare, false), opt(`🛏️ AC cabin to ${to.city}`, 'Sleep on the way · +25 energy', fare * 2, true));
+  }
+  if (acts[0]) acts[0].primary = true;
+  return {ic:l.ic, t:l.n, sub:'The coastal ferry: Monrovia, Buchanan, Greenville and Harper. Watch the coast go by from the deck.', body:'<div class="facts"><span class="chip">🕕 6 AM – 8 PM</span><span class="chip">🦺 Life jackets</span><span class="chip">🥤 Snack bar on board</span></div>', acts};
+}
+/* ---------- buses: ride the highways up country from Red Light, Buchanan, Gbarnga and Ganta ---------- */
+function panelBus(l){
+  const have = S.money + (S.momo || 0), onRide = AUTO && AUTO.phase === 'trip', h = hour(), open = h >= 5 && h < 21;
+  const acts = LOCS.filter(o => o.type === 'bus' && o.id !== l.id).map((to, i) => { const path = route(l.x, l.y, to.x, to.y), d = pathLen(path), fare = Math.round((250 + d * .3) / 50) * 50, hrs = Math.max(1, Math.round(d / 1500));
+    const why = onRide ? 'Wait until your OurRide drops you off' : !open ? 'Buses run from 5 AM to 9 PM' : have < fare ? `You need ${money(fare)} · you have ${money(have)}` : `About ${hrs} hour${hrs > 1 ? 's' : ''} on the road · window seat`;
+    return {l:`🚌 Bus to ${to.city}`, s:why, p:money(fare), pc:'minus', primary:i === 0, dis: !!onRide || !open || have < fare,
+      fn:() => { if (S.duty) endDuty(); if (S.gig){ S.gig = null; toast('Your job was cancelled so you can catch the bus.'); } busRide(l, to, fare, path); }}; });
+  return {ic:'🚌', t:l.n, sub:'Big buses to the counties on the new highways. Cheaper than flying, and you see the whole road.', body:'<div class="facts"><span class="chip">🕔 5 AM – 9 PM</span><span class="chip">❄️ AC bus</span><span class="chip">🧳 Bags on top</span></div>', acts};
+}
+function busRide(from, to, fare, path){
+  spend(fare, true); closeModal(); if (S.riding && !S.duty) parkMyCar(); S.riding = false; if (S.inside) goOutside();
+  const bus = vehicleMesh('bus', '#F2C230'); scene.add(bus); if (SND.pl){ SND.pl.rg.gain.value = 0; SND.pl.og.gain.value = 0; }
+  FLIGHT = {bus:true, from, to, path, len:pathLen(path), s:0, v:0, jet:bus, yaw:null, alt:4};
+  orbit.dist = 170; orbit.pitch = .42; flyBar.hidden = false; soundOn();
+  toast(`🚌 All aboard at ${from.n}! Next stop ${to.city}.`, 'gold');
+}
+function busTick(dt){
+  const F = FLIGHT, end = F.len - F.s, vmax = 95;
+  F.v = Math.min(vmax, F.v + 22 * dt, Math.sqrt(2 * 30 * Math.max(0, end)) + 2);
+  F.s = Math.min(F.len, F.s + F.v * dt);
+  const p = autoPoint(F.path, F.s), q = autoPoint(F.path, Math.min(F.len, F.s + 14)), a = Math.atan2(q.y - p.y, q.x - p.x);
+  F.yaw = F.yaw === null ? a : F.yaw + angDiff(a, F.yaw) * Math.min(1, dt * 4);
+  const ox = -Math.sin(F.yaw) * 11, oy = Math.cos(F.yaw) * 11, x = p.x + ox, y = p.y + oy;   // keep to the right-hand lane
+  F.jet.position.set(x, groundY(x, y), y); F.jet.rotation.set(0, -F.yaw, 0);
+  S.x = x; S.y = y; cam.x = x; cam.y = y;
+  if (performance.now() - lastLook > 1500){ const want = Math.atan2(-Math.cos(F.yaw), -Math.sin(F.yaw)); orbit.yaw += (((want - orbit.yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI) * Math.min(1, dt * 1.2); }
+  const nearBridge = BRIDGES.some(b => x > b.x - 20 && x < b.x + b.w + 20 && y > b.y - 20 && y < b.y + b.h + 20);
+  const ph = F.s < 120 ? `Pulling out of ${F.from.city}` : end < 200 ? `Arriving in ${F.to.city}` : nearBridge ? 'Crossing the bridge' : `On the road to ${F.to.city} · ${REGION_NAME[regionOf(x, y)] || ''}`;
+  $('#flyT').textContent = `🚌 ${F.from.city} → ${F.to.city} · ${ph}`; $('#flyP').style.width = Math.round(F.s / F.len * 100) + '%';
+  if (SND.L){ if (!SND.jet){ SND.jet = loopOf(SFX.eng_truck); SND.jetW = loopOf(SFX.traffic); } const now = SND.ctx.currentTime;
+    SND.jet.g.gain.setTargetAtTime(.2 + F.v / vmax * .3, now, .3); SND.jet.src.playbackRate.setTargetAtTime(.7 + F.v / vmax * .5, now, .3); SND.jetW.g.gain.setTargetAtTime(.15, now, .3); }
+  if (F.s >= F.len - .5 && F.v < 3) landFlight();
 }
 function sail(from, to, fare, cabin){
   spend(fare, true); closeModal(); if (S.riding && !S.duty) parkMyCar(); S.riding = false; if (S.inside) goOutside();
@@ -2352,7 +2438,7 @@ function boatTick(dt){
   boatPose(F.jet, _fp.x, _fp.z, F.yaw, T, F.v / vmax);
   S.x = _fp.x; S.y = _fp.z; cam.x = S.x; cam.y = S.y;
   if (performance.now() - lastLook > 1500){ const want = Math.atan2(-_ft.x, -_ft.z); orbit.yaw += (((want - orbit.yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI) * Math.min(1, dt * 1.2); }
-  const x = _fp.x / K, ph = F.s < 160 ? 'Leaving the jetty' : end < 220 ? 'Tying up at the jetty' : x < 1500 ? 'Passing West Point and Sinkor' : x < 3000 ? 'Passing ELWA and Thinkers Village beaches' : x < 4400 ? 'Out at sea past Marshall' : x < 5500 ? 'Crossing the St. John River mouth' : 'Coming into Waterhouse Bay';
+  const x = _fp.x / K, ph = F.s < 160 ? 'Leaving the jetty' : end < 220 ? 'Tying up at the jetty' : x < 1500 ? 'Passing West Point and Sinkor' : x < 3000 ? 'Passing ELWA and Thinkers Village beaches' : x < 4400 ? 'Out at sea past Marshall' : x < 5500 ? 'Crossing the St. John River mouth' : x < 6600 ? 'Passing Buchanan and Waterhouse Bay' : x < 7200 ? 'Along the Sinoe coast' : x < 7700 ? 'Off Greenville' : 'Rounding Cape Palmas to Harper';
   $('#flyT').textContent = `⛴️ ${F.from.city} → ${F.to.city} · ${ph}`; $('#flyP').style.width = Math.round(u * 100) + '%';
   if (SND.L){ if (!SND.jet){ SND.jet = loopOf(SFX.eng_truck); SND.jetW = loopOf(SFX.traffic); } const now = SND.ctx.currentTime;
     SND.jet.g.gain.setTargetAtTime(.12 + F.v / vmax * .2, now, .3); SND.jet.src.playbackRate.setTargetAtTime(.5 + F.v / vmax * .25, now, .3); SND.jetW.g.gain.setTargetAtTime(0, now, .3);
@@ -2374,6 +2460,7 @@ function panelFor(l){
   if (l.type === 'landmark') return panelLandmark(l);
   if (l.type === 'airport') return panelAirport(l, !S.inside);
   if (l.type === 'ferry') return panelFerry(l);
+  if (l.type === 'bus') return panelBus(l);
   if (l.type === 'park') return panelPark(l);
   if (l.type === 'telco') return panelTelco(l);
   if (l.type === 'club') return panelClub(l);
@@ -2514,6 +2601,7 @@ function doAction(){
   if (!near || AUTO) return; const n = near;
   if (n.type === 'airport' && !S.inside){ if (S.riding && !S.duty) parkMyCar(n.lot); return openModal(() => panelAirport(n, true)); }
   if (n.type === 'ferry' && !S.inside){ if (S.riding && !S.duty) parkMyCar(); return openModal(() => panelFerry(n)); }
+  if (n.type === 'bus' && !S.inside){ if (S.riding && !S.duty) parkMyCar(); return openModal(() => panelBus(n)); }
   if (n.type !== 'inside' && !S.inside && canEnter(n)){ if (S.riding && !S.duty) parkMyCar(n.lot); else if (S.riding) S.riding = false; return enterPlace(n); }
   openModal(() => n.type === 'inside' ? panelInside(n) : panelFor(n));
 }
@@ -2576,7 +2664,7 @@ for (let i = 0; i < ROADS.length; i++) for (let j = i + 1; j < ROADS.length; j++
     a.cross.push({s:sA, o:b, os:sB}); b.cross.push({s:sB, o:a, os:sA}); } }
 function turnInto(c, road, s){
   const m0 = road.m0 ?? (road.m0 = junctionGap(road, road.p[0])), m1 = road.m1 ?? (road.m1 = junctionGap(road, road.p[road.p.length - 1]));
-  c.road = road; c.dir = s < m0 + 25 ? 1 : s > road.len - m1 - 25 ? -1 : (Math.random() < .5 ? 1 : -1); c.s = clamp(s, m0 + 1, road.len - m1 - 1); c.turnT = T + 1.6; c.lo = undefined; c.v *= .6;
+  c.road = road; c.dir = c.joinDir || (s < m0 + 25 ? 1 : s > road.len - m1 - 25 ? -1 : (Math.random() < .5 ? 1 : -1)); c.joinDir = undefined; c.s = clamp(s, m0 + 1, road.len - m1 - 1); c.turnT = T + 1.6; c.lo = undefined; c.v *= .6;
 }
 function junctionGap(r, [x, y]){ let g = 0; for (const o of ROADS){ if (o === r) continue; for (const sg of o.segs){ const [d] = segDist(x, y, sg.ax, sg.ay, sg.bx, sg.by); if (d < o.w / 2 + 6) g = Math.max(g, o.w / 2 + 16); } } return Math.min(g, r.len * .3); }
 function trafficTick(dt){
@@ -2622,7 +2710,10 @@ function trafficTick(dt){
     else c.wait = 0;
     // drive on: at the end of a road turn into a connecting road, sometimes turn off into a side road; only a dead end makes a car turn round
     const r = c.road, s0 = c.s; c.s += c.dir * c.v * dt;
-    const clearAt = (road, s) => !live.some(o => o !== c && o.road === road && Math.abs(o.s - s) < 55);
+    const entryS = (road, s) => { const a0 = road.m0 ?? (road.m0 = junctionGap(road, road.p[0])), a1 = road.m1 ?? (road.m1 = junctionGap(road, road.p[road.p.length - 1])); return clamp(s, a0 + 1, road.len - a1 - 1); };
+    // only cars in the lane we would join can block us (cars waiting to come the other way do not)
+    const entryDir = (road, e) => e < (road.m0 || 0) + 26 ? [1] : e > road.len - (road.m1 || 0) - 26 ? [-1] : [1, -1];
+    const clearAt = (road, s) => { const e = entryS(road, s); return entryDir(road, e).some(d => !live.some(o => o !== c && o.road === road && o.dir === d && Math.abs(o.s - e) < 60)) && (c.joinDir = entryDir(road, e).find(d => !live.some(o => o !== c && o.road === road && o.dir === d && Math.abs(o.s - e) < 60))) !== undefined; };
     if (r.side && !c.rush) for (const j of r.side){ if ((s0 - j.s) * (c.s - j.s) < 0 && Math.random() < .3 && T > (c.turnT || 0) && clearAt(j.to, j.toS)){ turnInto(c, j.to, j.toS); break; } }
     // stop line: just before the road we are joining, never inside it
     const m0 = r.m0 ?? (r.m0 = junctionGap(r, r.p[0])), m1 = r.m1 ?? (r.m1 = junctionGap(r, r.p[r.p.length - 1]));
@@ -2630,7 +2721,8 @@ function trafficTick(dt){
       c.s = clamp(c.s, m0, r.len - m1);
       if (links.length){ const l = pick(links); c.endWait = 0; turnInto(c, l.road, l.s); }
       else if ((r.ends || [[], []])[end].length && (c.endWait = (c.endWait || 0) + dt) < 4){ c.v = 0; }   // wait for a gap in the traffic
-      else { c.endWait = 0; c.dir = end ? -1 : 1; } }
+      else if (!live.some(o => o !== c && o.road === r && o.dir === (end ? -1 : 1) && Math.abs(o.s - c.s) < 60)){ c.endWait = 0; c.dir = end ? -1 : 1; }   // turn round only into an empty lane
+      else c.v = 0; }
   }
 }
 function brakeLights(){
@@ -4992,6 +5084,21 @@ function syncPeers(dt){
   }
 }
 
+// bus stations: a long shelter with benches, a ticket booth, a sign with the routes and a bus waiting at the kerb
+for (const l of LOCS.filter(o => o.type === 'bus')){
+  const n = nearestRoad(l.x, l.y), ra = Math.atan2(n.r.segs[0].by - n.r.segs[0].ay, n.r.segs[0].bx - n.r.segs[0].ax); let dx = l.x - n.x, dz = l.y - n.y; const m = Math.hypot(dx, dz) || 1; dx /= m; dz /= m;
+  const seg = n.r.segs.reduce((b, sg) => { const [d] = segDist(n.x, n.y, sg.ax, sg.ay, sg.bx, sg.by); return d < b[0] ? [d, sg] : b; }, [1e9, null])[1], a = seg ? Math.atan2(seg.by - seg.ay, seg.bx - seg.ax) : ra;
+  const g = new THREE.Group(); g.position.set(l.x + dx * 14, 0, l.y + dz * 14); g.rotation.y = -a; scene.add(g);
+  const add = (geo, c, x, y, z) => { const mm = new THREE.Mesh(geo, lam(c)); mm.position.set(x, y, z); mm.castShadow = true; g.add(mm); return mm; };
+  add(new THREE.BoxGeometry(60, 1.4, 16), '#1565c0', 0, 15, 4); for (const x of [-27, -9, 9, 27]) add(new THREE.CylinderGeometry(.5, .5, 15, 6), '#cfd8dc', x, 7.5, 10);
+  add(new THREE.BoxGeometry(60, 12, .8), '#90a4ae', 0, 7, -3.6); for (const x of [-18, 0, 18]){ add(new THREE.BoxGeometry(14, 1, 4), '#6d4c41', x, 3.4, 0); add(new THREE.BoxGeometry(14, 3, .6), '#5d4037', x, 5.4, -1.8); }
+  add(new THREE.BoxGeometry(10, 11, 9), '#eceff1', 36, 5.5, 2); add(new THREE.BoxGeometry(12, 1, 11), '#1565c0', 36, 11.5, 2);
+  const others = LOCS.filter(o => o.type === 'bus' && o !== l).map(o => o.city);
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(36, 7), new THREE.MeshBasicMaterial({map:canvasTex(512, 100, (x) => { x.fillStyle = '#0d47a1'; x.fillRect(0, 0, 512, 100); x.fillStyle = '#FFD75A'; x.font = 'bold 34px Arial, sans-serif'; x.fillText('🚌 BUS STATION', 14, 40); x.fillStyle = '#fff'; x.font = '24px Arial, sans-serif'; x.fillText('To ' + others.join(' · '), 14, 80); })}));
+  sign.position.set(0, 19.6, 11.2); g.add(sign); const sb = sign.clone(); sb.rotation.y = Math.PI; sb.position.z = 11.1; g.add(sb);
+  add(new THREE.BoxGeometry(1, 23, 1), '#455a64', -30, 11.5, 11.2);
+  const bus = vehicleMesh('bus', '#F2C230'); bus.position.set(l.x - dx * 6, 0, l.y - dz * 6); bus.rotation.y = -a; scene.add(bus);
+}
 // rush hour: extra cars that join the main roads in the morning and evening
 { const mains = ROADS.filter(r => r.main && r.t === 'paved'), N = matchMedia('(pointer: coarse)').matches ? 60 : 110;
   for (let i = 0; i < N; i++){ const road = pick(mains), kind = pick(['taxi', 'taxi', 'car', 'car', 'keke', 'bus', 'suv', 'moto', 'truck']);
@@ -5466,7 +5573,7 @@ function loop(now){
   if ((frame++ % 6) === 0) drawMini();
   requestAnimationFrame(loop);
 }
-if (location.search.includes("debug")) window.__ss = {attendClass, personMesh, animPerson, randomLook, sleepInBed, setDev, devOn, showMorning, get ACT(){ return ACT; }, scene, gamesScreen, startGame, gameAction, get GAMEP(){ return GAMEP; }, paintScreen, applyPaintAll, BLD, get PAINT(){ return PAINT; }, CLUB, CLUB_SONGS, openPhone, trafficTick, get RUSH(){ return RUSH; }, flightPath, sail, panelFerry, panelAirport, JETTY, DOCKED, RWY, coastY, BH, CANOES, PLANE, regionOf, BUSH_WALLS, CORRIDORS, traffic, roadPoint, get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR, get CAR(){ return CAR; }, offRoad, giveVehicle, nearestRoad, WX, rollWeather, get orbit(){ return orbit; }, goInside, deliverFurn, designCmd, get DES(){ return DES; }, SND, SFX, fly, LOC, panelFor, get FLIGHT(){ return FLIGHT; }, MP, tourHome, useStairs, cookAt, takeBath, HOME_DISHES, invOf, sellItem, deliverFurn, cam, people, LOTS, parkMyCar, peopleTick, buildPlace, buildInterior, canEnter, roomAt};
+if (location.search.includes("debug")) window.__ss = {route, pathLen, seaLane, panelBus, busRide, BRIDGES, attendClass, personMesh, animPerson, randomLook, sleepInBed, setDev, devOn, showMorning, get ACT(){ return ACT; }, scene, gamesScreen, startGame, gameAction, get GAMEP(){ return GAMEP; }, paintScreen, applyPaintAll, BLD, get PAINT(){ return PAINT; }, CLUB, CLUB_SONGS, openPhone, trafficTick, get RUSH(){ return RUSH; }, flightPath, sail, panelFerry, panelAirport, JETTY, DOCKED, RWY, coastY, BH, CANOES, PLANE, regionOf, BUSH_WALLS, CORRIDORS, traffic, roadPoint, get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR, get CAR(){ return CAR; }, offRoad, giveVehicle, nearestRoad, WX, rollWeather, get orbit(){ return orbit; }, goInside, deliverFurn, designCmd, get DES(){ return DES; }, SND, SFX, fly, LOC, panelFor, get FLIGHT(){ return FLIGHT; }, MP, tourHome, useStairs, cookAt, takeBath, HOME_DISHES, invOf, sellItem, deliverFurn, cam, people, LOTS, parkMyCar, peopleTick, buildPlace, buildInterior, canEnter, roomAt};
 showIntro(false);
 requestAnimationFrame(loop);
 addEventListener('beforeunload', save);
