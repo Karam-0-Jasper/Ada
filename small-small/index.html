@@ -306,6 +306,7 @@ button{cursor:pointer;border:0;background:none;padding:0}
       <button class="go" id="contBtn">Continue</button>
       <button class="go alt" id="newBtn">Start a new life</button>
     </div>
+    <button id="restoreBtn" style="background:none;border:0;color:var(--muted);text-decoration:underline;font:inherit;font-size:14px;cursor:pointer;padding:6px;align-self:center">📥 Restore from a backup code</button>
   </div>
 </div>
 
@@ -1283,9 +1284,24 @@ function phoneScreen(){
       <div class="goal"><span class="dot">4</span><span>Every day costs L$150. Vehicles burn fuel. Plan your money!</span></div>
       <div class="goal"><span class="dot">5</span><span>Other players online appear with a blue name tag. Chat with them in <b>Let We Talk</b>.</span></div></div>`,
     acts:[{l: SND.on ? '🔊 Sound is on' : '🔇 Sound is off', s:'Engines, trucks, people talking, rain and music', p: SND.on ? 'Turn off' : 'Turn on', fn:() => { soundOn(); soundToggle(); }},
+      {l: LOWGFX ? '🐢 Low graphics: ON' : '✨ Graphics: High', s: LOWGFX ? 'Smoother on older phones. Tap for full graphics (the game restarts, your progress is saved)' : 'Slow phone? Turn on low graphics: no shadows, fewer people drawn (the game restarts, progress is saved)', p: LOWGFX ? 'Go high' : 'Go low',
+        fn:() => { save(); try { localStorage.setItem('ml_lowgfx', LOWGFX ? '0' : '1'); } catch (e) {} location.reload(); }},
+      {l:'💾 Back up my save', s:'Get a code you can keep in WhatsApp or notes, to bring your life back on any phone', fn:() => openModal(backupScreen)},
+      {l:'📥 Restore from a backup code', s:'Paste a code you saved before', fn:restoreBackup},
       {l:'Start a new life', s:'Erases this save', fn:() => { closeModal(); showIntro(true); }}]};
   return appScreen();
 }
+/* ---------- save backup: a code you can copy and paste back in ---------- */
+function backupCode(){ save(); const json = JSON.stringify(S); return 'ML1:' + btoa(unescape(encodeURIComponent(json))); }
+function backupScreen(){ const code = backupCode();
+  setTimeout(() => { const b = $('#bkCopy'), t = $('#bkCode'); if (!b || !t) return; b.onclick = () => { t.select(); (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(code) : Promise.reject()).then(() => toast('📋 Backup code copied! Paste it in WhatsApp or your notes.', 'good')).catch(() => { document.execCommand && document.execCommand('copy'); toast('📋 Select the code and copy it.', 'good'); }); }; }, 0);
+  return {ic:'💾', t:'Back up my save', sub:`Day ${S.day} · ${money(S.money + (S.momo || 0) + (S.bank || 0))} · ${S.owned.length} home${S.owned.length > 1 ? 's' : ''} · ${S.vehicles.length} vehicle${S.vehicles.length === 1 ? '' : 's'}. Keep this code safe: anyone with it can load your life.`,
+    body:`<textarea id="bkCode" readonly style="width:100%;height:120px;font-size:11px;border-radius:12px;padding:8px;word-break:break-all">${esc(code)}</textarea><button class="go" id="bkCopy" style="margin-top:8px;width:100%">📋 Copy code</button>`, acts:[]}; }
+function restoreBackup(){
+  const code = (prompt('Paste your Monrovia Living backup code:') || '').trim(); if (!code) return;
+  try { if (!code.startsWith('ML1:')) throw 0; const obj = JSON.parse(decodeURIComponent(escape(atob(code.slice(4))))); if (!obj || typeof obj !== 'object' || obj.day === undefined || !obj.look) throw 0;
+    localStorage.setItem(KEY, JSON.stringify(obj)); toast('✅ Save restored! Loading your life…', 'gold'); setTimeout(() => location.reload(), 900); }
+  catch (e) { toast('That code did not work. Copy the whole code, starting with ML1:', 'bad'); } }
 function bookRide(svc, l, fare){
   const n = nearestRoad(S.x, S.y), a = Math.random() * Math.PI * 2;
   S.booking = {svc, dest:l.id, fare, driver: pick(FIRST) + ' ' + pick(LAST), plate: 'LB-' + (1000 + Math.floor(Math.random() * 8999)), t0: performance.now(), wait: 6000 + Math.random() * 3000,
@@ -2954,8 +2970,10 @@ function darkness(){
 
 const MOBILE = matchMedia('(pointer: coarse)').matches;
 const renderer = new THREE.WebGLRenderer({canvas: cv, antialias: !MOBILE, powerPreference: 'high-performance'});
-renderer.setPixelRatio(Math.min(MOBILE ? 1.5 : 2, window.devicePixelRatio || 1));
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+// Low graphics (Settings): sharp-enough pixels, no shadows, fewer people and clouds drawn, for older phones
+const LOWGFX = (() => { try { return localStorage.getItem('ml_lowgfx') === '1'; } catch (e) { return false; } })();
+renderer.setPixelRatio(LOWGFX ? 1 : Math.min(MOBILE ? 1.5 : 2, window.devicePixelRatio || 1));
+renderer.shadowMap.enabled = !LOWGFX; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(0x9fd0f0, 500, 1500);
@@ -2965,7 +2983,7 @@ addEventListener('resize', resize3); resize3();
 
 const hemi = new THREE.HemisphereLight(0xe4f2ff, 0x5b7a37, 1.0); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xfff0d2, 1.7);
-sun.castShadow = true; sun.shadow.mapSize.set(MOBILE ? 1024 : 2048, MOBILE ? 1024 : 2048);
+sun.castShadow = !LOWGFX; sun.shadow.mapSize.set(MOBILE ? 1024 : 2048, MOBILE ? 1024 : 2048);
 Object.assign(sun.shadow.camera, {left:-360, right:360, top:360, bottom:-360, near:10, far:1600}); sun.shadow.bias = -0.0008; sun.shadow.normalBias = 0.6;
 scene.add(sun, sun.target);
 
@@ -3622,7 +3640,7 @@ const _M = new THREE.Matrix4(), _Q = new THREE.Quaternion(), _P = new THREE.Vect
 const ZERO_M = new THREE.Matrix4().makeScale(0, 0, 0);
 function syncPeople(){
   const v = camera.position;
-  for (const p of people){ const far = Math.abs(p.x - cam.x) > 520 || Math.abs(p.y - cam.y) > 520; p.farDone = far && p.far; p.far = far; p.bob = p.walkOn ? (1 - Math.abs(Math.sin(p.wph || 0))) * .4 : 0; }
+  for (const p of people){ const far = Math.abs(p.x - cam.x) > (LOWGFX ? 330 : 520) || Math.abs(p.y - cam.y) > (LOWGFX ? 330 : 520); p.farDone = far && p.far; p.far = far; p.bob = p.walkOn ? (1 - Math.abs(Math.sin(p.wph || 0))) * .4 : 0; }
   for (const k in CROWD){
     const d = CROWD[k];
     if (d.rain){ d.m.visible = !!(S && S.rain); if (!d.m.visible) continue; }
@@ -5335,7 +5353,7 @@ function weatherTick(dt, tx, tz, dark){
   // wet roads darken
   const wetK = Math.min(1, lv * 1.4); for (const [m, dry, wetC] of ROADMATS) m.color.copy(dry).lerp(wetC, wetK);
   // clouds drift across the sky with the wind
-  const shown = Math.round(4 + WX.cloud * (CLOUDS.length - 4)), grey = 1 - Math.min(.62, lv * .6) - dark * .55;
+  const shown = Math.round((4 + WX.cloud * (CLOUDS.length - 4)) * (LOWGFX ? .5 : 1)), grey = 1 - Math.min(.62, lv * .6) - dark * .55;
   // clouds stay white: only a little grey in heavy rain and dimmer at night
   { const g0 = clamp(1 - lv * .25 - dark * .45, .45, 1);
     cloudMat.color.setRGB(g0, g0, g0); cloudMat.opacity = .95; if (FLY_CLOUD_MAT) FLY_CLOUD_MAT.color.copy(cloudMat.color); }
@@ -5554,6 +5572,7 @@ $('#startBtn').addEventListener('click', () => {
 });
 $('#contBtn').addEventListener('click', () => { S = load(); if (!S) return showIntro(true); { const pb = parkedBay(); if (pb) pb.busy = true; } setTimeout(mpStart, 400); setTimeout(testerBonus, 800); S.duty = null; S.inCar = false; S.riding = false; S.inside = null; placeAt(S.x, S.y); if (!S.look) S.look = defaultLook('m', S.shirt, S.skin); S.momo = S.momo || 0; S.furn = S.furn || {}; S.wardrobe = S.wardrobe || [S.look.outfit || 'tshirt']; S.tx = S.tx || []; if (S.booking) S.booking = null; cam.x = S.x; cam.y = S.y; orbit.pitch = .78; orbit.dist = 175; faceFrom(findNear()); $('#intro').hidden = true; hud(); toast(`Welcome back, ${S.name}!`, 'good'); });
 $('#newBtn').addEventListener('click', () => showIntro(true));
+$('#restoreBtn').addEventListener('click', () => restoreBackup());
 $('#pname').addEventListener('keydown', e => { if (e.key === 'Enter') $('#startBtn').click(); });
 
 decorateOutside();
