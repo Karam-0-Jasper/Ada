@@ -212,6 +212,12 @@ button{cursor:pointer;border:0;background:none;padding:0}
 .paint-pv{display:block;width:100%;max-width:320px;margin:10px auto;background:#bfe3ff;border-radius:14px}
 .paint-sw{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;width:100%;margin:10px 0}.paint-sw button,.paint-any{aspect-ratio:1;border-radius:50%;border:2px solid #0002;padding:0}.paint-sw button.on{outline:3px solid #1e8e5a;outline-offset:2px}
 .paint-any{display:flex;align-items:center;justify-content:center;font-size:18px;position:relative;overflow:hidden;background:conic-gradient(red,orange,yellow,lime,cyan,blue,magenta,red)}.paint-any input{position:absolute;inset:0;opacity:0;cursor:pointer}
+#sleepFx{position:fixed;inset:0;background:#05070f;opacity:0;pointer-events:none;z-index:12;transition:opacity .3s}
+#morning{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:30}
+#morning .mcard{display:flex;flex-direction:column;align-items:center;gap:4px;padding:22px 34px;border-radius:26px;background:linear-gradient(160deg,rgba(255,196,92,.92),rgba(255,138,76,.9));color:#3b1d00;box-shadow:0 20px 60px rgba(0,0,0,.35);opacity:0}
+#morning.show .mcard{animation:mfade 4.4s ease-in-out forwards}#morning .msun{font-size:44px;animation:bob 1.6s ease-in-out infinite}#morning b{font-size:clamp(40px,12vw,64px);font-weight:800;letter-spacing:-.02em}#morning small{font-size:15px;font-weight:600}
+@keyframes mfade{0%{opacity:0;transform:scale(.85)}18%{opacity:1;transform:scale(1)}78%{opacity:1}100%{opacity:0;transform:scale(1.04)}}
+.cbtn.on{background:#1e8e5a}
 .logo{font-family:var(--font-display);font-weight:800;font-size:clamp(46px,12vw,64px);line-height:.85;letter-spacing:-.02em}
 .logo span{color:var(--gold);display:inline-block;animation:wig 2.4s ease-in-out infinite}
 @keyframes wig{50%{transform:rotate(-4deg) translateY(-3px)}}
@@ -265,6 +271,8 @@ button{cursor:pointer;border:0;background:none;padding:0}
   <div class="controls">
     <button class="cbtn" id="phoneBtn" aria-label="Open phone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>Phone</button>
     <div class="card speedo" id="speedo" hidden><b id="spdV" class="num">0</b><small>km/h</small></div>
+    <button class="cbtn" id="tvBtn" aria-label="TV on or off" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M9 21h6M12 18v3"/></svg>TV</button>
+    <button class="cbtn" id="acBtn" aria-label="AC on or off" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M4.9 6.5l14.2 11M4.9 17.5l14.2-11"/></svg>AC</button>
     <button class="cbtn" id="designBtn" aria-label="Design your home" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V10l7-6 7 6v11"/><path d="M10 21v-6h4v6"/></svg>Design</button>
     <button class="cbtn" id="lightBtn" aria-label="Headlights" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 6c-4 0-6 2.7-6 6s2 6 6 6h2V6z"/><path d="M4 9h3M3 12h4M4 15h3"/></svg>Lights</button>
     <button class="cbtn" id="radioBtn" aria-label="Radio" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M7 8l10-5"/><circle cx="15" cy="14" r="2.5"/><path d="M6 12h4M6 16h4"/></svg>Radio</button>
@@ -275,6 +283,8 @@ button{cursor:pointer;border:0;background:none;padding:0}
 </div>
 <div class="card design" id="designBar" hidden><b id="desT"></b><div class="row" id="desRow"></div><small id="desS"></small></div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
+<div id="sleepFx" aria-hidden="true"></div>
+<div id="morning" hidden><div class="mcard"><span class="msun">☀️</span><b id="mClock" class="num">6:00 AM</b><small id="mDay"></small></div></div>
 <div class="scrim" id="scrim" hidden><div class="card modal" id="modal" role="dialog" aria-modal="true"></div></div>
 <div class="busy" id="busy" hidden><div class="card"><div class="big" id="busyIc">⏳</div><h3 id="busyT">Working…</h3><div class="prog"><i id="busyBar"></i></div><p class="muted" id="busyS" style="margin:0;color:var(--muted);font-size:13px"></p></div></div>
 <div class="mapwrap" id="mapWrap" hidden><div class="bar2"><h3>Liberia</h3><button id="mapClose">Close</button></div><canvas id="bigMap" aria-label="Full map of Liberia"></canvas></div>
@@ -395,7 +405,7 @@ const ROADS = [
   {t:'dirt', w:14, p:[[6400,356],[6390,195]]}
 ];
 
-ROADS.forEach(r => r.w = Math.round(r.w * (r.t === 'paved' ? (r.main ? 1.9 : 1.6) : 1.4)));
+ROADS.forEach(r => r.w = Math.round(r.w * (r.t === 'paved' ? (r.main ? 2.5 : 2.1) : 1.8)));   // wide roads: room for two cars side by side each way
 /* ---------- game rules ---------- */
 const JOBS = {
   market:  {t:'Market seller',   wage:450,   e:30, f:22, verb:'Selling greens and pepper at Waterside', ic:'🥬'},
@@ -852,6 +862,7 @@ function hitsSolid(x, y, r){
   }
   return null;
 }
+function offRoad0(x, y){ const n = nearestRoad(x, y); return n.d > n.r.w / 2 + 3; }
 function rectFree(x, y, w, h, pad){
   const pts = [[x,y],[x+w,y],[x,y+h],[x+w,y+h],[x+w/2,y+h/2]];
   if (pts.some(([px,py]) => isWater(px, py))) return false;
@@ -859,6 +870,7 @@ function rectFree(x, y, w, h, pad){
   if (LOTS.some(o => x < o.x + o.w + 6 && x + w > o.x - 6 && y < o.y + o.h + 6 && y + h > o.y - 6)) return false;
   if (hitsSolid(x + w/2, y + h/2, Math.max(w, h)/2 + pad)) return false;
   const n = nearestRoad(x + w/2, y + h/2); if (n.d < n.r.w/2 + Math.max(w,h)/2 + 6) return false;
+  for (const [px, py] of [[x, y], [x + w, y], [x, y + h], [x + w, y + h], [x + w/2, y], [x + w/2, y + h], [x, y + h/2], [x + w, y + h/2]]){ const q = nearestRoad(px, py); if (q.d < q.r.w/2 + 4) return false; }
   for (const l of LOCS) if (dist(x + w/2, y + h/2, l.x, l.y) < (l.type === 'carlot' ? 125 : l.type === 'gas' ? 85 : 70)) return false;
   return true;
 }
@@ -903,6 +915,12 @@ for (const l of [...LOCS].sort((a, b) => PRI(a) - PRI(b))){
   const b = {x:cx - bw/2, y:cy - bh/2, w:bw, h:bh, roof:l.roof, wall:l.wall || '#f4ead8', loc:l};
   l.b = b; buildings.push(b); addSolid(b);
 }
+// a door must open onto the street, never into the next building: move any blocked door to a free side of its own building
+for (const l of LOCS){ const b = l.b; if (!b) continue;
+  const blocked = (x, y) => isWater(x, y) || buildings.some(o => o !== b && x > o.x - 4 && x < o.x + o.w + 4 && y > o.y - 4 && y < o.y + o.h + 4);
+  if (!blocked(l.x, l.y)) continue;
+  const cands = [[b.x + b.w / 2, b.y + b.h + 9], [b.x + b.w / 2, b.y - 9], [b.x - 9, b.y + b.h / 2], [b.x + b.w + 9, b.y + b.h / 2]].filter(([x, y]) => !blocked(x, y) && offRoad0(x, y));
+  if (cands.length){ const n0 = c => nearestRoad(c[0], c[1]).d; cands.sort((a, c) => n0(a) - n0(c)); [l.x, l.y] = cands[0]; if (DEBUG_MOVES) DEBUG_MOVES.push(l.id + ' door'); } }
 // parking lots beside every building you can go into (reserved before the filler houses are placed)
 const LOTS = [];
 {
@@ -918,12 +936,12 @@ const LOTS = [];
     const cx = b.x + b.w/2, cy = b.y + b.h/2, dx = l.x - cx, dy = l.y - cy, alongX = Math.abs(dy) >= Math.abs(dx);
     const ux = alongX ? 0 : Math.sign(dx) || 1, uy = alongX ? Math.sign(dy) || 1 : 0;
     let made = null;
-    for (const nb of l.huge ? [8, 6, 4] : l.big ? [4, 3, 2, 1] : [3, 2, 1]){
+    for (const nb of l.huge ? [8, 6, 4, 3] : l.big ? [4, 3, 2, 1] : [3, 2, 1]){
       const W = nb * BAY, fy = uy > 0 ? b.y + b.h - DEP : b.y, by2 = uy > 0 ? b.y : b.y + b.h - DEP, fx = ux > 0 ? b.x + b.w - DEP : b.x, bx2 = ux > 0 ? b.x : b.x + b.w - DEP;
       const cands = alongX
         ? [[b.x + b.w + 5, fy, W, DEP], [b.x - 5 - W, fy, W, DEP], [b.x + b.w + 5, by2, W, DEP], [b.x - 5 - W, by2, W, DEP], [cx - W/2, uy > 0 ? b.y - 5 - DEP : b.y + b.h + 5, W, DEP]]
         : [[fx, b.y + b.h + 5, DEP, W], [fx, b.y - 5 - W, DEP, W], [bx2, b.y + b.h + 5, DEP, W], [bx2, b.y - 5 - W, DEP, W], [ux > 0 ? b.x - 5 - DEP : b.x + b.w + 5, cy - W/2, DEP, W]];
-      for (const [x, y, w, h] of cands) if (lotFree(x, y, w, h)){ made = {x, y, w, h, nb, alongX, ux, uy, loc:l}; break; }
+      for (const [x, y, w, h] of [...cands, ...[14, 28, 44].flatMap(o => cands.map(([x, y, w, h]) => [x + (x < b.x ? -o : x > b.x + b.w - 1 ? o : 0), y + (y < b.y ? -o : y > b.y + b.h - 1 ? o : 0), w, h]))]) if (lotFree(x, y, w, h)){ made = {x, y, w, h, nb, alongX, ux, uy, loc:l}; break; }
       if (made) break; }
     if (!made) continue;
     // bays: cars face the building, like you nose in to park
@@ -2028,7 +2046,9 @@ function activity(kind, label, secs, then, extra){
 function actTick(){
   if (!ACT) return false;
   const k = Math.min(1, (performance.now() - ACT.t0) / ACT.dur); $('#actP').style.width = (k * 100) + '%';
-  if (k >= 1){ const a = ACT; ACT = null; $('#actBar').hidden = true; a.then && a.then(); hud(); save(); checkGoals(); }
+  if (ACT.adv){ const want = Math.round(ACT.adv * k); if (want > ACT.done){ advance(want - ACT.done); ACT.done = want; } }
+  { const fx = $('#sleepFx'); if (fx){ const on = ACT.kind === 'sleep'; fx.style.opacity = on ? Math.min(1, k < .5 ? k * 2.4 : (1 - k) * 2.4) * .5 : 0; } }
+  if (k >= 1){ const a = ACT; ACT = null; $('#actBar').hidden = true; if ($('#sleepFx')) $('#sleepFx').style.opacity = 0; a.then && a.then(); hud(); save(); checkGoals(); }
   return true;
 }
 function eat(name, food, opts){
@@ -2433,7 +2453,7 @@ function sleep(hm){
   busy('😴', 'Sleeping…', 'Good night', 1.6, () => {
     let mins = (6*60 - S.min + 1440) % 1440; if (mins < 1) mins = 1440;
     advance(mins); S.energy = Math.max(S.energy, hm.sleep); S.food = clamp(S.food - 15, 0, 100);
-    toast(`Good morning! Day ${S.day}.`, 'good');
+    toast(`Good morning! Day ${S.day}.`, 'good'); showMorning();
   });
 }
 function taxi(o, fare, mins){
@@ -2505,6 +2525,23 @@ const TRAFFIC_SPEED = .62, LOOK = 58;
 let trafficHornT = 0;
 let RUSH = 0, rushTold = -1;
 function rushLevel(){ if (!S) return 0; const h = hour(), ramp = (a, b, c, d) => h < a || h > d ? 0 : h < b ? (h - a) / (b - a) : h < c ? 1 : (d - h) / (d - c); return Math.max(ramp(6.3, 7.3, 8.8, 9.8), ramp(16.3, 17.3, 18.9, 19.9)); }
+// the road network for traffic: which roads meet at each end of a road, and where side roads join along it
+for (const r of ROADS){ r.ends = [[], []]; }
+for (const r of ROADS) [r.p[0], r.p[r.p.length - 1]].forEach(([x, y], e) => {
+  for (const o of ROADS){ if (o === r) continue; let best = null; for (const sg of o.segs){ const [d, cx, cy] = segDist(x, y, sg.ax, sg.ay, sg.bx, sg.by); if (d < o.w / 2 + 8 && (!best || d < best.d)) best = {d, s: sg.s + Math.hypot(cx - sg.ax, cy - sg.ay)}; }
+    if (!best) continue; r.ends[e].push({road:o, s:best.s}); (o.side = o.side || []).push({s:best.s, to:r, toS: e ? r.len : 0}); } });
+// crossings in the middle of two roads: the smaller road gives way
+const segX = (a, b) => { const rx = a.bx - a.ax, ry = a.by - a.ay, sx = b.bx - b.ax, sy = b.by - b.ay, d = rx * sy - ry * sx; if (Math.abs(d) < 1e-6) return null;
+  const qx = b.ax - a.ax, qy = b.ay - a.ay, t = (qx * sy - qy * sx) / d, u = (qx * ry - qy * rx) / d; return t >= 0 && t <= 1 && u >= 0 && u <= 1 ? [t, u] : null; };
+for (const r of ROADS) r.cross = [];
+for (let i = 0; i < ROADS.length; i++) for (let j = i + 1; j < ROADS.length; j++){ const a = ROADS[i], b = ROADS[j];
+  for (const sa of a.segs) for (const sb of b.segs){ const x = segX(sa, sb); if (!x) continue; const sA = sa.s + sa.l * x[0], sB = sb.s + sb.l * x[1];
+    if (sA < a.w * .2 + b.w / 2 || sA > a.len - b.w / 2 - a.w * .2 || sB < b.w / 2 || sB > b.len - a.w / 2) continue;   // a road ending on another is a junction, not a crossing
+    a.cross.push({s:sA, o:b, os:sB}); b.cross.push({s:sB, o:a, os:sA}); } }
+function turnInto(c, road, s){
+  const m0 = road.m0 ?? (road.m0 = junctionGap(road, road.p[0])), m1 = road.m1 ?? (road.m1 = junctionGap(road, road.p[road.p.length - 1]));
+  c.road = road; c.dir = s < m0 + 25 ? 1 : s > road.len - m1 - 25 ? -1 : (Math.random() < .5 ? 1 : -1); c.s = clamp(s, m0 + 1, road.len - m1 - 1); c.turnT = T + 1.6; c.lo = undefined; c.v *= .6;
+}
 function junctionGap(r, [x, y]){ let g = 0; for (const o of ROADS){ if (o === r) continue; for (const sg of o.segs){ const [d] = segDist(x, y, sg.ax, sg.ay, sg.bx, sg.by); if (d < o.w / 2 + 6) g = Math.max(g, o.w / 2 + 16); } } return Math.min(g, r.len * .3); }
 function trafficTick(dt){
   RUSH = rushLevel();
@@ -2516,7 +2553,9 @@ function trafficTick(dt){
   for (const c of traffic){ const p = roadPoint(c.road, c.s), want = c.road.w/4 * c.dir, hd = p.a + (c.dir < 0 ? Math.PI : 0);
     // change lanes and turn round smoothly instead of jumping across the road
     c.lo = c.lo === undefined ? want : c.lo + clamp(want - c.lo, -dt * 8, dt * 8); c.ya = c.ya === undefined ? hd : c.ya + angDiff(hd, c.ya) * Math.min(1, dt * 3.5);
-    const off = c.lo; c.wx = p.x + Math.cos(p.a + Math.PI/2) * off; c.wy = p.y + Math.sin(p.a + Math.PI/2) * off; c.hx = Math.cos(hd); c.hy = Math.sin(hd); c.len = (VDIM[c.kind] || VDIM.car)[0]; if (c.v === undefined) c.v = c.sp * TRAFFIC_SPEED; }
+    const off = c.lo, tx = p.x + Math.cos(p.a + Math.PI/2) * off, ty = p.y + Math.sin(p.a + Math.PI/2) * off;
+    // just turned into another road: glide across the junction instead of jumping lanes
+    if (c.turnT > T && c.wx !== undefined){ const k = Math.min(1, dt * 3.5); c.wx += (tx - c.wx) * k; c.wy += (ty - c.wy) * k; } else { c.wx = tx; c.wy = ty; } c.hx = Math.cos(hd); c.hy = Math.sin(hd); c.len = (VDIM[c.kind] || VDIM.car)[0]; if (c.v === undefined) c.v = c.sp * TRAFFIC_SPEED; }
   const crossers = people.filter(q => q.cross);
   const playerOn = S && S.x > -500 && !S.inside && !FLIGHT && !(AUTO && AUTO.phase === 'trip');
   trafficHornT -= dt;
@@ -2524,13 +2563,20 @@ function trafficTick(dt){
     let gap = 1e9, who = null;
     const ahead = (x, y, len, wide) => { const dx = x - c.wx, dy = y - c.wy, fwd = dx * c.hx + dy * c.hy; if (fwd <= 0 || fwd > LOOK + len) return; const lat = Math.abs(-dx * c.hy + dy * c.hx); if (lat > (wide || 8)) return; const g = fwd - c.len / 2 - len / 2; if (g < gap){ gap = g; return true; } };
     if (c.rush && !c.on) continue;
-    for (const o of live){ if (o === c || Math.abs(o.wx - c.wx) > 90 || Math.abs(o.wy - c.wy) > 90) continue; if (ahead(o.wx, o.wy, o.len, 8)) who = 'car'; }
+    // give way at crossings: wait before the box if a car from the other road is in it (or coming, when theirs is the bigger road)
+    for (const x of c.road.cross){ const dd = (x.s - c.s) * c.dir, half = x.o.w / 2 + 6; if (dd < -half || dd > 70) continue;
+      if (dd < half * .6) continue;   // already in the crossing: keep going
+      const busy = live.some(o => o.road === x.o && Math.abs(o.s - x.os) < (o.road.w > c.road.w || (o.road.w === c.road.w && o.road.n > c.road.n) ? 60 : c.road.w / 2 + 14) && o.v > .5 || (o.road === x.o && Math.abs(o.s - x.os) < c.road.w / 2 + 4));
+      if (busy){ const g = dd - half - c.len / 2; if (g < gap){ gap = Math.max(0, g); who = 'car'; } } }
+    for (const o of live){ if (o === c || Math.abs(o.wx - c.wx) > 90 || Math.abs(o.wy - c.wy) > 90) continue;
+      if (o.road !== c.road && c.road.cross.some(x => x.o === o.road && Math.abs(x.s - c.s) < x.o.w / 2 + 34)) continue;   // crossing traffic is handled by giving way above
+      if (ahead(o.wx, o.wy, o.len, 12)) who = 'car'; }
     for (const q of crossers){ if (Math.abs(q.x - c.wx) > 80 || Math.abs(q.y - c.wy) > 80) continue; if (ahead(q.x, q.y, 3, 11)) who = 'person'; }
     if (playerOn && Math.abs(S.x - c.wx) < 90 && Math.abs(S.y - c.wy) < 90){ if (ahead(S.x, S.y, S.riding ? 26 : 3, S.riding ? 10 : 11)) who = 'you'; }
     if (AUTO && AUTO.x !== undefined && ahead(AUTO.x, AUTO.y, 26, 9)) who = 'car';
     if (playerOn && !S.riding && S.parked && Math.abs(S.parked.x - c.wx) < 90 && Math.abs(S.parked.y - c.wy) < 90 && ahead(S.parked.x, S.parked.y, 26, 9)) who = 'car';
     const want = c.sp * TRAFFIC_SPEED * (WX.level > .5 ? .8 : 1), target = gap < 5 ? 0 : Math.min(want, (gap - 5) * 2.4);
-    c.v = c.v > target ? Math.max(target, c.v - 150 * dt) : Math.min(target, c.v + 34 * dt);
+    c.v = c.v > target ? Math.max(target, c.v - (target < c.v * .4 ? 160 : 70) * dt) : Math.min(target, c.v + (c.v < want * .5 ? 48 : 30) * dt);
     c.braking = c.v < want * .7 && target < c.v + 1;
     // stuck behind something: honk at you, or squeeze past a car that is not moving
     if (c.v < 2 && gap < 30){ c.wait = (c.wait || 0) + dt;
@@ -2538,9 +2584,17 @@ function trafficTick(dt){
       // stuck behind a car that is not moving: turn round when the other lane is clear (never drive through it)
       if (who === 'car' && c.wait > 5){ c.wait = 0; if (!live.some(o => o !== c && o.road === c.road && o.dir === -c.dir && Math.abs(o.s - c.s) < 60)) c.dir = -c.dir; } }
     else c.wait = 0;
-    // turn round before a junction, not in the middle of the other road
-    const r = c.road, m0 = r.m0 ?? (r.m0 = junctionGap(r, r.p[0])), m1 = r.m1 ?? (r.m1 = junctionGap(r, r.p[r.p.length - 1]));
-    c.s += c.dir * c.v * dt; if (c.s > r.len - m1){ c.s = r.len - m1; c.dir = -1; } if (c.s < m0){ c.s = m0; c.dir = 1; }
+    // drive on: at the end of a road turn into a connecting road, sometimes turn off into a side road; only a dead end makes a car turn round
+    const r = c.road, s0 = c.s; c.s += c.dir * c.v * dt;
+    const clearAt = (road, s) => !live.some(o => o !== c && o.road === road && Math.abs(o.s - s) < 55);
+    if (r.side && !c.rush) for (const j of r.side){ if ((s0 - j.s) * (c.s - j.s) < 0 && Math.random() < .3 && T > (c.turnT || 0) && clearAt(j.to, j.toS)){ turnInto(c, j.to, j.toS); break; } }
+    // stop line: just before the road we are joining, never inside it
+    const m0 = r.m0 ?? (r.m0 = junctionGap(r, r.p[0])), m1 = r.m1 ?? (r.m1 = junctionGap(r, r.p[r.p.length - 1]));
+    if (c.road === r && ((c.dir > 0 && c.s > r.len - m1) || (c.dir < 0 && c.s < m0))){ const end = c.dir > 0 ? 1 : 0, links = (r.ends || [[], []])[end].filter(l => (!c.rush || (l.road.main && l.road.t === 'paved')) && clearAt(l.road, l.s));
+      c.s = clamp(c.s, m0, r.len - m1);
+      if (links.length){ const l = pick(links); c.endWait = 0; turnInto(c, l.road, l.s); }
+      else if ((r.ends || [[], []])[end].length && (c.endWait = (c.endWait || 0) + dt) < 4){ c.v = 0; }   // wait for a gap in the traffic
+      else { c.endWait = 0; c.dir = end ? -1 : 1; } }
   }
 }
 function brakeLights(){
@@ -2696,7 +2750,8 @@ function faint(){ if (S.energy <= 0 && !AUTO) ambulanceRescue(); S.energy = Math
    ========================================================= */
 function hud(){
   { const hb = $('#hornBtn'), rb = $('#radioBtn'), on = !!(S && S.riding && !S.inside); if (hb.hidden === on) hb.hidden = !on; if (rb.hidden === on) rb.hidden = !on; const lb = $('#lightBtn'); if (lb.hidden === on) lb.hidden = !on; lb.classList.toggle('on', !!S.lights); }
-  { const db = $('#designBtn'); const own = ownHomeInside(); if (db.hidden === own) db.hidden = !own; db.classList.toggle('on', !!DES); }
+  { const db = $('#designBtn'); const own = ownHomeInside(); if (db.hidden === own) db.hidden = !own; db.classList.toggle('on', !!DES);
+    for (const k of ['tv', 'ac']){ const b = $('#' + k + 'Btn'), show = own && homeHas(k); if (b.hidden === show) b.hidden = !show; b.classList.toggle('on', show && devOn(k)); } }
   if (!S) return;
   $('#hName').textContent = S.name;
   $('#hClock').textContent = `Day ${S.day} · ${fmtTime(S.min)} ${wxIcon()}`;
@@ -3290,15 +3345,21 @@ function hairGroup(L){
   return g;
 }
 const BODY = {x:.84, y:1.16, z:.78}, PS = .78;   // PS: overall people size, so they fit next to the cars
+function shadeHex(h, k){ return '#' + new THREE.Color(h).offsetHSL(0, 0, k).getHexString(); }
 function personMesh(L){
   if (typeof L === 'string') L = randomLook();
   const g = new THREE.Group(), skin = lam(L.skin);
   const legCol = L.dress ? L.skin : (L.bottom || '#1F3A5F');
   const legs = [-1.5, 1.5].map(z => { const p = new THREE.Group();
-    const m = new THREE.Mesh(new THREE.CapsuleGeometry(.95, 4.7, 4, 10), L.dress ? skin : clothMat(legCol)); m.position.y = -3.25; m.castShadow = true; p.add(m);
+    const m = new THREE.Mesh(L.dress ? new THREE.CapsuleGeometry(.95, 4.7, 4, 10) : new THREE.CylinderGeometry(1.25, 1.12, 6.4, 10), L.dress ? skin : clothMat(legCol)); m.position.y = L.dress ? -3.25 : -3.1; m.castShadow = true; p.add(m);
+    if (!L.dress){ const cuff = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, .5, 10), lam(shadeHex(legCol, -.18))); cuff.position.y = -6.1; p.add(cuff); }
     const shoe = new THREE.Mesh(new THREE.CapsuleGeometry(.85, 1.6, 3, 8).rotateZ(Math.PI/2), lam(L.dress ? '#7a3b2a' : '#111')); shoe.position.set(.5, -6.4, 0); p.add(shoe);
     p.position.set(0, 6.5, z); g.add(p); return p; });
   const torso = new THREE.Mesh(new THREE.CapsuleGeometry(1.9, 3.3, 4, 12).scale(1, 1, L.g === 'f' ? 1.38 : 1.5), clothMat(L.top)); torso.position.y = 10; torso.castShadow = true; g.add(torso);
+  // trousers: the seat and waist in the trouser colour with a belt, so the shirt stops at the waist
+  if (!L.dress){ const hips = new THREE.Mesh(new THREE.CylinderGeometry(2.05, 2.15, 3, 12).scale(1, 1, L.g === 'f' ? 1.38 : 1.5), clothMat(legCol)); hips.position.y = 7.6; hips.castShadow = true; g.add(hips);
+    const belt = new THREE.Mesh(new THREE.CylinderGeometry(2.08, 2.08, .6, 12).scale(1, 1, L.g === 'f' ? 1.39 : 1.51), lam('#2b1d14')); belt.position.y = 9.2; g.add(belt);
+    const buckle = new THREE.Mesh(new THREE.BoxGeometry(.3, .55, .9), lam('#d4af37')); buckle.position.set(2.1, 9.2, 0); g.add(buckle); }
   if (L.dress){ const len = L.long ? 6.5 : 4.2; const sk = new THREE.Mesh(new THREE.CylinderGeometry(2.9, L.long ? 4.6 : 4.4, len, 12), clothMat(L.top)); sk.position.y = 6.6 - len/2 + .2; sk.castShadow = true; g.add(sk); }
   if (L.stripe){ const s = new THREE.Mesh(new THREE.BoxGeometry(4.1, 1.4, 6.1), lam(L.stripe)); s.position.y = 11.5; g.add(s); }
   if (L.tie){ const sh = new THREE.Mesh(new THREE.BoxGeometry(.3, 4, 1.6), lam('#f5f5f5')); sh.position.set(2.05, 11, 0); g.add(sh); const t = new THREE.Mesh(new THREE.BoxGeometry(.35, 3.6, .7), lam('#B03A2E')); t.position.set(2.15, 10.8, 0); g.add(t); }
@@ -3339,6 +3400,8 @@ function poseFor(g, act, down){
   if (u.umb) u.umb.visible = !!(S && S.rain && !S.inside && !S.riding && !act && !down);
   if (down){ g.rotation.z = Math.PI / 2; g.position.y += 2.5; return; }
   if (!act) return;
+  if (act.kind === 'sleep' && act.bed){ const b = act.bed; g.rotation.order = 'YXZ'; g.rotation.set(0, b.yaw - Math.PI / 2, Math.PI / 2); g.position.set(b.x, b.y + Math.sin(t * 1.5) * .12, b.z);
+    u.legs[0].rotation.z = u.legs[1].rotation.z = 0; u.arms[0].rotation.z = u.arms[1].rotation.z = .12; return; }
   if (act.kind === 'eat'){ u.food.material.color.set(act.color || '#c2410c'); u.arms[0].rotation.z = -1.05; const bite = (Math.sin(t * 5) + 1) / 2; u.arms[1].rotation.z = -.6 - bite * 1.9; u.head.position.y = 16.2 - bite * .25; }
   if (act.kind === 'drink'){ const sip = (Math.sin(t * 2.4) + 1) / 2; u.arms[1].rotation.z = -1.2 - sip * 1.5; u.arms[0].rotation.z = 0; }
   if (act.kind === 'cook'){ u.arms[0].rotation.z = -1.25; u.arms[1].rotation.z = -1.0 + Math.sin(t * 6) * .3; }
@@ -3357,8 +3420,13 @@ const CROWD = {};
 {
   const C = new THREE.Color(), idx = k => people.map((p, i) => i).filter(i => k(people[i]));
   const def = {
-    legL:{geo:new THREE.CapsuleGeometry(.95, 4.7, 3, 8).translate(0, -3.25, 0), ids:idx(() => true), col:p => p.look.dress ? p.look.skin : p.look.bottom, y:6.5, side:-1.5, limb:'legL', body:1},
-    legR:{geo:new THREE.CapsuleGeometry(.95, 4.7, 3, 8).translate(0, -3.25, 0), ids:idx(() => true), col:p => p.look.dress ? p.look.skin : p.look.bottom, y:6.5, side:1.5, limb:'legR', body:1},
+    legL:{geo:new THREE.CapsuleGeometry(.95, 4.7, 3, 8).translate(0, -3.25, 0), ids:idx(p => p.look.dress), col:p => p.look.skin, y:6.5, side:-1.5, limb:'legL', body:1},
+    legR:{geo:new THREE.CapsuleGeometry(.95, 4.7, 3, 8).translate(0, -3.25, 0), ids:idx(p => p.look.dress), col:p => p.look.skin, y:6.5, side:1.5, limb:'legR', body:1},
+    // trousers: wide legs, the seat and a belt
+    pantL:{geo:new THREE.CylinderGeometry(1.25, 1.12, 6.4, 8).translate(0, -3.1, 0), ids:idx(p => !p.look.dress), col:p => p.look.bottom || '#1F3A5F', y:6.5, side:-1.5, limb:'legL', body:1},
+    pantR:{geo:new THREE.CylinderGeometry(1.25, 1.12, 6.4, 8).translate(0, -3.1, 0), ids:idx(p => !p.look.dress), col:p => p.look.bottom || '#1F3A5F', y:6.5, side:1.5, limb:'legR', body:1},
+    hips:{geo:new THREE.CylinderGeometry(2.05, 2.15, 3, 10).scale(1, 1, 1.48), ids:idx(p => !p.look.dress), col:p => p.look.bottom || '#1F3A5F', y:7.6, body:1},
+    belt:{geo:new THREE.CylinderGeometry(2.08, 2.08, .6, 10).scale(1, 1, 1.5), ids:idx(p => !p.look.dress), col:() => '#2b1d14', y:9.2, body:1},
     shoeL:{geo:new THREE.CapsuleGeometry(.75, 1.4, 1, 5).rotateZ(Math.PI/2), ids:idx(() => true), col:p => p.look.dress ? '#7a3b2a' : pick(['#111111', '#3e2723', '#fafafa', '#1b2a49']), end:{limb:'legL', py:6.5, len:6.4, side:-1.5, fwd:.6}},
     shoeR:{geo:new THREE.CapsuleGeometry(.75, 1.4, 1, 5).rotateZ(Math.PI/2), ids:idx(() => true), col:p => p.look.dress ? '#7a3b2a' : pick(['#111111', '#3e2723', '#fafafa', '#1b2a49']), end:{limb:'legR', py:6.5, len:6.4, side:1.5, fwd:.6}},
     handL:{geo:new THREE.IcosahedronGeometry(.85, 0), ids:idx(() => true), col:p => p.look.skin, end:{limb:'armL', py:13.2, len:6.5, side:-3.3}},
@@ -3739,7 +3807,7 @@ function houseShell(R, F, fi, ox, col, fg){
   for (const [a, b] of segs) if (b - a > 1) box(b - a, 5, 2, wall, ox + (a + b)/2, 2.5, D/2 + 1, fg);
   if (fi === 0){ box(14, .3, 8, '#5d4037', ox + doorX, .15, D/2 - 4, fg); R.door = {x:ox + doorX, z:D/2 - 3}; R.keep.push({x:ox + doorX - 10, z:D/2 - 18, w:20, d:18}); }
   // windows on the back wall
-  for (const r of F.rooms) if (Math.abs(r.z + D/2) < 1 && r.w > 24){ const win = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(18, r.w - 10), 11), R.winMat); win.position.set(ox + r.x + r.w/2, 21, -D/2 + .05); fg.add(win); box(Math.min(19, r.w - 9), 1, 1.2, '#6d4c41', ox + r.x + r.w/2, 15, -D/2 + .4, fg); }
+  for (const r of F.rooms) if (Math.abs(r.z + D/2) < 1 && r.w > 24){ const win = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(18, r.w - 10), 11), R.winMat); win.position.set(ox + r.x + r.w/2, 21, -D/2 + .05); fg.add(win); box(Math.min(19, r.w - 9), 1, 1.2, '#6d4c41', ox + r.x + r.w/2, 15, -D/2 + .4, fg); addBeams(R, fg, ox + r.x + r.w/2, Math.min(18, r.w - 10), -D/2 + .3); }
   // inside walls between rooms, each with a doorway
   const rs = F.rooms;
   for (let i = 0; i < rs.length; i++) for (let j = i + 1; j < rs.length; j++){ const a = rs[i], b = rs[j];
@@ -3824,6 +3892,8 @@ function addItem(R, it, room){
   if (!p || itemFits(R, f, p[0], p[1], p[2])) p = findFree(R, f, k, room);
   if (!p){ if (!R.tour && !R.warnedFull){ R.warnedFull = true; setTimeout(() => toast(`📦 Some furniture is in storage: there is no space for it here. Sell it or move things around.`), 800); } return; }
   f.g.position.set(p[0], 0, p[1]); f.g.rotation.y = p[2]; R.floorG[floorOf(R, p[0])].add(f.g); R.items[it.id] = f;
+  if (k === 'tv' || k === 'bigtv') f.g.traverse(m => { if (!f.screen && m.isMesh && m.material.isMeshBasicMaterial && m.material.map) f.screen = m; });
+  if (k === 'ac') f.g.traverse(m => { if (m.isMesh && m.material.isMeshBasicMaterial && m.material.color.getHex() === 0x3ddc84) f.led = m; });
   f.g.userData.fid = it.id; if (f.g.userData.spin) INT_SPIN.push(f.g.userData.spin); if (f.g.userData.ceil) INT_SPIN.push({ceil:f.g.userData.ceil});
   if (f.g.userData.glow) R.glows.push(...f.g.userData.glow);
   if (f.g.userData.lamp && R.lamps < 5){ R.lamps++; const pl = new THREE.PointLight(f.g.userData.lamp, 0, 110, 1.6); pl.position.set(0, f.g.userData.lampY || 24, 0); f.g.add(pl); (R.pls = R.pls || []).push(pl); }
@@ -3903,6 +3973,8 @@ function designCmd(c){
 }
 $('#designBar').addEventListener('click', e => { const b = e.target.closest('[data-des]'); if (b) designCmd(b.dataset.des); });
 $('#designBtn').addEventListener('click', () => DES ? endDesign() : startDesign());
+$('#tvBtn').addEventListener('click', () => setDev('tv', !devOn('tv')));
+$('#acBtn').addEventListener('click', () => setDev('ac', !devOn('ac')));
 $('#hornBtn').addEventListener('click', () => myHorn());
 $('#radioBtn').addEventListener('click', () => radioNext());
 $('#lightBtn').addEventListener('click', () => toggleLights());
@@ -4001,6 +4073,83 @@ function cookAt(d){
 function takeBath(){
   const b = INT.bathAt; if (b){ INT.x = b.x; INT.z = b.z; INT.a = Math.PI/2; }
   activity('bath', b && b.small ? '🪣 Taking a bucket bath…' : '🛁 Taking a bath…', 3.8, () => { advance(b && b.small ? 15 : 30); S.hyg = 100; S.energy = clamp(S.energy + 6, 0, 100); toast('🧼 Fresh and clean! You smell nice.', 'good'); if (b){ INT.x = b.x; INT.z = b.z + 14; } });
+}
+/* ---------- home life: TV and AC you can switch on and off, sleeping in your bed, morning sun through the windows ---------- */
+const devKey = () => INT && !INT.place ? INT.home : null;
+const devOn = k => { const h = devKey(); return !!(h && S.dev && S.dev[h] && S.dev[h][k]); };
+const homeHas = k => !!(INT && !INT.place && INT.items && Object.values(INT.items).some(f => k === 'tv' ? (f.k === 'tv' || f.k === 'bigtv') : f.k === k));
+function setDev(k, on){ const h = devKey(); if (!h) return; S.dev = S.dev || {}; S.dev[h] = {...(S.dev[h] || {}), [k]: on}; soundOn();
+  if (SND.ctx) blip('square', on ? 880 : 520, 0, .06, .05); toast(k === 'tv' ? (on ? '📺 TV on' : '📺 TV off') : (on ? '❄️ AC on: the room is getting cool' : '❄️ AC off'), on ? 'good' : ''); hud(); save(); }
+// one animated picture shared by every TV that is on: football, the news, music videos
+const TVC = document.createElement('canvas'); TVC.width = 192; TVC.height = 108; const TV_TEX = tex(TVC); let tvT = 0;
+function drawTV(t){
+  const x = TVC.getContext('2d'), ch = Math.floor(t / 20) % 3;
+  if (ch === 0){ x.fillStyle = '#2e8b3a'; x.fillRect(0, 0, 192, 108); for (let i = 0; i < 8; i++){ x.fillStyle = i % 2 ? '#2a8035' : '#33963f'; x.fillRect(i * 24, 0, 24, 108); }
+    x.strokeStyle = '#fff'; x.lineWidth = 2; x.strokeRect(8, 8, 176, 92); x.beginPath(); x.moveTo(96, 8); x.lineTo(96, 100); x.stroke(); x.beginPath(); x.arc(96, 54, 14, 0, 7); x.stroke();
+    const bx = 96 + Math.sin(t * .9) * 60, by = 54 + Math.sin(t * 1.7) * 30;
+    for (let i = 0; i < 6; i++){ x.fillStyle = i < 3 ? '#C8102E' : '#ffffff'; x.beginPath(); x.arc(bx + Math.sin(t * 1.3 + i * 2) * 26 + (i < 3 ? -12 : 12), by + Math.cos(t * 1.1 + i) * 22, 3.4, 0, 7); x.fill(); }
+    x.fillStyle = '#fff'; x.beginPath(); x.arc(bx, by, 2.2, 0, 7); x.fill(); x.fillStyle = 'rgba(0,0,0,.6)'; x.fillRect(4, 4, 92, 16); x.fillStyle = '#fff'; x.font = 'bold 11px sans-serif'; x.fillText(`LIB ${1 + Math.floor(t / 37) % 3} - 1 GHA  ${Math.floor(t * 1.5) % 90}'`, 8, 16); }
+  else if (ch === 1){ const g = x.createLinearGradient(0, 0, 192, 108); g.addColorStop(0, '#0b3d91'); g.addColorStop(1, '#C8102E'); x.fillStyle = g; x.fillRect(0, 0, 192, 108);
+    x.fillStyle = '#f1c27d'; x.beginPath(); x.arc(60, 50, 16, 0, 7); x.fill(); x.fillStyle = '#263238'; x.fillRect(40, 66, 40, 30); x.fillStyle = '#fff'; x.font = 'bold 16px sans-serif'; x.fillText('LNTV NEWS', 100, 40);
+    x.fillStyle = '#FFD75A'; x.fillRect(0, 86, 192, 22); x.fillStyle = '#111'; x.font = 'bold 11px sans-serif'; x.fillText('BREAKING: New road for Gbarnga · Lone Star win · Rain tonight in Monrovia', 192 - (t * 40) % 560, 101); }
+  else { for (let i = 0; i < 6; i++){ x.fillStyle = `hsl(${(t * 60 + i * 50) % 360},80%,${45 + 10 * Math.sin(t * 3 + i)}%)`; x.fillRect(i * 32, 0, 32, 108); }
+    x.fillStyle = '#111'; for (let i = 0; i < 3; i++){ const px = 50 + i * 46, j = Math.abs(Math.sin(t * 4 + i)) * 10; x.beginPath(); x.arc(px, 40 - j, 8, 0, 7); x.fill(); x.fillRect(px - 7, 48 - j, 14, 26); }
+    x.fillStyle = '#fff'; x.font = 'bold 12px sans-serif'; x.fillText('🎵 Hipco Hits TV', 8, 100); }
+  TV_TEX.needsUpdate = true;
+}
+function devicesTick(R){
+  if (R.place) return; const items = Object.values(R.items || {}), tvOn = devOn('tv'), acOn = devOn('ac');
+  if (tvOn && (tvT -= 1 / 30) < 0){ tvT = .12; drawTV(T); }
+  for (const f of items){
+    if ((f.k === 'tv' || f.k === 'bigtv') && f.screen){ const m = f.screen.material, want = tvOn ? TV_TEX : null; if (m.map !== want){ m.map = want; m.color.setHex(tvOn ? 0xffffff : 0x080a0c); m.needsUpdate = true; }
+      if (!f.tvLight){ f.tvLight = new THREE.PointLight(0x9ec8ff, 0, 70, 1.8); f.tvLight.position.set(14, 16, 0); f.g.add(f.tvLight); } f.tvLight.intensity = tvOn ? .9 + Math.sin(T * 9) * .25 + Math.sin(T * 2.3) * .2 : 0; }
+    if (f.k === 'ac'){ if (f.led) f.led.material.color.setHex(acOn ? 0x3ddc84 : 0x5a1010);
+      if (!f.air){ const n = 40, pos = new Float32Array(n * 3); f.air = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(pos, 3)), new THREE.PointsMaterial({color:0xcfefff, size:1.6, transparent:true, opacity:.7, depthWrite:false})); f.air.userData.seed = [...Array(n)].map(() => Math.random()); f.g.add(f.air); }
+      f.air.visible = acOn; if (acOn){ const p = f.air.geometry.attributes.position.array; f.air.userData.seed.forEach((sd, i) => { const k = (T * .35 + sd) % 1; p[i * 3] = 3 + k * 22; p[i * 3 + 1] = 23 - k * 12 - Math.sin(sd * 9) * 2; p[i * 3 + 2] = (sd - .5) * 18 + Math.sin(T + sd * 6) * 1.5; }); f.air.geometry.attributes.position.needsUpdate = true; } } }
+  // the AC hums softly when it is on
+  if (SND.ctx && SND.buf){ if (!SND.acHum){ const c = SND.ctx, src = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain(); src.buffer = SND.buf; src.loop = true; fl.type = 'lowpass'; fl.frequency.value = 340; g.gain.value = 0; src.connect(fl).connect(g).connect(SND.master); src.start(); SND.acHum = g; }
+    SND.acHum.gain.setTargetAtTime(acOn && S.inside ? .07 : 0, SND.ctx.currentTime, .4); }
+  // morning: warm sun beams come in through the windows
+  const h = hour(), mf = clamp(1 - Math.abs(h - 7.3) / 2.6, 0, 1) * (1 - WX.level * .8);
+  for (const b of R.beams || []) b.material.opacity = (b.userData.floor ? .55 : .32) * mf;
+  // asleep: Zzz, the sheet, the room goes dark then light
+  const sl = !!(ACT && ACT.kind === 'sleep');
+  if (R.zzz){ R.zzz.visible = sl; if (sl){ R.zzz.position.set(ACT.bed.hx, ACT.bed.y + 10, ACT.bed.hz); R.zzz.children.forEach((z, i) => { const k = (T * .5 + i / 3) % 1; z.position.set(k * 4, k * 12, 0); z.material.opacity = Math.sin(k * Math.PI); z.scale.setScalar(2 + k * 3); }); } }
+  for (const f of items) if (f.sheet) f.sheet.visible = sl && acOn && ACT.bed.f === f;
+}
+function addBeams(R, fg, cx, w, wallZ){
+  const g = (fl) => canvasTex(64, 128, (x, W, H) => { const gr = fl ? x.createRadialGradient(W / 2, H / 2, 4, W / 2, H / 2, W * .9) : x.createLinearGradient(0, 0, 0, H);
+    if (fl){ gr.addColorStop(0, 'rgba(255,226,150,1)'); gr.addColorStop(1, 'rgba(255,200,120,0)'); } else { gr.addColorStop(0, 'rgba(255,236,170,.95)'); gr.addColorStop(1, 'rgba(255,215,140,0)'); } x.fillStyle = gr; x.fillRect(0, 0, W, H); });
+  R.beamTex = R.beamTex || [g(false), g(true)];
+  const mat = (fl) => new THREE.MeshBasicMaterial({map:R.beamTex[fl ? 1 : 0], transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, opacity:0, side:THREE.DoubleSide});
+  const len = 34, beam = new THREE.Mesh(new THREE.PlaneGeometry(w, len), mat(false)); beam.position.set(cx, 21 - Math.sin(.9) * len / 2, wallZ + Math.cos(.9) * len / 2); beam.rotation.x = -.9; fg.add(beam);
+  const patch = new THREE.Mesh(new THREE.PlaneGeometry(w * 1.3, 18).rotateX(-Math.PI / 2), mat(true)); patch.position.set(cx, .45, wallZ + 30); patch.userData.floor = 1; fg.add(patch);
+  (R.beams = R.beams || []).push(beam, patch);
+}
+// sleep in your own bed: lie down, Zzz, time flies, the sun comes up
+const BED_TOP = {bed:7.2, mattress:9.6, kingbed:10.2};
+function sleepInBed(q){
+  const items = Object.values(INT.items || {}).filter(f => BED_TOP[f.k]);
+  if (!items.length) return sleep({sleep:q});
+  const fi = INT.fi || 0, f = items.find(b => floorOf(INT, b.g.position.x) === fi) || items[0], bfi = floorOf(INT, f.g.position.x);
+  if (bfi !== fi){ INT.fi = bfi; INT.floorG.forEach((fg, i) => fg.visible = i === bfi); }
+  const th = f.g.rotation.y, fd = f.fd || 32, auntie = INT.home === 'auntie' && f.k === 'bed', top = auntie ? 1.6 : BED_TOP[f.k], fz = -fd / 2 + 23, hzl = fz - 17;   // feet towards the foot of the bed, head on the pillow
+  const bed = {f, x: f.g.position.x + fz * Math.sin(th), z: f.g.position.z + fz * Math.cos(th), yaw: th, y: top + 2.2, hx: f.g.position.x + hzl * Math.sin(th), hz: f.g.position.z + hzl * Math.cos(th)};
+  if (!f.sheet){ const fw = f.fw || 22, sheet = new THREE.Mesh(new THREE.BoxGeometry(fw * .9, 1.4, fd - 12), new THREE.MeshLambertMaterial({map:canvasTex(64, 64, (x) => { x.fillStyle = '#e3f2fd'; x.fillRect(0, 0, 64, 64); x.fillStyle = '#90caf9'; for (let i = 0; i < 8; i++) x.fillRect(0, i * 8, 64, 3); x.fillStyle = '#1565c0'; for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++){ x.beginPath(); x.arc(8 + i * 16, 8 + j * 16, 2.4, 0, 7); x.fill(); } })}));
+    sheet.position.set(0, top + 3.7, 5); sheet.visible = false; f.g.add(sheet); f.sheet = sheet; }
+  if (!INT.zzz){ INT.zzz = new THREE.Group(); for (let i = 0; i < 3; i++){ const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:canvasTex(64, 64, (x) => { x.fillStyle = '#fff'; x.font = 'bold 50px Arial'; x.fillText('Z', 14, 50); }), transparent:true, depthWrite:false})); INT.zzz.add(sp); } INT.sc.add(INT.zzz); }
+  let mins = (6 * 60 - S.min + 1440) % 1440; if (mins < 1) mins = 1440;
+  const cold = devOn('ac'), q2 = q; INT.x = bed.x; INT.z = bed.z; orbitIn.dist = Math.max(90, orbitIn.dist * .8);
+  toast(cold ? '😴 Good night. The AC is on, so you pull the sheet up.' : '😴 Good night…');
+  activity('sleep', '😴 Sleeping… Zzz', 7, () => {
+    S.energy = Math.max(S.energy, q2); S.food = clamp(S.food - 15, 0, 100);
+    INT.x = f.g.position.x + (f.fw || 22) / 2 * Math.cos(th) + 7 * Math.cos(th); INT.z = f.g.position.z - (f.fw || 22) / 2 * Math.sin(th) - 7 * Math.sin(th); INT.a = -th;
+    showMorning(); }, {bed, adv: mins, done: 0});
+}
+function showMorning(){
+  const el = $('#morning'); if (!el) return; $('#mClock').textContent = fmtTime(S.min); $('#mDay').textContent = `Good morning! Day ${S.day} · ${WX_KINDS[WX.kind].t}`;
+  el.hidden = false; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); clearTimeout(showMorning.t); showMorning.t = setTimeout(() => { el.hidden = true; el.classList.remove('show'); }, 4600);
+  if (SND.ctx){ [523, 659, 784, 1046].forEach((f, i) => blip('sine', f, 0, .5, .05, i * .16)); }
 }
 function useStairs(){ const R = INT, to = R.fi ? 0 : 1, st = R.stairs[to]; if (!st) return; R.fi = to; R.x = st.x; R.z = st.z; R.floorG.forEach((fg, i) => fg.visible = i === to); closeModal(); toast(to ? '⬆️ Upstairs' : '⬇️ Downstairs'); }
 
@@ -4123,16 +4272,17 @@ function panelInside0(s){
     case 'console': return {ic:'🎮', t:'Game console', sub:'Football video games with friends.', acts:[{l:'Play football games', s:'1 hour · +5 energy', primary:true, fn:() => busy('🎮', 'Playing video games…', 'Lone Star vs Brazil, 3-2!', 1, () => { advance(60); S.energy = clamp(S.energy + 5, 0, 100); S.fun = (S.fun || 0) + 1; })}]};
     case 'microwave': return {ic:'🍲', t:'Microwave', sub:'Warm up some food fast.', acts:[{l:'Warm bread & butter', s:'5 min · +10 food', p:money(50), pc:'minus', primary:true, dis:!canPay(50), fn:() => { spend(50); closeModal(); eat('warm bread & butter', 10, {color:'#d7ccc8'}); }}]};
     case 'bed': case 'mattress': return {ic:'🛏️', t:'Your bed', sub:`Sleep restores up to <b>${q}%</b> energy${bonus ? ` (furniture bonus +${bonus})` : ''}.`,
-      acts:[{l:'Sleep until 6 AM', primary:true, fn:() => sleep({sleep:q})}, {l:'Take a nap', s:'2 hours · +20 energy', fn:() => busy('😴', 'Napping…', '', 1, () => { advance(120); S.energy = clamp(S.energy + 20, 0, q); S.food = clamp(S.food - 5, 0, 100); })}]};
+      acts:[{l:'Sleep until 6 AM', s: devOn('ac') ? 'Lie down under the sheet with the AC on' : 'Lie down in your bed', primary:true, fn:() => { closeModal(); sleepInBed(q); }}, {l:'Take a nap', s:'2 hours · +20 energy', fn:() => busy('😴', 'Napping…', '', 1, () => { advance(120); S.energy = clamp(S.energy + 20, 0, q); S.food = clamp(S.food - 5, 0, 100); })}]};
     case 'sofa': return {ic:'🛋️', t:'Sofa', sub:'Put your feet up.', acts:[{l:'Rest on the sofa', s:'1 hour · +8 energy', primary:true, fn:() => busy('🛋️', 'Resting…', '', 1, () => { advance(60); S.energy = clamp(S.energy + 8, 0, 100); })}]};
     case 'tv': return {ic:'📺', t:'Flat-screen TV', sub:'Football, news and Nollywood movies.', acts:[
-      {l:'Watch the football', s:'2 hours · +10 energy', primary:true, fn:() => busy('⚽', 'Watching the match at home…', 'Lone Star vs Ghana', 1.4, () => { advance(120); S.energy = clamp(S.energy + 10, 0, 100); toast('What a game!', 'gold'); })},
-      {l:'Watch a Nollywood movie', s:'2 hours · +8 energy', fn:() => busy('🎬', 'Watching a movie…', 'The drama is too much!', 1.4, () => { advance(120); S.energy = clamp(S.energy + 8, 0, 100); })}]};
+      {l: devOn('tv') ? '📴 Turn the TV off' : '📺 Turn the TV on', s: devOn('tv') ? 'It is showing football, news and music' : 'Flip through the channels', fn:() => setDev('tv', !devOn('tv'))},
+      {l:'Watch the football', s:'2 hours · +10 energy', primary:true, fn:() => (devOn('tv') || setDev('tv', true), 0) || busy('⚽', 'Watching the match at home…', 'Lone Star vs Ghana', 1.4, () => { advance(120); S.energy = clamp(S.energy + 10, 0, 100); toast('What a game!', 'gold'); })},
+      {l:'Watch a Nollywood movie', s:'2 hours · +8 energy', fn:() => (devOn('tv') || setDev('tv', true), 0) || busy('🎬', 'Watching a movie…', 'The drama is too much!', 1.4, () => { advance(120); S.energy = clamp(S.energy + 8, 0, 100); })}]};
     case 'fridge': return {ic:'🧊', t:'Fridge', sub:'Cooking at home is cheaper than cookshops.', acts:[{l:'Cook rice & soup at home', s:'45 min · +40 food', p:money(120), pc:'minus', primary:true, dis:!canPay(120) || S.food >= 100, fn:() => { spend(120); busy('🍲', 'Cooking…', 'Pepper, onion, palm oil…', 1.2, () => { advance(30); eat('your home-cooked rice & soup', 40, {color:'#c2410c', mins:15}); }); }}]};
     case 'radio': return {ic:'📻', t:'Radio', sub:'News, hipco and call-in shows.', acts:[{l:'Listen to the radio', s:'30 min · +4 energy', primary:true, fn:() => busy('📻', 'Listening to the radio…', 'The DJ is reading shout-outs', 1, () => { advance(30); S.energy = clamp(S.energy + 4, 0, 100); })}]};
     case 'dining': return {ic:'🍽️', t:'Dining table', sub:'A proper place to eat with family.', acts:[]};
     case 'kingbed': return panelInside({k:'bed'});
-    case 'ac': return {ic:'❄️', t:'Air conditioner', sub:'Cool air all night. You sleep better.', acts:[]};
+    case 'ac': return {ic:'❄️', t:'Air conditioner', sub:'Cool air all night. With the AC on you sleep under a sheet.', acts:[{l: devOn('ac') ? '❄️ Turn the AC off' : '❄️ Turn the AC on', s: devOn('ac') ? 'It is blowing cold air' : 'Cool the room down', primary:true, fn:() => setDev('ac', !devOn('ac'))}]};
     case 'generator': return {ic:'⚡', t:'Generator', sub:'Light when LEC current goes off.', acts:[]};
     case 'fan': case 'ceilfan': return {ic:'🌀', t:'Fan', sub:'Small breeze in the hot season.', acts:[]};
     case 'shelf': return {ic:'📚', t:'Bookshelf', sub:'Your books and WAEC past questions.', acts:[]};
@@ -4152,7 +4302,7 @@ function renderInterior(){
   for (const s of INT_SPIN){ if (s.ceil) s.ceil.rotation.y += .25; else s.rotation.x += .3; }
   R.bulb.intensity = dark > .2 ? 1.6 : .2; R.hl.intensity = 1.05 - dark * .45;
   R.winMat.color.setHSL(.56, .6, .85 - dark * .7);
-  R.me.position.set(R.x, 0, R.z); R.me.rotation.y = -R.a; animPerson(R.me, player.step, player.moving); poseFor(R.me, ACT, false);
+  R.me.position.set(R.x, 0, R.z); R.me.rotation.y = -R.a; animPerson(R.me, player.step, player.moving); poseFor(R.me, ACT, false); devicesTick(R);
   const cp = Math.cos(orbitIn.pitch), sp = Math.sin(orbitIn.pitch);
   R.cam.aspect = innerWidth / innerHeight; R.cam.updateProjectionMatrix();
   const fx = R.floors ? R.floors[R.fi || 0].ox : 0, cx = fx + (R.x - fx) * .5;
@@ -5226,7 +5376,7 @@ function loop(now){
   if ((frame++ % 6) === 0) drawMini();
   requestAnimationFrame(loop);
 }
-if (location.search.includes("debug")) window.__ss = {scene, gamesScreen, startGame, gameAction, get GAMEP(){ return GAMEP; }, paintScreen, applyPaintAll, BLD, get PAINT(){ return PAINT; }, CLUB, CLUB_SONGS, openPhone, trafficTick, get RUSH(){ return RUSH; }, flightPath, sail, panelFerry, panelAirport, JETTY, DOCKED, RWY, coastY, BH, CANOES, PLANE, regionOf, BUSH_WALLS, CORRIDORS, traffic, roadPoint, get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR, get CAR(){ return CAR; }, offRoad, giveVehicle, nearestRoad, WX, rollWeather, get orbit(){ return orbit; }, goInside, deliverFurn, designCmd, get DES(){ return DES; }, SND, SFX, fly, LOC, panelFor, get FLIGHT(){ return FLIGHT; }, MP, tourHome, useStairs, cookAt, takeBath, HOME_DISHES, invOf, sellItem, deliverFurn, cam, people, LOTS, parkMyCar, peopleTick, buildPlace, buildInterior, canEnter, roomAt};
+if (location.search.includes("debug")) window.__ss = {sleepInBed, setDev, devOn, showMorning, get ACT(){ return ACT; }, scene, gamesScreen, startGame, gameAction, get GAMEP(){ return GAMEP; }, paintScreen, applyPaintAll, BLD, get PAINT(){ return PAINT; }, CLUB, CLUB_SONGS, openPhone, trafficTick, get RUSH(){ return RUSH; }, flightPath, sail, panelFerry, panelAirport, JETTY, DOCKED, RWY, coastY, BH, CANOES, PLANE, regionOf, BUSH_WALLS, CORRIDORS, traffic, roadPoint, get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR, get CAR(){ return CAR; }, offRoad, giveVehicle, nearestRoad, WX, rollWeather, get orbit(){ return orbit; }, goInside, deliverFurn, designCmd, get DES(){ return DES; }, SND, SFX, fly, LOC, panelFor, get FLIGHT(){ return FLIGHT; }, MP, tourHome, useStairs, cookAt, takeBath, HOME_DISHES, invOf, sellItem, deliverFurn, cam, people, LOTS, parkMyCar, peopleTick, buildPlace, buildInterior, canEnter, roomAt};
 showIntro(false);
 requestAnimationFrame(loop);
 addEventListener('beforeunload', save);
