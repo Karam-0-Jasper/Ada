@@ -1502,7 +1502,7 @@ function mpStart(){
   try {
     const sb = window.supabase.createClient(MP_URL, MP_KEY, {auth:{persistSession:false}, realtime:{params:{eventsPerSecond:15}}});
     MP.ch = sb.channel('smallsmall-world', {config:{broadcast:{self:false}, presence:{key:MP.id}}});
-    MP.ch.on('broadcast', {event:'pos'}, ({payload:p}) => { if (!p || typeof p.id !== 'string' || p.id === MP.id) return; const peer = mpPeer(p.id); Object.assign(peer.t, {x:+p.x || 0, y:+p.y || 0, a:+p.a || 0, rd:p.rd ? String(p.rd) : '', mv:!!p.mv, in:!!p.in, fl:['jet', 'prop', 'boat'].includes(p.fl) ? p.fl : '', h:clamp(+p.h || 0, 0, 400), ya:+p.ya || 0}); peer.seen = performance.now(); });
+    MP.ch.on('broadcast', {event:'pos'}, ({payload:p}) => { if (!p || typeof p.id !== 'string' || p.id === MP.id) return; const peer = mpPeer(p.id); Object.assign(peer.t, {x:+p.x || 0, y:+p.y || 0, a:+p.a || 0, rd:p.rd ? String(p.rd) : '', mv:!!p.mv, in:!!p.in, fl:['jet', 'prop', 'boat'].includes(p.fl) ? p.fl : '', h:clamp(+p.h || 0, 0, 2000), ya:+p.ya || 0}); peer.seen = performance.now(); });
     MP.ch.on('broadcast', {event:'money'}, ({payload:m}) => { if (!m || m.to !== MP.id || typeof m.id !== 'string' || !S) return; const n = Math.floor(+m.n); if (!(n > 0 && n <= 1e8)) return;
       const who = cleanText(m.name).slice(0, 16) || 'A player'; S.momo = (S.momo || 0) + n; logTx(n, 'Received from ' + who); toast(`💸 ${who} sent you ${money(n)} on MoMo!`, 'gold'); save(); hud(); });
     MP.ch.on('broadcast', {event:'chat'}, ({payload:m}) => { if (!m || typeof m.id !== 'string') return; if (m.to && m.to !== MP.id) return; mpReceive(m); });
@@ -2215,11 +2215,11 @@ let FLIGHT = null;
 function flightPts(A, dA, B, dB){
   const ya = A.y + A.h/2, yb = B.y + B.h/2, a0 = dA > 0 ? A.x + 30 : A.x + A.w - 30, aEnd = dA > 0 ? A.x + A.w : A.x;
   const thr = dB > 0 ? B.x + 24 : B.x + B.w - 24, bEnd = dB > 0 ? B.x + B.w - 40 : B.x + 40, sA = Math.sign(yb - ya) || (ya < H/2 ? 1 : -1), sB = Math.sign(ya - yb) || (yb < H/2 ? 1 : -1);
-  const pts = [[a0, ya], [a0 + dA * A.w * .5, ya], [aEnd + dA * 260, ya], [aEnd + dA * 650, ya]], D = pts[3], E = [thr - dB * 1500, yb];
+  const pts = [[a0, ya], [a0 + dA * A.w * .5, ya], [aEnd + dA * 260, ya], [aEnd + dA * 650, ya]], D = pts[3], E = [thr - dB * 3200, yb];
   // already past the start of the approach, or heading the wrong way: swing round in a wide circuit
   if ((E[0] - D[0]) * dA < 400 || (E[0] - D[0]) * dB < 400) pts.push([D[0] + dA * 450, D[1] + sA * 450], [E[0] - dB * 450, E[1] + sB * 450]);
   else if (dist(D[0], D[1], E[0], E[1]) > 1400) pts.push([(D[0] + E[0]) / 2, (D[1] + E[1]) / 2]);
-  pts.push(E, [thr - dB * 700, yb], [thr, yb], [(thr + bEnd) / 2, yb], [bEnd, yb]);
+  pts.push(E, [thr - dB * 2100, yb], [thr - dB * 1100, yb], [thr - dB * 450, yb], [thr, yb], [(thr + bEnd) / 2, yb], [bEnd, yb]);
   return {pts, roll: Math.abs(bEnd - thr), lift: A.w * .5};
 }
 const ptsLen = pts => pts.reduce((a, p, i) => i ? a + dist(p[0], p[1], pts[i - 1][0], pts[i - 1][1]) : 0, 0);
@@ -2239,9 +2239,20 @@ function flyShadow(){ if (FLY_SHADOW) return FLY_SHADOW;
 function fly(from, to, fare){
   spend(fare, true); closeModal(); S.riding = false; if (S.inside){ goOutside(); }
   const P = flightPath(from.id, to.id), len = P.curve.getLength(), jetty = from.id === 'ria' || to.id === 'ria', jet = jetty ? jetMesh() : propMesh(); scene.add(jet);
-  FLIGHT = {from, to, curve:P.curve, len, s:0, v:0, jet, yaw:0, bank:0, lift:P.lift, td: len - P.roll, alt:0, kind: jetty ? 'jet' : 'prop', vmax: jetty ? 95 : 74, cruise: jetty ? 270 : 210};
+  FLIGHT = {from, to, curve:P.curve, len, s:0, v:0, jet, yaw:0, bank:0, lift:P.lift, td: len - P.roll, alt:0, kind: jetty ? 'jet' : 'prop', vmax: jetty ? 110 : 82, cruise: jetty ? 1500 : 950, climb: jetty ? 2100 : 1500, descLen: 3200};
+  flightClouds(FLIGHT);
   orbit.dist = 230; orbit.pitch = .32; flyShadow().visible = true;
   toast(`${jetty ? '✈️' : '🛩️'} Boarding at ${from.n}. Fasten your seatbelt!`, 'gold'); flyBar.hidden = false; soundOn();
+}
+// clouds along the route, some below your cruising height and some you fly through
+let CLOUD_TEX = null;
+function flightClouds(F){
+  CLOUD_TEX = CLOUD_TEX || canvasTex(128, 128, (x) => { for (let i = 0; i < 9; i++){ const cx = 30 + Math.random() * 68, cy = 46 + Math.random() * 36, r = 18 + Math.random() * 22, g = x.createRadialGradient(cx, cy, 2, cx, cy, r); g.addColorStop(0, 'rgba(255,255,255,.95)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 128, 128); } });
+  const grp = new THREE.Group(), P = new THREE.Vector3(), N = COARSE ? 45 : 80;
+  for (let i = 0; i < N; i++){ F.curve.getPointAt(.08 + Math.random() * .84, P); const side = (Math.random() - .5) * 1600, y = 450 + Math.random() * 900;
+    for (let k = 0; k < 3; k++){ const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:CLOUD_TEX, transparent:true, depthWrite:false, opacity:.85, fog:false}));
+      const sc = 160 + Math.random() * 220; sp.scale.set(sc * 1.6, sc, 1); sp.position.set(P.x + side + (Math.random() - .5) * 200, y + (Math.random() - .5) * 60, P.z + (Math.random() - .5) * 600); grp.add(sp); } }
+  scene.add(grp); F.clouds = grp;
 }
 const _fp = new THREE.Vector3(), _ft = new THREE.Vector3();
 function flightTick(dt){
@@ -2251,20 +2262,20 @@ function flightTick(dt){
   F.s = Math.min(F.len, F.s + F.v * dt);
   const u = F.s / F.len; F.curve.getPointAt(u, _fp); F.curve.getTangentAt(Math.min(.999, u + .002), _ft);
   // height: climb after lift-off, cruise, then a long glide down to touchdown with a little flare
-  const sm = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); }, climb = F.kind === 'jet' ? 900 : 650;
-  const altAt = q => F.cruise * sm((q - F.lift) / climb) * (1 - sm((q - (F.td - 1150)) / 1150));
-  const alt = altAt(F.s), pitch = Math.atan2(altAt(F.s + 4) - alt, 4) + (F.s > F.lift - 60 && F.s < F.lift + 120 ? .06 : 0) + (F.s > F.td - 90 && F.s < F.td ? .05 : 0);
+  const sm = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); }, climb = F.climb, dl = F.descLen;
+  const altAt = q => F.cruise * sm((q - F.lift) / climb) * (1 - sm((q - (F.td - dl)) / dl));
+  const alt = altAt(F.s), pitch = clamp(Math.atan2(altAt(F.s + 4) - alt, 4), -.16, .22) + (F.s > F.lift - 60 && F.s < F.lift + 120 ? .06 : 0) + (F.s > F.td - 90 && F.s < F.td ? .05 : 0);
   _fp.y = alt; F.jet.position.copy(_fp); F.alt = alt;
   const yaw = Math.atan2(_ft.x, _ft.z), dy = ((yaw - F.yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI; F.yaw = yaw;
   F.bank = lerp(F.bank, clamp(-dy / Math.max(dt, .001) * .45, -.6, .6), .05);
   F.jet.rotation.set(0, 0, 0); F.jet.lookAt(_fp.x + _ft.x, _fp.y + _ft.y, _fp.z + _ft.z); F.jet.rotateY(-Math.PI/2); F.jet.rotateZ(pitch); F.jet.rotateX(F.bank);
   aircraftTick(F.jet, alt, T, darkness());
-  const sh = flyShadow(), ss = Math.max(.25, 1 - alt / 320), U = F.jet.userData; sh.position.set(_fp.x - alt * .25, groundY(_fp.x, _fp.z) + .7, _fp.z); sh.scale.set(U.len * .95, 1, U.span * .7); sh.rotation.y = -Math.atan2(_ft.z, _ft.x); sh.material.opacity = ss * .5;
+  const sh = flyShadow(), ss = Math.max(0, 1 - alt / 420), U = F.jet.userData; sh.position.set(_fp.x - alt * .25, groundY(_fp.x, _fp.z) + .7, _fp.z); sh.scale.set(U.len * .95, 1, U.span * .7); sh.rotation.y = -Math.atan2(_ft.z, _ft.x); sh.material.opacity = ss * .5;
   // you are on board: the map, the clock and the camera follow the plane
   S.x = _fp.x; S.y = _fp.z; cam.x = S.x; cam.y = S.y;
   if (performance.now() - lastLook > 1500){ const want = Math.atan2(-_ft.x, -_ft.z); orbit.yaw += (((want - orbit.yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI) * Math.min(1, dt * 1.5); }
-  orbit.dist = lerp(orbit.dist, _fp.y > 40 ? 330 : 230, dt * .5);
-  const name = AIR_SHORT[F.to.id], ph = F.s < F.lift ? (F.v < 30 ? 'Rolling down the runway' : 'Taking off!') : F.s > F.td ? 'Touchdown! Slowing down' : F.s > F.td - 1150 ? 'Final approach, wheels down' : alt < F.cruise - 20 ? (F.s < F.len / 2 ? 'Climbing, wheels up' : 'Starting the descent') : `Cruising to ${name}, ${AIR_COUNTY[F.to.id]}`;
+  orbit.dist = lerp(orbit.dist, _fp.y > 300 ? 430 : _fp.y > 40 ? 330 : 230, dt * .5); orbit.pitch = lerp(orbit.pitch, _fp.y > 300 ? .5 : .32, dt * .4);
+  const name = AIR_SHORT[F.to.id], ph = F.s < F.lift ? (F.v < 30 ? 'Rolling down the runway' : 'Taking off!') : F.s > F.td ? 'Touchdown! Slowing down' : F.s > F.td - 900 ? 'Final approach, wheels down' : alt < F.cruise - 30 ? (F.s < F.len / 2 ? (alt > 600 ? 'Climbing above the clouds' : 'Climbing, wheels up') : 'Starting the descent') : `Cruising high above Liberia to ${name} · ${Math.round(alt * 8.2).toLocaleString('en-US')} ft`;
   $('#flyT').textContent = `${F.kind === 'jet' ? '✈️' : '🛩️'} ${AIR_SHORT[F.from.id]} → ${name} · ${ph}`; $('#flyP').style.width = Math.round(u * 100) + '%';
   if (SND.L){ if (!SND.jet){ SND.jet = loopOf(SFX.eng_truck); SND.jetW = loopOf(SFX.traffic); } const now = SND.ctx.currentTime, pr = F.kind === 'jet' ? 1 : 1.5;
     SND.jet.g.gain.setTargetAtTime(.25 + F.v / vmax * .45, now, .2); SND.jet.src.playbackRate.setTargetAtTime((1.1 + F.v / vmax * 1.3) * pr, now, .2); SND.jetW.g.gain.setTargetAtTime(F.v / vmax * .5, now, .3); }
@@ -2285,7 +2296,7 @@ function planeSounds(F, alt){
   set(A.lp.frequency, 260 + k * (roll || rev ? 1500 : 650), .35);
   set(A.o.frequency, jet ? 650 + k * 1800 + (rev ? 600 : 0) : 85 + k * 70, .5); set(A.bp.frequency, jet ? 2600 : 400, .5); set(A.og.gain, jet ? .018 + k * .03 : .045 + k * .03, .3);
   if (!F.gearUp && alt > 32){ F.gearUp = 1; kickAt(.4); }
-  if (!F.desc && F.s > F.td - 1350){ F.desc = 1; chime(); toast('🔔 "We are starting our descent. Please return to your seat."'); }
+  if (!F.desc && F.s > F.td - F.descLen - 150){ F.desc = 1; chime(); toast('🔔 "We are starting our descent. Please return to your seat."'); }
   if (!F.touch && F.s > F.td){ F.touch = 1; const t = SND.ctx.currentTime; noiseHit(t, 3400, .32, .32); noiseHit(t + .18, 3000, .26, .24); kickAt(.55); }
 }
 const kickAt = v => { try { const c = SND.ctx, o = c.createOscillator(), g = c.createGain(), t = c.currentTime; o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(38, t + .2); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + .3); o.connect(g).connect(SND.master); o.start(t); o.stop(t + .35); } catch (e) {} };
@@ -2298,7 +2309,7 @@ function groundPlaneSounds(){
   A.o.frequency.setTargetAtTime(jet ? 1400 : 120, now, .5); A.bp.frequency.setTargetAtTime(jet ? 2600 : 400, now, .5); A.og.gain.setTargetAtTime(best * (jet ? .03 : .05), now, .4); }
 const runwayBusy = id => !!(FLIGHT && !FLIGHT.boat && (FLIGHT.from.id === id || FLIGHT.to.id === id));
 function landFlight(){
-  const F = FLIGHT, to = F.to; scene.remove(F.jet); FLIGHT = null; flyBar.hidden = true; if (FLY_SHADOW) FLY_SHADOW.visible = false;
+  const F = FLIGHT, to = F.to; scene.remove(F.jet); if (F.clouds) scene.remove(F.clouds); FLIGHT = null; flyBar.hidden = true; if (FLY_SHADOW) FLY_SHADOW.visible = false; camera.far = 3200; camera.updateProjectionMatrix();
   if (F.boat){ const d = DOCKED[F.from.id]; if (d) d.visible = true; if (F.cabin){ S.energy = clamp(S.energy + 25, 0, 100); toast('😴 You slept in your cabin. +25 energy.', 'good'); } }
   if (SND.jet){ SND.jet.g.gain.value = 0; SND.jetW.g.gain.value = 0; } if (SND.sea) SND.sea.g.gain.value = 0; if (SND.pl){ SND.pl.rg.gain.value = 0; SND.pl.og.gain.value = 0; }
   placeAt(to.x, to.y); faceFrom(to); orbit.dist = 175; orbit.pitch = .78; S.visited = S.visited || []; if (!S.visited.includes(to.id)) S.visited.push(to.id);
@@ -2856,6 +2867,11 @@ const lam = (color, extra) => { const k = color + (extra ? JSON.stringify(extra)
   const water = new THREE.Mesh(new THREE.PlaneGeometry(W, H), waterMat);
   water.rotation.x = -Math.PI / 2; water.position.set(W/2, .9, H/2); water.receiveShadow = true; scene.add(water);
   // far ocean beyond the map edge
+  // the rest of Liberia beyond the map: bush and farmland to the north and east (the ocean stays to the west and south)
+  { const tx = canvasTex(256, 256, (x) => { x.fillStyle = '#6f9a4f'; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 260; i++){ x.fillStyle = Math.random() < .6 ? 'rgba(40,90,35,.35)' : 'rgba(150,120,60,.22)'; x.beginPath(); x.ellipse(Math.random() * 256, Math.random() * 256, 6 + Math.random() * 26, 4 + Math.random() * 14, Math.random() * 3, 0, 7); x.fill(); } });
+    tx.wrapS = tx.wrapT = THREE.RepeatWrapping;
+    for (const [x0, z0, w, h] of [[260, -7000, W + 6740, 7000], [W, 0, 7000, H * .9]]){ const m = tx.clone(); m.needsUpdate = true; m.repeat.set(w / 900, h / 900);
+      const land = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshLambertMaterial({map:m})); land.rotation.x = -Math.PI / 2; land.position.set(x0 + w / 2, -.25, z0 + h / 2); land.receiveShadow = true; scene.add(land); } }
   const sea = new THREE.Mesh(new THREE.PlaneGeometry(14000, 14000), new THREE.MeshPhongMaterial({color:0x2a7ab4, specular:0x9fd0f0, shininess:60}));
   sea.rotation.x = -Math.PI / 2; sea.position.set(W/2, -.6, H/2); scene.add(sea);
 }
@@ -5217,6 +5233,7 @@ function render(){
   if (WX.flash > 0) _sky.lerp(SKY.flash, WX.flash * .8);
   scene.background = _sky; scene.fog.color.copy(_sky);
   scene.fog.near = 500 - lv * 300; scene.fog.far = 1600 - lv * 750;
+  if (FLIGHT && !FLIGHT.boat){ const a = FLIGHT.alt; scene.fog.near += a * 1.2; scene.fog.far += a * 2.6; const want = 3200 + a * 3; if (Math.abs(camera.far - want) > 150){ camera.far = want; camera.updateProjectionMatrix(); } }
   sun.position.set(tx - Math.cos(az) * 600, 120 + Math.max(.15, el) * 650, tz + 260);
   sun.target.position.set(tx, 0, tz);
   sun.intensity = (1.9 * (1 - dark) + .05) * (1 - lv * .6) * (1 - (WX.shade || 0) * .45) + WX.flash * 1.5;
