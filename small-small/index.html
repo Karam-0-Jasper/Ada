@@ -2635,7 +2635,7 @@ function peopleTick(dt){
   const inTraffic = (x, y) => { for (const c of traffic){ if ((c.rush && !c.on) || c.wx === undefined || Math.abs(c.wx - x) > 30 || Math.abs(c.wy - y) > 30) continue; const dx = x - c.wx, dy = y - c.wy;
     if (Math.abs(dx * c.hx + dy * c.hy) < c.len / 2 + 3 && Math.abs(-dx * c.hy + dy * c.hx) < 9) return c; } return null; };
   for (const p of people){
-    p.t += dt; p.mode = p.mode || 'walk'; p.ph = p.ph ?? Math.random() * 6;
+    p.t += dt; p.mode = p.mode || 'walk'; p.ph = p.ph ?? Math.random() * 6; p.lx = p.x; p.ly = p.y;
     const near = me && Math.abs(me.x - p.x) < 26 && Math.abs(me.y - p.y) < 26 && !me.riding;
     if (p.mode === 'walk'){
       const d = dist(p.x, p.y, p.tx, p.ty);
@@ -2651,18 +2651,21 @@ function peopleTick(dt){
         else if (p.cross && inTraffic(nx, ny)){ p.waitT = (p.waitT || 0) + dt; if (p.waitT > 6){ p.waitT = 0; wanderTarget(p); } }   // wait for the car on the crossing to move
         else if (!hitsSolid(nx, ny, 3) && !isWater(nx, ny)){ p.x = nx; p.y = ny; p.waitT = 0; } else wanderTarget(p);
         const want = Math.atan2(p.ty - p.y, p.tx - p.x); p.a += angDiff(want, p.a) * Math.min(1, dt * 8); }
-      const sw = Math.sin(p.t * 8) * .55; p.legL = sw; p.legR = -sw; p.armL = -sw * .8; p.armR = sw * .8;
+      const mv = Math.hypot(p.x - (p.lx ?? p.x), p.y - (p.ly ?? p.y)); p.wph = ((p.wph || 0) + mv * .42) % (Math.PI * 2);
+      const sw = Math.sin(p.wph), cw = Math.cos(p.wph), on = mv > .01 ? 1 : 0;
+      p.legL = sw * .5 * on; p.legR = -sw * .5 * on; p.legLK = -(.06 + .85 * Math.max(0, cw)) * on; p.legRK = -(.06 + .85 * Math.max(0, -cw)) * on;
+      p.armL = -sw * .42 * on; p.armR = sw * .42 * on; p.walkOn = on;
     } else if (p.mode === 'idle'){
-      p.idleT -= dt; p.legL = p.legR = 0;
+      p.idleT -= dt; p.legL = p.legR = p.legLK = p.legRK = 0; p.walkOn = 0;
       if (p.phone){ p.armR = -2.5; p.armL = -.15; } else { p.armL = Math.sin(p.t * 1.3 + p.ph) * .05; p.armR = -p.armL; p.a += Math.sin(p.t * .6 + p.ph) * .25 * dt; }
       if (p.idleT < 0){ p.mode = 'walk'; p.phone = false; if (!wanderTarget(p)){ p.mode = 'idle'; p.idleT = 2; } }
     } else if (p.mode === 'talk'){
-      p.talkT -= dt; p.legL = p.legR = 0; const want = Math.atan2(p.gy - p.y, p.gx - p.x); p.a += angDiff(want, p.a) * Math.min(1, dt * 5);
+      p.talkT -= dt; p.legL = p.legR = p.legLK = p.legRK = 0; p.walkOn = 0; const want = Math.atan2(p.gy - p.y, p.gx - p.x); p.a += angDiff(want, p.a) * Math.min(1, dt * 5);
       const turn = Math.floor((p.t + p.ph) / 3) % 2 === (p.speaker ? 0 : 1);
       if (turn){ p.armR = -.7 + Math.sin(p.t * 4.5) * .45; p.armL = -.25 + Math.sin(p.t * 3.1) * .2; } else { p.armR = p.armL = 0; }
       if (p.talkT < 0){ p.mode = 'walk'; if (!wanderTarget(p)){ p.mode = 'idle'; p.idleT = 3; } }
     } else if (p.mode === 'wave'){
-      p.waveT -= dt; p.legL = p.legR = 0; p.armR = -2.8 + Math.sin(p.t * 9) * .35; p.armL = 0; if (me) p.a += angDiff(Math.atan2(me.y - p.y, me.x - p.x), p.a) * Math.min(1, dt * 6);
+      p.waveT -= dt; p.legL = p.legR = p.legLK = p.legRK = 0; p.walkOn = 0; p.armR = -2.8 + Math.sin(p.t * 9) * .35; p.armL = 0; if (me) p.a += angDiff(Math.atan2(me.y - p.y, me.x - p.x), p.a) * Math.min(1, dt * 6);
       if (p.waveT < 0){ p.mode = 'idle'; p.idleT = 1 + Math.random() * 3; }
     }
     // people notice you: some turn and wave when you walk past
@@ -2742,7 +2745,7 @@ function update(dt){
     if (!isWater(nx, S.y) && (stuck || !hitsSolid(nx, S.y, r))) S.x = nx;
     if (!isWater(S.x, ny) && (stuck || !hitsSolid(S.x, ny, r))) S.y = ny;
     const ta = Math.atan2(mz, mx); let da = ta - player.a; while (da > Math.PI) da -= 2*Math.PI; while (da < -Math.PI) da += 2*Math.PI; player.a += da * Math.min(1, dt * 10);
-    player.step += dt * 9;
+    player.step += dt * sp * .2;
   }
   CAR.spd = 0; CAR.vx = CAR.vy = 0;
   }
@@ -3366,10 +3369,13 @@ function personMesh(L){
   if (typeof L === 'string') L = randomLook();
   const g = new THREE.Group(), skin = lam(L.skin);
   const legCol = L.dress ? L.skin : (L.bottom || '#1F3A5F');
-  const legs = [-1.5, 1.5].map(z => { const p = new THREE.Group();
-    const m = new THREE.Mesh(L.dress ? new THREE.CapsuleGeometry(.95, 4.7, 4, 10) : new THREE.CylinderGeometry(1.25, 1.12, 6.4, 10), L.dress ? skin : clothMat(legCol)); m.position.y = L.dress ? -3.25 : -3.1; m.castShadow = true; p.add(m);
-    if (!L.dress){ const cuff = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, .5, 10), lam(shadeHex(legCol, -.18))); cuff.position.y = -6.1; p.add(cuff); }
-    const shoe = new THREE.Mesh(new THREE.CapsuleGeometry(.85, 1.6, 3, 8).rotateZ(Math.PI/2), lam(L.dress ? '#7a3b2a' : '#111')); shoe.position.set(.5, -6.4, 0); p.add(shoe);
+  // legs: thigh from the hip, a knee that bends, shin, cuff and shoe
+  const legs = [-1.5, 1.5].map(z => { const p = new THREE.Group(), mat = L.dress ? skin : clothMat(legCol);
+    const th = new THREE.Mesh(L.dress ? new THREE.CapsuleGeometry(.95, 2.1, 4, 10) : new THREE.CylinderGeometry(1.25, 1.18, 3.5, 10), mat); th.position.y = -1.75; th.castShadow = true; p.add(th);
+    const kn = new THREE.Group(); kn.position.y = -3.3; p.add(kn); p.userData.knee = kn;
+    const sh = new THREE.Mesh(L.dress ? new THREE.CapsuleGeometry(.9, 2.1, 4, 10) : new THREE.CylinderGeometry(1.18, 1.12, 3.2, 10), mat); sh.position.y = -1.5; sh.castShadow = true; kn.add(sh);
+    if (!L.dress){ const cuff = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, .5, 10), lam(shadeHex(legCol, -.18))); cuff.position.y = -2.8; kn.add(cuff); }
+    const shoe = new THREE.Mesh(new THREE.CapsuleGeometry(.85, 1.6, 3, 8).rotateZ(Math.PI/2), lam(L.dress ? '#7a3b2a' : '#111')); shoe.position.set(.5, -3.1, 0); kn.add(shoe);
     p.position.set(0, 6.5, z); g.add(p); return p; });
   const torso = new THREE.Mesh(new THREE.CapsuleGeometry(1.9, 3.3, 4, 12).scale(1, 1, L.g === 'f' ? 1.38 : 1.5), clothMat(L.top)); torso.position.y = 10; torso.castShadow = true; g.add(torso);
   // trousers: the seat and waist in the trouser colour with a belt, so the shirt stops at the waist
@@ -3381,7 +3387,8 @@ function personMesh(L){
   if (L.tie){ const sh = new THREE.Mesh(new THREE.BoxGeometry(.3, 4, 1.6), lam('#f5f5f5')); sh.position.set(2.05, 11, 0); g.add(sh); const t = new THREE.Mesh(new THREE.BoxGeometry(.35, 3.6, .7), lam('#B03A2E')); t.position.set(2.15, 10.8, 0); g.add(t); }
   const arms = [-3.5, 3.5].map(z => { const p = new THREE.Group();
     const sleeve = new THREE.Mesh(new THREE.CapsuleGeometry(.85, 1.2, 3, 8), clothMat(L.top)); sleeve.position.y = -1.2; p.add(sleeve);
-    const m = new THREE.Mesh(new THREE.CapsuleGeometry(.66, 3.1, 3, 8), L.tie || L.outfit === 'hoodie' ? clothMat(L.top) : skin); m.position.y = -4.4; p.add(m);
+    const am = L.tie || L.outfit === 'hoodie' ? clothMat(L.top) : skin, up = new THREE.Mesh(new THREE.CapsuleGeometry(.66, 1.4, 3, 8), am); up.position.y = -2.6; p.add(up);
+    const el = new THREE.Group(); el.position.y = -3.7; p.add(el); p.userData.elbow = el; const fa = new THREE.Mesh(new THREE.CapsuleGeometry(.62, 1.5, 3, 8), am); fa.position.y = -1.3; el.add(fa);
     p.position.set(0, 13.2, z * (L.g === 'f' ? .92 : 1)); g.add(p); return p; });
   const neck = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1.4, 8), skin); neck.position.y = 14; g.add(neck);
   const head = new THREE.Mesh(new THREE.SphereGeometry(2.8, 12, 10), skin); head.position.y = 16.2; head.castShadow = true; g.add(head);
@@ -3390,7 +3397,7 @@ function personMesh(L){
     for (const z of [-1, 1]){ const w = new THREE.Mesh(new THREE.SphereGeometry(.5, 8, 6), lam('#fafafa')); w.scale.set(.5, .8, 1); w.position.set(2.6, 16.7, z * 1.05); g.add(w); const br = new THREE.Mesh(new THREE.BoxGeometry(.3, .28, 1.1), hc); br.position.set(2.55, 17.55, z * 1.1); br.rotation.x = z * .15; g.add(br); const ear = new THREE.Mesh(new THREE.SphereGeometry(.6, 8, 6), skin); ear.scale.set(.6, 1, .5); ear.position.set(0, 16.3, z * 2.75); g.add(ear); }
     const nose = new THREE.Mesh(new THREE.SphereGeometry(.5, 8, 6), skin); nose.scale.set(1, .9, .8); nose.position.set(2.85, 16, 0); g.add(nose);
     const mouth = new THREE.Mesh(new THREE.BoxGeometry(.25, .3, 1.4), dk); mouth.position.set(2.62, 15, 0); g.add(mouth);
-    for (const a2 of [arms[0], arms[1]]){ const hand = new THREE.Mesh(new THREE.SphereGeometry(.8, 8, 6), skin); hand.position.y = -6.7; a2.add(hand); } }
+    for (const a2 of [arms[0], arms[1]]){ const hand = new THREE.Mesh(new THREE.SphereGeometry(.8, 8, 6), skin); hand.position.y = -3; a2.userData.elbow.add(hand); } }
   if (L.g === 'f'){ for (const z of [-2.75, 2.75]){ const r = new THREE.Mesh(new THREE.SphereGeometry(.45, 6, 4), lam('#F1C40F')); r.position.set(0, 15.6, z); g.add(r); } }
   g.add(hairGroup(L));
   const plate = new THREE.Group(); const pl = new THREE.Mesh(new THREE.CylinderGeometry(3, 2.4, .6, 14), lam('#ffffff')); plate.add(pl);
@@ -3400,7 +3407,7 @@ function personMesh(L){
   spoon.position.set(.6, -6.4, 0); spoon.visible = false; arms[1].add(spoon);
   const cup = new THREE.Mesh(new THREE.CylinderGeometry(1.1, .9, 3, 10), lam('#e74c3c')); cup.position.set(.8, -7, 0); cup.visible = false; arms[1].add(cup);
   const umb = new THREE.Group(); const ucan = new THREE.Mesh(new THREE.ConeGeometry(8, 3.2, 10), lam(pick(['#E5392C','#2E86C1','#111111','#8E44AD']))); ucan.position.y = 26; ucan.castShadow = true; umb.add(ucan); const ust = new THREE.Mesh(new THREE.CylinderGeometry(.3, .3, 10, 5), lam('#333')); ust.position.y = 20; umb.add(ust); umb.visible = false; g.add(umb);
-  g.userData = {legs, arms, head, plate, food, spoon, cup, umb};
+  g.userData = {legs, arms, head, torso, plate, food, spoon, cup, umb};
   // tall and slim: stretch the body, keep the head and hair round
   g.scale.set(BODY.x * PS, BODY.y * PS, BODY.z * PS);
   head.scale.set(1, 1 / BODY.y, .92 / BODY.z);
@@ -3424,10 +3431,20 @@ function poseFor(g, act, down){
   if (act.kind === 'bath'){ const sm = INT && INT.bathAt && INT.bathAt.small; if (sm){ u.arms[1].rotation.z = -2.6 + Math.sin(t * 3) * .5; u.arms[0].rotation.z = -.3; } else { g.position.y -= 6.5; u.legs[0].rotation.z = u.legs[1].rotation.z = 1.5; u.arms[0].rotation.z = u.arms[1].rotation.z = -.5; } }
   if (act.kind === 'class'){ u.legs[0].rotation.z = u.legs[1].rotation.z = 1.4; g.position.y -= 3; u.arms[0].rotation.z = -1.3; u.arms[1].rotation.z = -1.3 + Math.sin(t * 6) * .15; }
 }
-function animPerson(g, step, moving){
-  const s = moving ? Math.sin(step) * .7 : 0;
-  g.userData.legs[0].rotation.z = s; g.userData.legs[1].rotation.z = -s;
-  g.userData.arms[0].rotation.z = -s * .8; g.userData.arms[1].rotation.z = s * .8;
+// a proper gait: hips swing, the knee bends as the leg swings through, arms swing against the legs with bent elbows,
+// shoulders turn against the hips and the body rises over the standing leg; run = 1 for a jog
+function animPerson(g, step, moving, run){
+  const u = g.userData; if (!u || !u.legs) return; const t = performance.now() / 1000;
+  u.walk = (u.walk || 0) + ((moving ? 1 : 0) - (u.walk || 0)) * .25; const w = u.walk, r = (run || 0) * w;
+  const s = Math.sin(step), c = Math.cos(step), hip = (.5 + r * .32) * w, kneeMax = .9 + r * .55;
+  u.legs[0].rotation.z = s * hip; u.legs[1].rotation.z = -s * hip;
+  [1, -1].forEach((sg, i) => { const k = u.legs[i].userData.knee; if (k) k.rotation.z = -(.06 + kneeMax * Math.max(0, sg * c)) * w; });
+  const arm = (.42 + r * .3) * w, idle = Math.sin(t * 1.3) * .03 * (1 - w);
+  u.arms[0].rotation.z = -s * arm + idle; u.arms[1].rotation.z = s * arm - idle;
+  for (const a of u.arms){ const e = a.userData.elbow; if (e) e.rotation.z = (.12 + r * 1.05) * w + .05 * (1 - w); }
+  if (u.torso){ u.torso.rotation.y = s * (.1 + r * .06) * w; u.torso.scale.y = 1 + Math.sin(t * 2.2) * .015 * (1 - w); }
+  if (u.head) u.head.rotation.y = -s * .05 * w;
+  g.position.y += (1 - Math.abs(s)) * (.3 + r * .45) * w;
 }
 
 /* ---------- crowd (instanced, so the city can be busy) ---------- */
@@ -3436,11 +3453,15 @@ const CROWD = {};
 {
   const C = new THREE.Color(), idx = k => people.map((p, i) => i).filter(i => k(people[i]));
   const def = {
-    legL:{geo:new THREE.CapsuleGeometry(.95, 4.7, 3, 8).translate(0, -3.25, 0), ids:idx(p => p.look.dress), col:p => p.look.skin, y:6.5, side:-1.5, limb:'legL', body:1},
-    legR:{geo:new THREE.CapsuleGeometry(.95, 4.7, 3, 8).translate(0, -3.25, 0), ids:idx(p => p.look.dress), col:p => p.look.skin, y:6.5, side:1.5, limb:'legR', body:1},
+    legL:{geo:new THREE.CapsuleGeometry(.95, 2.1, 3, 8).translate(0, -1.75, 0), ids:idx(p => p.look.dress), col:p => p.look.skin, y:6.5, side:-1.5, limb:'legL', body:1},
+    legR:{geo:new THREE.CapsuleGeometry(.95, 2.1, 3, 8).translate(0, -1.75, 0), ids:idx(p => p.look.dress), col:p => p.look.skin, y:6.5, side:1.5, limb:'legR', body:1},
+    shinL:{geo:new THREE.CapsuleGeometry(.9, 2.1, 3, 8).translate(0, -1.5, 0), ids:idx(p => p.look.dress), col:p => p.look.skin, y:6.5, side:-1.5, knee:'legL', body:1},
+    shinR:{geo:new THREE.CapsuleGeometry(.9, 2.1, 3, 8).translate(0, -1.5, 0), ids:idx(p => p.look.dress), col:p => p.look.skin, y:6.5, side:1.5, knee:'legR', body:1},
     // trousers: wide legs, the seat and a belt
-    pantL:{geo:new THREE.CylinderGeometry(1.25, 1.12, 6.4, 8).translate(0, -3.1, 0), ids:idx(p => !p.look.dress), col:p => p.look.bottom || '#1F3A5F', y:6.5, side:-1.5, limb:'legL', body:1},
-    pantR:{geo:new THREE.CylinderGeometry(1.25, 1.12, 6.4, 8).translate(0, -3.1, 0), ids:idx(p => !p.look.dress), col:p => p.look.bottom || '#1F3A5F', y:6.5, side:1.5, limb:'legR', body:1},
+    pantL:{geo:new THREE.CylinderGeometry(1.25, 1.18, 3.5, 8).translate(0, -1.75, 0), ids:idx(p => !p.look.dress), col:p => p.look.bottom || '#1F3A5F', y:6.5, side:-1.5, limb:'legL', body:1},
+    pantR:{geo:new THREE.CylinderGeometry(1.25, 1.18, 3.5, 8).translate(0, -1.75, 0), ids:idx(p => !p.look.dress), col:p => p.look.bottom || '#1F3A5F', y:6.5, side:1.5, limb:'legR', body:1},
+    pshinL:{geo:new THREE.CylinderGeometry(1.18, 1.12, 3.3, 8).translate(0, -1.6, 0), ids:idx(p => !p.look.dress), col:p => p.look.bottom || '#1F3A5F', y:6.5, side:-1.5, knee:'legL', body:1},
+    pshinR:{geo:new THREE.CylinderGeometry(1.18, 1.12, 3.3, 8).translate(0, -1.6, 0), ids:idx(p => !p.look.dress), col:p => p.look.bottom || '#1F3A5F', y:6.5, side:1.5, knee:'legR', body:1},
     hips:{geo:new THREE.CylinderGeometry(2.05, 2.15, 3, 10).scale(1, 1, 1.48), ids:idx(p => !p.look.dress), col:p => p.look.bottom || '#1F3A5F', y:7.6, body:1},
     belt:{geo:new THREE.CylinderGeometry(2.08, 2.08, .6, 10).scale(1, 1, 1.5), ids:idx(p => !p.look.dress), col:() => '#2b1d14', y:9.2, body:1},
     shoeL:{geo:new THREE.CapsuleGeometry(.75, 1.4, 1, 5).rotateZ(Math.PI/2), ids:idx(() => true), col:p => p.look.dress ? '#7a3b2a' : pick(['#111111', '#3e2723', '#fafafa', '#1b2a49']), end:{limb:'legL', py:6.5, len:6.4, side:-1.5, fwd:.6}},
@@ -3484,14 +3505,18 @@ const _M = new THREE.Matrix4(), _Q = new THREE.Quaternion(), _P = new THREE.Vect
 const ZERO_M = new THREE.Matrix4().makeScale(0, 0, 0);
 function syncPeople(){
   const v = camera.position;
-  for (const p of people){ const far = Math.abs(p.x - cam.x) > 520 || Math.abs(p.y - cam.y) > 520; p.farDone = far && p.far; p.far = far; p.bob = p.mode === 'walk' && dist(p.x, p.y, p.tx, p.ty) > 2 ? Math.abs(Math.sin(p.t * 8)) * .7 : 0; }
+  for (const p of people){ const far = Math.abs(p.x - cam.x) > 520 || Math.abs(p.y - cam.y) > 520; p.farDone = far && p.far; p.far = far; p.bob = p.walkOn ? (1 - Math.abs(Math.sin(p.wph || 0))) * .4 : 0; }
   for (const k in CROWD){
     const d = CROWD[k];
     if (d.rain){ d.m.visible = !!(S && S.rain); if (!d.m.visible) continue; }
     d.ids.forEach((pi, j) => { const p = people[pi];
       if (p.far){ if (!p.farDone) d.m.setMatrixAt(j, ZERO_M); return; }
       const ca0 = Math.cos(p.a), sa0 = Math.sin(p.a);
-      if (d.end){ const e = d.end, ang = p[e.limb] || 0, ky = e.limb[0] === 'l' ? BODY.y : BODY.y, f = (Math.sin(ang) * e.len + (e.fwd || 0)) * PS, y = (e.py - Math.cos(ang) * e.len) * ky * PS + (e.limb[0] === 'l' ? .3 : 0) + p.bob, sd2 = e.side * BODY.z * PS;
+      if (d.knee){ const a = p[d.knee] || 0, k = p[d.knee + 'K'] || 0, Ly = 3.3 * BODY.y * PS, sd = d.side * BODY.z * PS, f = Ly * Math.sin(a);
+        _E.set(0, -p.a, a + k, 'YXZ'); _Q.setFromEuler(_E); _S.set(BODY.x * PS, BODY.y * PS, BODY.z * PS);
+        _P.set(p.x - sa0 * sd + ca0 * f, d.y * BODY.y * PS + p.bob - Ly * Math.cos(a), p.y + ca0 * sd + sa0 * f); _M.compose(_P, _Q, _S); d.m.setMatrixAt(j, _M); return; }
+      if (d.end){ const e = d.end, ang = p[e.limb] || 0, kk = e.limb[0] === 'l' ? (p[e.limb + 'K'] || 0) : 0, ky = BODY.y, L1 = e.limb[0] === 'l' ? 3.3 : e.len,
+        f = (Math.sin(ang) * L1 + Math.sin(ang + kk) * (e.len - L1) + (e.fwd || 0)) * PS, y = (e.py - Math.cos(ang) * L1 - Math.cos(ang + kk) * (e.len - L1)) * ky * PS + (e.limb[0] === 'l' ? .3 : 0) + p.bob, sd2 = e.side * BODY.z * PS;
         _E.set(0, -p.a, 0); _Q.setFromEuler(_E); _S.set(PS, PS, PS); _P.set(p.x + ca0 * f - sa0 * sd2, Math.max(.4, y), p.y + sa0 * f + ca0 * sd2); _M.compose(_P, _Q, _S); d.m.setMatrixAt(j, _M); return; }
       const sw = d.limb ? (p[d.limb] || 0) : 0;
       _E.set(0, -p.a, sw, 'YXZ'); _Q.setFromEuler(_E);
@@ -4255,7 +4280,7 @@ function interiorMove(ix, iy, dt){
   if (Math.hypot(ix, iy) > .1){
     const nx = INT.x + mx * sp * dt, nz = INT.z + mz * sp * dt;
     if (!blocked(nx, INT.z)) INT.x = nx; if (!blocked(INT.x, nz)) INT.z = nz;
-    INT.a = Math.atan2(mz, mx); player.step += dt * 9; player.moving = true;
+    INT.a = Math.atan2(mz, mx); player.step += dt * 15; player.moving = true;
   } else player.moving = false;
   let best = null, bd = 1e9;
   for (const s of INT.spots){ if (INT.floors && Math.round(s.x / INT.pitch) !== (INT.fi || 0)) continue; const d = Math.hypot(INT.x - s.x, INT.z - s.z); if (d < (s.r || 14) && d < bd){ bd = d; best = s; } }
@@ -4318,7 +4343,7 @@ function renderInterior(){
   for (const s of INT_SPIN){ if (s.ceil) s.ceil.rotation.y += .25; else s.rotation.x += .3; }
   R.bulb.intensity = dark > .2 ? 1.6 : .2; R.hl.intensity = 1.05 - dark * .45;
   R.winMat.color.setHSL(.56, .6, .85 - dark * .7);
-  R.me.position.set(R.x, 0, R.z); R.me.rotation.y = -R.a; animPerson(R.me, player.step, player.moving); poseFor(R.me, ACT, false); devicesTick(R);
+  R.me.position.set(R.x, 0, R.z); R.me.rotation.y = -R.a; animPerson(R.me, player.step, player.moving, .4); poseFor(R.me, ACT, false); devicesTick(R);
   const cp = Math.cos(orbitIn.pitch), sp = Math.sin(orbitIn.pitch);
   R.cam.aspect = innerWidth / innerHeight; R.cam.updateProjectionMatrix();
   const fx = R.floors ? R.floors[R.fi || 0].ox : 0, cx = fx + (R.x - fx) * .5;
@@ -4915,7 +4940,7 @@ function syncPeers(dt){
     if (p.air){ p.air.visible = !(S && S.inside); p.air.position.set(p.x, p.airKind === 'boat' ? 1 : (p.t.h || 0), p.y); p.air.rotation.set(0, p.t.ya || 0, 0); aircraftTick(p.air, p.t.h || 0, T, 0); }
     const gy = groundY(p.x, p.y), hide = p.t.in || (S && S.inside) || !!p.air;
     p.mesh.visible = !hide && (!p.car || vk === 'moto'); if (p.car) p.car.visible = !hide;
-    p.mesh.position.set(p.x, gy + (vk === 'moto' ? 4 : 0), p.y); p.mesh.rotation.y = -p.a; animPerson(p.mesh, performance.now() / 110, p.t.mv && !vk);
+    p.mesh.position.set(p.x, gy + (vk === 'moto' ? 4 : 0), p.y); p.mesh.rotation.y = -p.a; animPerson(p.mesh, performance.now() / 1000 * 23, p.t.mv && !vk, 1);
     if (p.car){ p.car.position.set(p.x, gy, p.y); p.car.rotation.y = -p.a; }
     if (!p.lab){ p.lab = document.createElement('div'); p.lab.className = 'lab player'; peerLabs.appendChild(p.lab); }
     p.lab.textContent = '🟢 ' + p.name;
@@ -5266,7 +5291,7 @@ function render(){
       if (veh.kind === 'moto'){ playerMesh.visible = true; playerMesh.position.set(S.x - Math.cos(player.a) * 1, gy + 4, S.y - Math.sin(player.a) * 1); playerMesh.rotation.set(CAR.roll || 0, -player.a, 0, 'YXZ'); animPerson(playerMesh, 0, false); }
       else playerMesh.visible = false;
     } else {
-      playerMesh.visible = !FLIGHT; playerMesh.position.set(S.x, gy, S.y); playerMesh.rotation.y = -player.a; animPerson(playerMesh, player.step, player.moving); poseFor(playerMesh, ACT, S.down);
+      playerMesh.visible = !FLIGHT; playerMesh.position.set(S.x, gy, S.y); playerMesh.rotation.y = -player.a; animPerson(playerMesh, player.step, player.moving, 1); poseFor(playerMesh, ACT, S.down);
     }
     youMark.visible = !FLIGHT; youMark.position.set(S.x, gy + 30 + Math.sin(T * 3) * 1.5, S.y); youMark.rotation.y = T * 2;
     const home = LOC[HOMES[S.home].loc]; homeBeam.position.set(home.x, 60, home.y);
@@ -5393,7 +5418,7 @@ function loop(now){
   if ((frame++ % 6) === 0) drawMini();
   requestAnimationFrame(loop);
 }
-if (location.search.includes("debug")) window.__ss = {sleepInBed, setDev, devOn, showMorning, get ACT(){ return ACT; }, scene, gamesScreen, startGame, gameAction, get GAMEP(){ return GAMEP; }, paintScreen, applyPaintAll, BLD, get PAINT(){ return PAINT; }, CLUB, CLUB_SONGS, openPhone, trafficTick, get RUSH(){ return RUSH; }, flightPath, sail, panelFerry, panelAirport, JETTY, DOCKED, RWY, coastY, BH, CANOES, PLANE, regionOf, BUSH_WALLS, CORRIDORS, traffic, roadPoint, get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR, get CAR(){ return CAR; }, offRoad, giveVehicle, nearestRoad, WX, rollWeather, get orbit(){ return orbit; }, goInside, deliverFurn, designCmd, get DES(){ return DES; }, SND, SFX, fly, LOC, panelFor, get FLIGHT(){ return FLIGHT; }, MP, tourHome, useStairs, cookAt, takeBath, HOME_DISHES, invOf, sellItem, deliverFurn, cam, people, LOTS, parkMyCar, peopleTick, buildPlace, buildInterior, canEnter, roomAt};
+if (location.search.includes("debug")) window.__ss = {personMesh, animPerson, randomLook, sleepInBed, setDev, devOn, showMorning, get ACT(){ return ACT; }, scene, gamesScreen, startGame, gameAction, get GAMEP(){ return GAMEP; }, paintScreen, applyPaintAll, BLD, get PAINT(){ return PAINT; }, CLUB, CLUB_SONGS, openPhone, trafficTick, get RUSH(){ return RUSH; }, flightPath, sail, panelFerry, panelAirport, JETTY, DOCKED, RWY, coastY, BH, CANOES, PLANE, regionOf, BUSH_WALLS, CORRIDORS, traffic, roadPoint, get AUTO(){ return AUTO; }, get INT(){ return INT; }, route, pathLen, LOCS, buildings, get S(){ return S; }, set S(v){ S = v; }, isWater, hitsSolid, people, ADDR, get CAR(){ return CAR; }, offRoad, giveVehicle, nearestRoad, WX, rollWeather, get orbit(){ return orbit; }, goInside, deliverFurn, designCmd, get DES(){ return DES; }, SND, SFX, fly, LOC, panelFor, get FLIGHT(){ return FLIGHT; }, MP, tourHome, useStairs, cookAt, takeBath, HOME_DISHES, invOf, sellItem, deliverFurn, cam, people, LOTS, parkMyCar, peopleTick, buildPlace, buildInterior, canEnter, roomAt};
 showIntro(false);
 requestAnimationFrame(loop);
 addEventListener('beforeunload', save);
