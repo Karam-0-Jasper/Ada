@@ -1666,8 +1666,8 @@ function talkScreen(){
   MP.unread = 0;
   const peers = [...MP.peers.values()];
   const tabs = `<div class="seg"><button data-talk="room" aria-selected="${talkTab === 'room'}">Montserrado</button><button data-talk="players" aria-selected="${talkTab === 'players'}">Players (${peers.length})</button></div>`;
-  const status = MP.online ? `<div class="chip ok">🟢 Connected · ${peers.length + 1} in Montserrado</div>` : `<div class="chip no">Connecting to Montserrado… check your internet</div>`;
-  if (talkTab === 'players') return {t:'Let We Talk', body: tabs + status + `<div class="list">${peers.length ? peers.map(p => `<button class="goal" data-talk="dm:${esc(p.id)}"><span class="dot">${p.look && p.look.g === 'f' ? '👩🏾' : '👨🏾'}</span><span style="flex:1;text-align:left"><b>${esc(p.name)}</b><br><small style="color:var(--muted)">${p.seen ? districtAt(p.t.x, p.t.y) : 'Just joined'}${(MP.dms[p.id] || []).length ? ' · ' + MP.dms[p.id].length + ' messages' : ''}</small></span>›</button>`).join('') : '<div class="goal">No other players right now. Share the game link with your friends!</div>'}</div>`, acts:[]};
+  const status = (MP.online ? `<div class="chip ok">🟢 Connected · ${peers.length + 1} playing now</div>` : `<div class="chip no">Connecting… check your internet</div>`) + `<button class="go" data-invite style="width:100%;margin:8px 0">📲 Invite friends to play</button>`;
+  if (talkTab === 'players') return {t:'Let We Talk', body: tabs + status + `<div class="list">${peers.length ? peers.map(p => `<button class="goal" data-talk="dm:${esc(p.id)}"><span class="dot">${p.look && p.look.g === 'f' ? '👩🏾' : '👨🏾'}</span><span style="flex:1;text-align:left"><b>${esc(p.name)}</b> <span class="chip" data-find="${esc(p.id)}" style="padding:2px 8px;font-size:12px">📍 Find on map</span><br><small style="color:var(--muted)">${p.seen ? districtAt(p.t.x, p.t.y) : 'Just joined'}${(MP.dms[p.id] || []).length ? ' · ' + MP.dms[p.id].length + ' messages' : ''}</small></span>›</button>`).join('') : '<div class="goal">No other players right now. Share the game link with your friends!</div>'}</div>`, acts:[]};
   const dm = talkTab.startsWith('dm:') ? talkTab.slice(3) : null, peer = dm && MP.peers.get(dm);
   const msgs = dm ? (MP.dms[dm] || []) : MP.chat;
   setTimeout(() => { const box = $('#chatBox'); if (box) box.scrollTop = box.scrollHeight; const f = $('#chatForm'); if (!f) return;
@@ -2026,6 +2026,8 @@ $('#scrim').addEventListener('click', e => {
   if (e.target === $('#scrim') || e.target.closest('[data-close]')) return closeModal();
   const tab = e.target.closest('[data-tab]'); if (tab){ phoneTab = tab.dataset.tab; renderModal(); return; }
   if (e.target.closest('[data-homebar]')){ if (phoneApp === 'home') return closeModal(); phoneApp = 'home'; renderModal(); return; }
+  if (e.target.closest('[data-invite]')){ inviteFriends(); return; }
+  const fd = e.target.closest('[data-find]'); if (fd){ const p = MP.peers.get(fd.dataset.find); if (p && p.seen){ S.wp = {x:p.t.x, y:p.t.y, n:p.name, peer:p.id}; toast(`📍 Follow the blue beam to ${p.name}`, 'gold'); closeModal(); hud(); } else toast('Your friend is still loading in.'); return; }
   const tk = e.target.closest('[data-talk]'); if (tk){ talkTab = tk.dataset.talk; renderModal(); return; }
   const shp = e.target.closest('[data-shop]'); if (shp){ shopTab = shp.dataset.shop; renderModal(); return; }
   const gm = e.target.closest('[data-game]'); if (gm){ gameAction(gm.dataset.game); return; }
@@ -2648,7 +2650,7 @@ function drawPhoneMap(){
   for (const l of LOCS) if (l.type !== 'taxi') x.fillText(l.ic, l.x*s, l.y*s);
   if (S.wp){ x.strokeStyle = '#4aa3ff'; x.lineWidth = 5; x.beginPath(); x.arc(S.wp.x*s, S.wp.y*s, 12, 0, 7); x.stroke(); }
   if (S.gig){ x.strokeStyle = '#FFB21E'; x.lineWidth = 4; x.beginPath(); x.arc(S.gig.x*s, S.gig.y*s, 10, 0, 7); x.stroke(); }
-  x.fillStyle = '#fff'; x.strokeStyle = '#E5392C'; x.lineWidth = 5; x.beginPath(); x.arc(S.x*s, S.y*s, 9, 0, 7); x.fill(); x.stroke();
+  drawPeers(x, s, 0, 0, true); x.fillStyle = '#fff'; x.strokeStyle = '#E5392C'; x.lineWidth = 5; x.beginPath(); x.arc(S.x*s, S.y*s, 9, 0, 7); x.fill(); x.stroke();
 }
 function checkGoals(){
   for (const g of GOALS){ if (!S.goals.includes(g.id) && g.ok(S)){ S.goals.push(g.id); toast(`🏆 Goal reached: ${g.t}`, 'gold'); confetti(); } }
@@ -5113,6 +5115,7 @@ function animatePlace(){
 /* ---------- remote players ---------- */
 const peerLabs = $('#labels');
 function syncPeers(dt){
+  if (S && S.wp && S.wp.peer){ const q = MP.peers.get(S.wp.peer); if (q && q.seen){ S.wp.x = q.t.x; S.wp.y = q.t.y; } }
   for (const p of MP.peers.values()){
     if (!p.seen){ if (p.mesh) p.mesh.visible = false; continue; }
     if (p.x === null){ p.x = p.t.x; p.y = p.t.y; }
@@ -5535,6 +5538,15 @@ function prerender(scale){
 const miniBase = prerender(0.075);
 let bigBase = null;
 const mini = $('#mini'), mctx = mini.getContext('2d');
+// friends online, drawn as blue dots (with names on the big maps)
+function drawPeers(x, s, ox, oy, names){
+  for (const p of MP.peers.values()){ if (!p.seen || p.x === null) continue; const px = p.x * s - ox, py = p.y * s - oy;
+    x.fillStyle = '#2e86ff'; x.strokeStyle = '#fff'; x.lineWidth = names ? 3 : 2; x.beginPath(); x.arc(px, py, names ? 8 : 4.5, 0, 7); x.fill(); x.stroke();
+    if (names){ x.font = '800 14px "Nunito Sans", system-ui'; x.lineWidth = 4; x.strokeStyle = 'rgba(0,0,0,.6)'; x.strokeText(p.name, px, py - 16); x.fillStyle = '#fff'; x.fillText(p.name, px, py - 16); } } }
+const inviteText = () => `Come play Monrovia Living with me! Live the Liberian life: hustle, buy a car and a house, and we can see each other in the game. ${location.origin}`;
+function inviteFriends(){ const url = location.origin, text = inviteText();
+  if (navigator.share) navigator.share({title:'Monrovia Living', text, url}).catch(() => {});
+  else { try { navigator.clipboard.writeText(text); } catch (e) {} window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank'); toast('📲 Invite link copied. Send it to your friends!', 'good'); } }
 function drawMini(){
   if (!S) return;
   const mw = mini.width, mh = mini.height, s = 0.075, span = 1.0;
@@ -5542,7 +5554,7 @@ function drawMini(){
   const ox = S.x * s - mw/2, oy = S.y * s - mh/2;
   mctx.drawImage(miniBase, -ox, -oy);
   const g = S.gig; if (g){ mctx.fillStyle = '#FFB21E'; mctx.beginPath(); mctx.arc(g.x*s - ox, g.y*s - oy, 5, 0, 7); mctx.fill(); }
-  const home = LOC[HOMES[S.home].loc]; mctx.fillStyle = '#39C06A'; mctx.fillRect(home.x*s - ox - 3, home.y*s - oy - 3, 6, 6);
+  const home = LOC[HOMES[S.home].loc]; mctx.fillStyle = '#39C06A'; mctx.fillRect(home.x*s - ox - 3, home.y*s - oy - 3, 6, 6); drawPeers(mctx, s, ox, oy, false);
   mctx.fillStyle = '#fff'; mctx.strokeStyle = '#E5392C'; mctx.lineWidth = 3; mctx.beginPath(); mctx.arc(mw/2, mh/2, 5, 0, 7); mctx.fill(); mctx.stroke();
 }
 function openMap(){
@@ -5555,7 +5567,7 @@ function openMap(){
   x.font = '16px system-ui, "Apple Color Emoji"';
   for (const l of LOCS) x.fillText(l.ic, l.x*s, l.y*s);
   if (S.gig){ x.strokeStyle = '#FFB21E'; x.lineWidth = 3; x.beginPath(); x.arc(S.gig.x*s, S.gig.y*s, 10, 0, 7); x.stroke(); }
-  x.fillStyle = '#fff'; x.strokeStyle = '#E5392C'; x.lineWidth = 4; x.beginPath(); x.arc(S.x*s, S.y*s, 8, 0, 7); x.fill(); x.stroke();
+  drawPeers(x, s, 0, 0, true); x.fillStyle = '#fff'; x.strokeStyle = '#E5392C'; x.lineWidth = 4; x.beginPath(); x.arc(S.x*s, S.y*s, 8, 0, 7); x.fill(); x.stroke();
   x.fillStyle = 'rgba(255,255,255,.8)'; x.font = 'italic 700 16px "Nunito Sans", system-ui'; x.fillText('Atlantic Ocean', 400*K*s + 80, 1800*K*s);
   $('#mapWrap').hidden = false;
 }
