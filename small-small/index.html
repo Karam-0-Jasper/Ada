@@ -2839,11 +2839,11 @@ function update(dt){
   if (paused) return;
   // time: 1 real second = 1.2 game minutes
   const gm = dt * 1.2; advance(gm);
-  S.food = clamp(S.food - gm * .11, 0, 100);
-  S.hyg = clamp((S.hyg ?? 100) - gm * (S.inside ? .025 : .045) * (WX.kind === 'sun' ? 1.2 : 1), 0, 100);
+  S.food = clamp(S.food - gm * .068, 0, 100);   // bars last longer: about a full game day from full food to empty
+  S.hyg = clamp((S.hyg ?? 100) - gm * (S.inside ? .015 : .028) * (WX.kind === 'sun' ? 1.2 : 1), 0, 100);
   if (S.hyg < 25 && T > (S.hygT || 0)){ S.hygT = T + 120; toast(S.hyg < 10 ? '🤢 People are holding their nose! Go home and take a bath.' : '🧼 You need a bath soon. Go home to the bathroom.'); }
   const hot = WX.kind === 'sun' && !S.inside && !S.riding && hour() > 11 && hour() < 16;
-  S.energy = clamp(S.energy - gm * (S.food <= 0 ? .3 : .085) * (hot ? 1.25 : 1), 0, 100);
+  S.energy = clamp(S.energy - gm * (S.food <= 0 ? .2 : .053) * (hot ? 1.2 : 1), 0, 100);
   if (hot && !S.hotTold){ S.hotTold = S.day; toast('🥵 The sun is hot! You tire faster outside at midday. Ride or rest in the shade.'); } else if (S.hotTold && S.hotTold !== S.day) S.hotTold = 0;
   if (S.food <= 0 && (warnT -= dt) < 0){ toast('You are starving! Eat at a cookshop.', 'bad'); warnT = 20; }
   if (S.energy <= 0 && !AUTO) return faint();
@@ -3872,7 +3872,7 @@ function houseFixturesLocal(R, r, F, fi, ox, fg){
       const bk = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 2.8, 6, 14), lam('#E5392C')); bk.position.set(cx - 4, 3, top + 7); fg.add(bk); const wt = new THREE.Mesh(new THREE.CylinderGeometry(3.1, 3.1, .3, 14), new THREE.MeshLambertMaterial({color:0x4fc3f7})); wt.position.set(cx - 4, 5.6, top + 7); fg.add(wt);
       const cup = new THREE.Mesh(new THREE.CylinderGeometry(1, .8, 2, 10), lam('#FFB21E')); cup.position.set(cx + 3, 1, top + 9); fg.add(cup);
       box(r.w - 4, .2, r.d - 6, '#90a4ae', cx, .12, top + r.d/2, fg); S2(cx - 4, top + 7, 7, 7);
-      spots.push({k:'bath', x:cx, z:top + 15, r:9}); R.bathAt = {x:cx - 4, z:top + 12, y:0, small:1};
+      spots.push({k:'bath', x:cx, z:top + 15, r:9}); R.bathAt = {x:cx - 4, z:top + 12, y:0, small:1, wt, fx:bathFx(fg, cx - 4, 21, top + 12, .4, 3.2, true)};
     } else bathroomSet(R, r, ox, fg);
   }
   if (r.t === 'hall' && r.stairs){
@@ -3941,6 +3941,31 @@ function kitchenRun(R, r, ox, fg){
   spots.push({k:'stove', x:st, z:top + 17, r:9}); spots.push({k:'sink', x:sx, z:top + 17, r:8}); spots.push({k:'fridge', x:ox + r.x + r.w - 10, z:top + 20, r:9});
   R.stoveAt = {x:st, z:top + 17, pot:[st - 3.4, 13.4, top + 3.1]};
 }
+// running water for a bath: drops falling from the shower head (or poured from the cup over your head), splashes, steam, a puddle
+function bathFx(parent, x, y0, z, floorY, spread, bucket){
+  const N = 90, pos = new Float32Array(N * 3), drops = [];
+  for (let i = 0; i < N; i++) drops.push({x:0, y:-99, z:0, v:0, t:Math.random()});
+  const pts = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(pos, 3)), new THREE.PointsMaterial({color:0xcff0ff, size:.9, transparent:true, opacity:.9, depthWrite:false}));
+  const g = new THREE.Group(); g.add(pts); g.visible = false; parent.add(g);
+  const rings = [0, 1, 2].map(() => { const r = new THREE.Mesh(new THREE.RingGeometry(.6, 1, 18).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0, depthWrite:false, side:THREE.DoubleSide})); r.position.set(x, floorY + .15, z); g.add(r); return {m:r, t:Math.random()}; });
+  const steam = bucket ? [] : [0, 1, 2, 3, 4].map(i => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:NAV_GLOW || navGlowTex(), color:0xffffff, transparent:true, opacity:0, depthWrite:false})); g.add(sp); return {s:sp, t:i / 5}; });
+  const puddle = bucket ? new THREE.Mesh(new THREE.CircleGeometry(1, 24).rotateX(-Math.PI / 2), new THREE.MeshPhongMaterial({color:0x8fd3f5, transparent:true, opacity:.55, shininess:120, depthWrite:false})) : null;
+  if (puddle){ puddle.position.set(x, floorY + .05, z + 2); g.add(puddle); }
+  return {g, pts, drops, rings, steam, puddle, x, y0, z, floorY, spread, bucket};
+}
+function bathFxTick(F, dt, k){
+  const p = F.pts.geometry.attributes.position.array;
+  F.drops.forEach((d, i) => { if (d.y < F.floorY){ d.t -= dt; if (d.t > 0){ p[i * 3 + 1] = -99; return; }
+      // a new drop: from the shower head, or poured in bursts from the cup over the head
+      const pour = !F.bucket || Math.sin(T * 2.4) > -.2; if (!pour){ d.t = .05; p[i * 3 + 1] = -99; return; }
+      const a = Math.random() * 6.28, r = Math.random() * (F.bucket ? 2.4 : 1.6); d.x = F.x + Math.cos(a) * r; d.z = F.z + Math.sin(a) * r; d.y = F.y0 - Math.random() * 2; d.v = 8 + Math.random() * 6; d.vx = Math.cos(a) * (F.bucket ? 3 : 1.5); d.vz = Math.sin(a) * (F.bucket ? 3 : 1.5); d.t = Math.random() * .25; }
+    d.v += 60 * dt; d.y -= d.v * dt; d.x += d.vx * dt; d.z += d.vz * dt; p[i * 3] = d.x; p[i * 3 + 1] = d.y; p[i * 3 + 2] = d.z;
+    if (d.y < F.floorY){ const r = F.rings.find(q => q.t >= 1) || F.rings[i % 3]; r.t = 0; r.m.position.set(d.x, F.floorY + .15, d.z); } });
+  F.pts.geometry.attributes.position.needsUpdate = true;
+  for (const r of F.rings){ r.t = Math.min(1, r.t + dt * 2.2); r.m.scale.setScalar(.6 + r.t * 2.4); r.m.material.opacity = (1 - r.t) * .7; }
+  for (const st of F.steam){ st.t = (st.t + dt * .25) % 1; st.s.position.set(F.x + Math.sin(st.t * 9 + st.s.id) * 4, F.floorY + st.t * 22, F.z + Math.cos(st.t * 7) * 3); st.s.scale.setScalar(6 + st.t * 14); st.s.material.opacity = Math.sin(st.t * Math.PI) * .35; }
+  if (F.puddle) F.puddle.scale.setScalar(1 + k * 9);
+}
 function bathroomSet(R, r, ox, fg){
   const top = r.z, solids = R.staticSolids, spots = R.staticSpots, white = () => new THREE.MeshPhongMaterial({color:0xfafafa, shininess:60});
   // bathtub with rounded rim, taps and a shower
@@ -3951,7 +3976,7 @@ function bathroomSet(R, r, ox, fg){
   meshAt(new THREE.CylinderGeometry(.3, .3, 18, 8), CHROME(), -11, 18, -6.2, tub); meshAt(new THREE.CylinderGeometry(1.8, 1.2, .8, 14), CHROME(), -11, 27, -4.8, tub);
   meshAt(new THREE.CylinderGeometry(.25, .25, 26, 6).rotateZ(Math.PI/2), CHROME(), 0, 30, 6.4, tub); const cur = meshAt(new THREE.PlaneGeometry(10, 20), new THREE.MeshLambertMaterial({color:0x80deea, transparent:true, opacity:.55, side:THREE.DoubleSide}), 8, 20, 6.4, tub);
   const bub = new THREE.Group(); for (let i = 0; i < 16; i++){ const b = new THREE.Mesh(new THREE.SphereGeometry(1 + Math.random(), 8, 6), new THREE.MeshLambertMaterial({color:0xffffff, transparent:true, opacity:.9})); b.position.set(-10 + Math.random() * 20, 7.4 + Math.random() * 1.4, -4 + Math.random() * 8); bub.add(b); } bub.visible = false; tub.add(bub);
-  solids.push({x:tx - 13, z:tz - 6.5, w:26, d:13}); spots.push({k:'bath', x:tx, z:top + 20, r:10}); R.bathAt = {x:tx, z:tz, y:-3, bub};
+  solids.push({x:tx - 13, z:tz - 6.5, w:26, d:13}); spots.push({k:'bath', x:tx, z:top + 20, r:10}); R.bathAt = {x:tx, z:tz, y:-3, bub, wat, fx:bathFx(tub, -9, 26, -3.6, 6.8, 5, false)};
   // toilet: bowl, seat, lid and tank
   const tl = new THREE.Group(); tl.position.set(ox + r.x + r.w - 7, 0, top + r.d - 12); tl.rotation.y = Math.PI; fg.add(tl);
   meshAt(new THREE.CylinderGeometry(2.6, 2, 5, 14), white(), 0, 2.5, 1, tl); meshAt(new THREE.TorusGeometry(2.6, .45, 6, 16).rotateX(Math.PI/2), white(), 0, 5.2, 1, tl);
@@ -4247,7 +4272,7 @@ function cookAt(d){
   activity('cook', `🍳 Cooking ${d.t}…`, 3.6, () => { advance(d.m); eat('your home-cooked ' + d.t.toLowerCase(), d.f, {e:d.e, color:d.c}); });
 }
 function takeBath(){
-  const b = INT.bathAt; if (b){ INT.x = b.x; INT.z = b.z; INT.a = Math.PI/2; }
+  const b = INT.bathAt; if (b){ INT.x = b.x; INT.z = b.z; INT.a = Math.PI/2; const fi = floorOf(INT, b.x); if (INT.floorG && fi !== (INT.fi || 0)){ INT.fi = fi; INT.floorG.forEach((fg, i) => fg.visible = i === fi); } }
   activity('bath', b && b.small ? '🪣 Taking a bucket bath…' : '🛁 Taking a bath…', 3.8, () => { advance(b && b.small ? 15 : 30); S.hyg = 100; S.energy = clamp(S.energy + 6, 0, 100); toast('🧼 Fresh and clean! You smell nice.', 'good'); if (b){ INT.x = b.x; INT.z = b.z + 14; } });
 }
 /* ---------- home life: TV and AC you can switch on and off, sleeping in your bed, morning sun through the windows ---------- */
@@ -4471,6 +4496,7 @@ function panelInside0(s){
   }
   return {t:s.n, acts:[]};
 }
+let _bathT = 0; const wdtBath = () => { const now = performance.now() / 1000, d = _bathT ? now - _bathT : .016; _bathT = now; return d; };
 function renderInterior(){
   const R = INT, dark = darkness() / .62;
   { const wdt = Math.min(.05, T - (render.wT || T)); render.wT = T; soundTick(wdt); if (SND.hiss) SND.hiss.gain.value = .02 * WX.level; }
@@ -4485,6 +4511,13 @@ function renderInterior(){
   if (R.glows) for (const m of R.glows) m.emissiveIntensity = .35 + dark * 1.3;
   if (R.pls) for (const pl of R.pls) pl.intensity = .15 + dark * 1.6;
   if (R.bathAt && R.bathAt.bub){ R.bathAt.bub.visible = !!(ACT && ACT.kind === 'bath'); if (R.bathAt.bub.visible) R.bathAt.bub.children.forEach((b, i) => b.position.y = 8 + Math.sin(T * 2 + i) * .4); }
+  { const B = R.bathAt, on = !!(B && ACT && ACT.kind === 'bath'), k = on ? Math.min(1, (performance.now() - ACT.t0) / ACT.dur) : 0;
+    if (B && B.fx){ B.fx.g.visible = on; if (on) bathFxTick(B.fx, Math.min(.05, wdtBath()), k); }
+    if (B && B.wat) B.wat.position.y = on ? 5.2 + Math.min(1, k * 1.6) * 1.6 : 6.6;   // the tub fills up
+    if (B && B.wt) B.wt.position.y = on ? 5.6 - k * 3.4 : 5.6;                          // the bucket empties
+    // the sound of running water
+    if (SND.ctx && SND.buf){ if (!SND.water){ const c = SND.ctx, src = c.createBufferSource(), hp = c.createBiquadFilter(), bp = c.createBiquadFilter(), g = c.createGain(); src.buffer = SND.buf; src.loop = true; hp.type = 'highpass'; hp.frequency.value = 900; bp.type = 'peaking'; bp.frequency.value = 3200; bp.gain.value = 6; g.gain.value = 0; src.connect(hp).connect(bp).connect(g).connect(SND.master); src.start(); SND.water = g; }
+      SND.water.gain.setTargetAtTime(on ? (B.small ? (Math.sin(T * 2.4) > -.2 ? .16 : .02) : .14) : 0, SND.ctx.currentTime, .15); } }
   if (R.oven) R.oven.emissiveIntensity = ACT && ACT.kind === 'cook' ? .9 : 0;
   if (R.flames){ const on = !!(ACT && ACT.kind === 'cook'); R.flames.forEach((f, i) => { f.visible = on && i < 8; if (on) f.scale.y = .8 + Math.random() * .6; }); }
   if (R.stoveAt){ const on = !!(ACT && ACT.kind === 'cook'); if (on && !R.potFx){ const pg = new THREE.Group(); const pot = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.3, 3.4, 14), lam('#9e9e9e')); pg.add(pot); for (let i = 0; i < 5; i++){ const st = new THREE.Mesh(new THREE.SphereGeometry(1, 6, 5), new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:.5})); st.userData.i = i; pg.add(st); } pg.position.set(...R.stoveAt.pot); R.sc.add(pg); R.potFx = pg; }
