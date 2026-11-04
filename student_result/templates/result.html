@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Result</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f2f4f8; }
+        .box { width: 360px; margin: 40px auto; background: white; padding: 24px; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; }
+        td { padding: 6px; border-bottom: 1px solid #ddd; }
+        .PASS { color: green; font-weight: bold; }
+        .FAIL { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="box">
+    <h2>Result</h2>
+    <table>
+        <tr><td>Name</td><td>{{ name }}</td></tr>
+        <tr><td>Roll No</td><td>{{ roll_no }}</td></tr>
+        <tr><td>Degree</td><td>{{ degree }}</td></tr>
+        <tr><td>Semester</td><td>{{ semester }}</td></tr>
+        {% for m in marks %}
+        <tr><td>Subject {{ loop.index }}</td><td>{{ m }}</td></tr>
+        {% endfor %}
+        <tr><td>Total</td><td>{{ total }} / 500</td></tr>
+        <tr><td>Percentage</td><td>{{ percentage }}%</td></tr>
+        <tr><td>Result</td><td class="{{ status }}">{{ status }}</td></tr>
+    </table>
+    <p><small>Pass mark: {{ pass_mark }} in every subject</small></p>
+    <a href="/">Enter another student</a>
+</div>
+</body>
+</html>

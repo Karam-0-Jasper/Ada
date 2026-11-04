@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Marks</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f2f4f8; }
+        .box { width: 360px; margin: 40px auto; background: white; padding: 24px; border-radius: 8px; }
+        label { display: block; margin-top: 10px; }
+        input { width: 100%; padding: 6px; box-sizing: border-box; }
+        button { margin-top: 16px; width: 100%; padding: 10px; background: #2d6cdf; color: white; border: none; border-radius: 4px; }
+    </style>
+</head>
+<body>
+<div class="box">
+    <h2>Student Marks Entry</h2>
+    <form action="/result" method="post">
+        <label>Student Name</label>
+        <input type="text" name="name" required>
+
+        <label>Roll No</label>
+        <input type="text" name="roll_no" required>
+
+        <label>Degree</label>
+        <input type="text" name="degree" required>
+
+        <label>Semester</label>
+        <input type="number" name="semester" min="1" max="10" required>
+
+        <label>Subject 1</label>
+        <input type="number" name="sub1" min="0" max="100" required>
+        <label>Subject 2</label>
+        <input type="number" name="sub2" min="0" max="100" required>
+        <label>Subject 3</label>
+        <input type="number" name="sub3" min="0" max="100" required>
+        <label>Subject 4</label>
+        <input type="number" name="sub4" min="0" max="100" required>
+        <label>Subject 5</label>
+        <input type="number" name="sub5" min="0" max="100" required>
+
+        <button type="submit">Calculate Result</button>
+    </form>
+</div>
+</body>
+</html>
