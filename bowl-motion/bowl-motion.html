@@ -87,11 +87,11 @@ const progress=document.createElement('div');progress.className='abs progress';p
 // ---- INTRO: split screen face-off
 const I={
   topHalf:el('half','', 'top:0;background:linear-gradient(180deg,rgba(18,90,50,.75),rgba(18,122,92,.55)),url(assets/goddess_wide.jpg) center/cover'),
-  botHalf:el('half','', 'top:960px;background:linear-gradient(90deg,rgba(255,106,61,.6),rgba(232,72,122,.55),rgba(155,108,255,.6),rgba(79,195,255,.55)),url(assets/shrimp_wide.jpg) center/cover'),
+  botHalf:el('half','', 'top:960px;background:linear-gradient(90deg,rgba(255,106,61,.6),rgba(232,72,122,.55),rgba(155,108,255,.6),rgba(79,195,255,.55)),url(assets/shrimp_wide.jpg) center/cover;box-shadow:inset 0 -320px 220px -60px rgba(6,20,30,.85)'),
   gBowl:bowlEl('goddess',560,260,250),
   cBowl:bowlEl('shrimp',560,260,1110),
-  gLab:el('big green','GREEN PLATE','font-size:104px;top:110px'),
-  cLab:el('big rainbow','COLORFUL PLATE','font-size:104px;top:1710px'),
+  gLab:el('big green','GREEN PLATE','font-size:104px;top:110px;filter:drop-shadow(0 6px 18px rgba(0,0,0,.85))'),
+  cLab:el('big rainbow','COLORFUL PLATE','font-size:104px;top:1710px;filter:drop-shadow(0 6px 18px rgba(0,0,0,.95))'),
   vs:el('vs','VS'),
 };
 
