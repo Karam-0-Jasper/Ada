@@ -1,0 +1,18 @@
+Regional Youth Conference - After Effects project kit
+=====================================================
+
+1. Unzip this folder anywhere. Keep "RYC_Build_AE.jsx" next to the "assets" folder.
+2. Open Adobe After Effects (2020 or newer).
+3. Go to File > Scripts > Run Script File...  and choose RYC_Build_AE.jsx
+4. Two comps get built automatically, fully keyframed, with sound:
+     - RYC Logo - Vertical 1080x1920
+     - RYC Logo - Horizontal 1920x1080
+5. File > Save As... to save your .aep project.
+
+Editing tips
+- "LOGO CONTROL" (top layer, a null): scale or move it to resize/reposition the whole logo.
+- Each element is its own layer: Head, Arms, Arch, Text_1/2/3. Select a layer and press U
+  to see all its keyframes. Drag keyframes to change timing.
+- Background: a white solid at the bottom. Change its colour with Layer > Solid Settings.
+- Sound: the "Sound" layer. Delete or mute it, or swap in your own audio.
+- All PNGs in "assets" are transparent and high-resolution (2306x847), so you can also use them in Premiere, Canva, etc.
