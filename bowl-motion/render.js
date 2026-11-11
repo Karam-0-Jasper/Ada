@@ -7,7 +7,7 @@ const path = require('path');
   const args = process.argv.slice(2);
   const fi = args.indexOf('--frames');
   const stills = fi >= 0 ? args[fi + 1].split(',').map(Number) : null;
-  const out = args.find(a => a.endsWith('.mp4')) || 'bowl-benefits.mp4';
+  const out = args.find(a => a.endsWith('.mp4')) || 'green-vs-colorful.mp4';
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1080, height: 1920 } });
   await page.goto('file://' + path.resolve(__dirname, 'bowl-motion.html') + '?render=1');
