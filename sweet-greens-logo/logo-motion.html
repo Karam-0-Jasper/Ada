@@ -1,0 +1,77 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Sweet Greens Logo</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{overflow:hidden;background:#5f7163}
+#stage{position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 45%,#677a6b 0%,#5f7163 55%,#536457 100%)}
+.clip{position:absolute;top:0;height:100%;overflow:hidden}
+.p{position:absolute;will-change:transform,opacity}
+.p img{width:100%;height:100%;display:block}
+#bar{position:absolute;background:rgb(240,237,225);border-radius:2px}
+#grain{position:absolute;inset:0;opacity:.07;mix-blend-mode:overlay;pointer-events:none}
+</style></head><body><div id="stage"><canvas id="grain"></canvas></div>
+<script>
+const L={"fg": [240.0, 237.0, 225.0], "bg": [95.0, 113.0, 99.0], "K": 6, "pieces": [{"n": "S", "x": 189, "y": 292, "w": 46, "h": 110}, {"n": "W", "x": 262, "y": 292, "w": 86, "h": 110}, {"n": "E", "x": 381, "y": 292, "w": 44, "h": 110}, {"n": "E3_0", "x": 459, "y": 316, "w": 46, "h": 14}, {"n": "E3_1", "x": 459, "y": 339, "w": 46, "h": 15}, {"n": "E3_2", "x": 459, "y": 363, "w": 46, "h": 14}, {"n": "T", "x": 533, "y": 292, "w": 49, "h": 110}, {"n": "bar", "x": 631, "y": 292, "w": 13, "h": 110}, {"n": "G", "x": 693, "y": 292, "w": 56, "h": 110}, {"n": "R", "x": 781, "y": 292, "w": 47, "h": 110}, {"n": "E2", "x": 860, "y": 292, "w": 44, "h": 110}, {"n": "E4", "x": 937, "y": 292, "w": 45, "h": 110}, {"n": "N", "x": 1012, "y": 292, "w": 52, "h": 110}, {"n": "S2", "x": 1094, "y": 292, "w": 45, "h": 110}]};
+const q=new URLSearchParams(location.search);
+const W=+q.get('w')||1920, H=+q.get('h')||1080, SC=+(q.get('s')||(W>H?1.55:0.98));
+const DURATION=5.5, FPS=30; window.DURATION=DURATION; window.FPS=FPS;
+const stage=document.getElementById('stage');stage.style.width=W+'px';stage.style.height=H+'px';
+document.body.style.width=W+'px';document.body.style.height=H+'px';
+const CX=664, CY=346, DIV=637.5;
+const X=x=>W/2+(x-CX)*SC, Y=y=>H/2+(y-CY)*SC;
+const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v)), lin=(t,a,b)=>clamp((t-a)/(b-a));
+const eOut=x=>1-Math.pow(1-x,4), eIO=x=>x<.5?8*x**4:1-Math.pow(-2*x+2,4)/2;
+const divX=X(DIV), gap=4;
+const left=document.createElement('div');left.className='clip';left.style.left='0';left.style.width=(divX-gap)+'px';
+const right=document.createElement('div');right.className='clip';right.style.left=(divX+gap)+'px';right.style.width=(W-divX-gap)+'px';
+stage.append(left,right);
+const bar=document.createElement('div');bar.id='bar';stage.append(bar);
+const BAR={x:635,y:298,w:4.2,h:97};
+bar.style.cssText+=`left:${X(BAR.x+0.4)}px;top:${Y(BAR.y)}px;width:${BAR.w*SC}px;height:${BAR.h*SC}px`;
+const pieces=L.pieces.filter(p=>p.n!=='bar').map(p=>{
+  const side=p.x<DIV?'L':'R', host=side==='L'?left:right, off=side==='L'?0:divX+gap;
+  const d=document.createElement('div');d.className='p';d.innerHTML=`<img src="assets/${p.n}.png">`;
+  d.style.cssText=`left:${X(p.x)-off}px;top:${Y(p.y)}px;width:${p.w*SC}px;height:${p.h*SC}px`;
+  host.append(d);
+  const cx=p.x+p.w/2;
+  return {d,p,side,dist:Math.abs(cx-DIV)*SC, travel:(side==='L'?1:-1)*(Math.abs(cx-DIV)+p.w/2)*SC};
+});
+// order: letters nearest the divider leave first
+pieces.forEach(o=>{
+  const sameSide=pieces.filter(z=>z.side===o.side&&!z.p.n.startsWith('E3_')||z===o);
+  o.rank=pieces.filter(z=>z.side===o.side&&z.dist<o.dist&&!(z.p.n.startsWith('E3_')&&o.p.n.startsWith('E3_'))).length;
+  if(o.p.n.startsWith('E3_')){o.rank=pieces.filter(z=>z.side==='L'&&z.dist<o.dist&&!z.p.n.startsWith('E3_')).length;o.extra=(+o.p.n.slice(3))*0.09}
+  else o.extra=0;
+});
+const wordSpan={L:Math.max(...pieces.filter(o=>o.side==='L').map(o=>Math.abs(o.travel)))+20,R:Math.max(...pieces.filter(o=>o.side==='R').map(o=>Math.abs(o.travel)))+20};
+// film grain
+const g=document.getElementById('grain');g.width=W/2;g.height=H/2;g.style.width=W+'px';g.style.height=H+'px';
+const gctx=g.getContext('2d');
+function grain(seed){const id=gctx.createImageData(g.width,g.height);let s=seed*9301+49297;for(let i=0;i<id.data.length;i+=4){s=(s*9301+49297)%233280;const v=s/233280*255;id.data[i]=id.data[i+1]=id.data[i+2]=v;id.data[i+3]=255}gctx.putImageData(id,0,0)}
+let lastSeed=-1;
+function render(t){
+  const seed=Math.floor(t*12); if(seed!==lastSeed){grain(seed+1);lastSeed=seed}
+  // divider draws from centre
+  const b=eIO(lin(t,0.25,1.05));
+  bar.style.transform=`scaleY(${b})`;bar.style.opacity=lin(t,0.25,0.35);
+  // each word slides out from behind the divider as one unit,
+  // with extra letter spacing that tightens as it lands
+  const wordP={L:eOut(lin(t,1.0,2.4)),R:eOut(lin(t,1.08,2.48))};
+  const track=1-eOut(lin(t,1.2,3.2));
+  pieces.forEach(o=>{
+    const span=o.side==='L'?wordSpan.L:wordSpan.R, dir=o.side==='L'?1:-1;
+    let x=dir*span*(1-wordP[o.side]) - dir*o.rank*14*SC*track;
+    if(o.p.n.startsWith('E3_')){const k=+o.p.n.slice(3);const bp=eOut(lin(t,1.5+k*0.12,2.3+k*0.12));x+=-26*SC*(1-bp)*(k+1)}
+    o.d.style.transform=`translateX(${x}px)`;
+    o.d.style.opacity=1;
+  });
+  // gentle settle of the whole lockup
+  const z=1.04-0.04*eOut(lin(t,0.9,3.4));
+  [left,right,bar].forEach(e=>{e.style.transformOrigin=`${W/2-(e===right?divX+gap:0)}px ${H/2}px`});
+  left.style.transform=right.style.transform=`scale(${z})`;
+  bar.style.transform=`translateY(0) scale(${z},${b*z})`;
+  bar.style.transformOrigin=`center center`;
+}
+window.render=render;
+if(q.get('render')!=='1'){const st=performance.now();(function loop(){render(((performance.now()-st)/1000)%(DURATION+1));requestAnimationFrame(loop)})()}
+</script></body></html>

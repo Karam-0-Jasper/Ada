@@ -1,0 +1,110 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Green vs Colorful Carousel</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:4320px;height:1350px;overflow:hidden;font-family:'Inter',sans-serif;color:#fff;background:#06202e}
+#pano{position:relative;width:4320px;height:1350px;overflow:hidden;
+  background:linear-gradient(90deg,#0b3a26 0%,#0e4a30 25%,#123b33 45%,#2a1d3d 58%,#3a1830 75%,#06202e 100%)}
+.abs{position:absolute}
+.glow{position:absolute;border-radius:50%;filter:blur(120px);opacity:.55}
+.green{color:#5ed37a}
+.rainbow{background:linear-gradient(90deg,#ffd23d,#ff6a3d,#e8487a,#9b6cff,#4fc3ff);-webkit-background-clip:text;color:transparent}
+.kick{font-size:30px;font-weight:800;letter-spacing:8px}
+.h1{font-weight:900;letter-spacing:-4px;line-height:.9;white-space:nowrap}
+.bowl{border-radius:50%;box-shadow:0 40px 90px rgba(0,0,0,.6)}
+.bowl img{width:100%;height:100%;border-radius:50%;display:block}
+.ring{border-radius:50%;border:3px dashed rgba(255,255,255,.3)}
+.chips{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.chip{height:100px;border-radius:24px;background:rgba(10,30,40,.62);border:1.5px solid rgba(255,255,255,.15);display:flex;align-items:center;gap:18px;padding:0 22px}
+.dot{flex:0 0 46px;height:46px;border-radius:50%;box-shadow:0 0 0 5px rgba(255,255,255,.08)}
+.chip b{display:block;font-size:30px;font-weight:800;letter-spacing:-.5px}
+.chip span{display:block;font-size:21px;font-weight:600;color:rgba(255,255,255,.75);margin-top:3px}
+.vs{width:240px;height:240px;border-radius:50%;background:#fff;color:#06202e;font-size:110px;font-weight:900;letter-spacing:-5px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 16px rgba(255,255,255,.18),0 24px 70px rgba(0,0,0,.55)}
+.row{position:absolute;left:3320px;width:920px;height:130px}
+.row .lab{text-align:center;font-size:22px;font-weight:800;letter-spacing:5px;color:rgba(255,255,255,.6)}
+.row .l,.row .r{position:absolute;top:34px;font-size:44px;font-weight:800;letter-spacing:-1px}
+.row .l{left:0;color:#5ed37a}.row .r{right:0}
+.row .tr{position:absolute;left:0;right:0;top:100px;height:12px;border-radius:9px;background:rgba(255,255,255,.12)}
+.row .tr i{position:absolute;top:0;height:100%;border-radius:9px}
+.row .tr i.a{right:50%;background:#5ed37a}.row .tr i.b{left:50%;background:linear-gradient(90deg,#ffd23d,#ff6a3d,#e8487a,#9b6cff)}
+.pill{display:inline-block;font-size:26px;font-weight:800;letter-spacing:3px;padding:14px 26px;border-radius:99px}
+.page{position:absolute;top:56px;font-size:22px;font-weight:700;letter-spacing:4px;color:rgba(255,255,255,.55)}
+</style></head><body><div id="pano">
+
+<!-- soft colour glows -->
+<div class="glow" style="width:900px;height:900px;left:-200px;top:-200px;background:#2fae5a"></div>
+<div class="glow" style="width:800px;height:800px;left:1200px;top:600px;background:#1f9f60"></div>
+<div class="glow" style="width:800px;height:800px;left:2300px;top:-250px;background:#ff6a3d"></div>
+<div class="glow" style="width:700px;height:700px;left:2600px;top:800px;background:#9b6cff"></div>
+<div class="glow" style="width:700px;height:700px;left:3700px;top:300px;background:#4fc3ff;opacity:.3"></div>
+
+<!-- continuous ribbon across all slides -->
+<svg class="abs" style="left:0;top:0" width="4320" height="1350">
+  <defs><linearGradient id="rib" x1="0" x2="1"><stop offset="0" stop-color="#5ed37a"/><stop offset=".45" stop-color="#5ed37a"/><stop offset=".55" stop-color="#ffd23d"/><stop offset=".68" stop-color="#ff6a3d"/><stop offset=".8" stop-color="#e8487a"/><stop offset=".9" stop-color="#9b6cff"/><stop offset="1" stop-color="#4fc3ff"/></linearGradient></defs>
+  <path d="M -50 1180 C 400 1050, 700 1320, 1080 1230 S 1700 1000, 2160 1060 S 2800 1330, 3240 1290 S 3900 1320, 4400 1280" fill="none" stroke="url(#rib)" stroke-width="10" stroke-linecap="round" opacity=".55"/>
+</svg>
+
+<!-- ===== SLIDE 1: hook ===== -->
+<div class="page" style="left:80px">1 / 4</div>
+<div class="abs kick" style="left:80px;top:150px;color:#fff">THE BOWL BATTLE</div>
+<div class="abs h1 green" style="left:70px;top:230px;font-size:230px">GREEN</div>
+<div class="abs" style="left:84px;top:450px;font-size:90px;font-weight:600;color:rgba(255,255,255,.7)">vs</div>
+<div class="abs h1 rainbow" style="left:70px;top:560px;font-size:182px">COLORFUL</div>
+<div class="abs" style="left:84px;top:770px;font-size:38px;font-weight:600;color:rgba(255,255,255,.88);line-height:1.35">2 bowls. 12 ingredients.<br>Only one gets your order.</div>
+<div class="abs bowl" style="left:610px;top:900px;width:400px;height:400px"><img src="assets/shrimp.png"></div>
+<div class="abs bowl" style="left:300px;top:960px;width:360px;height:360px"><img src="assets/goddess.png"></div>
+<div class="abs pill" style="left:80px;top:1010px;background:#fff;color:#06202e;font-size:24px;padding:12px 22px;display:none"></div>
+<div class="abs" style="left:84px;top:1200px;font-size:30px;font-weight:800;letter-spacing:4px">SWIPE →</div>
+
+<!-- ===== SLIDE 2: green ===== -->
+<div class="page" style="left:1160px">2 / 4</div>
+<div class="abs kick green" style="left:1160px;top:110px">ROUND 1 · GREEN PLATE</div>
+<div class="abs h1" style="left:1158px;top:156px;font-size:100px;letter-spacing:-3px">Green Goddess</div>
+<div class="abs" style="left:1162px;top:262px;font-size:32px;font-weight:600;color:rgba(255,255,255,.75)"><b style="color:#fff">800</b> CAL · <b style="color:#fff">$16</b></div>
+<div class="abs ring" style="left:1300px;top:330px;width:640px;height:640px"></div>
+<div class="abs bowl" style="left:1340px;top:370px;width:560px;height:560px"><img src="assets/goddess2.png"></div>
+<div class="abs chips" style="left:1160px;top:990px;width:920px">
+  <div class="chip"><div class="dot" style="background:#8a3b34"></div><div><b>Steak</b><span>Iron + B12</span></div></div>
+  <div class="chip"><div class="dot" style="background:#5a2d2a"></div><div><b>Quinoa</b><span>Complete protein</span></div></div>
+  <div class="chip"><div class="dot" style="background:#9bd34a"></div><div><b>Avocado</b><span>Heart-healthy fats</span></div></div>
+  <div class="chip"><div class="dot" style="background:#d7f0c2"></div><div><b>Cucumber</b><span>Hydration</span></div></div>
+  <div class="chip"><div class="dot" style="background:#3fae3a"></div><div><b>Herbs</b><span>Antioxidants</span></div></div>
+  <div class="chip"><div class="dot" style="background:#4c8f2e"></div><div><b>Pesto</b><span>Good fats</span></div></div>
+</div>
+
+<!-- VS sits on the seam between slide 2 and 3 -->
+<div class="abs vs" style="left:2040px;top:530px">VS</div>
+
+<!-- ===== SLIDE 3: colorful ===== -->
+<div class="page" style="left:2240px">3 / 4</div>
+<div class="abs kick rainbow" style="left:2240px;top:110px">ROUND 2 · COLORFUL PLATE</div>
+<div class="abs h1" style="left:2238px;top:156px;font-size:100px;letter-spacing:-3px">Quinoa Shrimp</div>
+<div class="abs" style="left:2242px;top:262px;font-size:32px;font-weight:600;color:rgba(255,255,255,.75)"><b style="color:#fff">670</b> CAL · <b style="color:#fff">$18</b></div>
+<div class="abs ring" style="left:2460px;top:330px;width:640px;height:640px"></div>
+<div class="abs bowl" style="left:2500px;top:370px;width:560px;height:560px"><img src="assets/shrimp.png"></div>
+<div class="abs chips" style="left:2240px;top:990px;width:920px">
+  <div class="chip"><div class="dot" style="background:#ff9466"></div><div><b>Shrimp</b><span>Lean protein</span></div></div>
+  <div class="chip"><div class="dot" style="background:#c9a27c"></div><div><b>Quinoa</b><span>Plant power</span></div></div>
+  <div class="chip"><div class="dot" style="background:#9bd34a"></div><div><b>Avocado</b><span>Healthy fats</span></div></div>
+  <div class="chip"><div class="dot" style="background:#ff8a1e"></div><div><b>Carrots</b><span>Vitamin A</span></div></div>
+  <div class="chip"><div class="dot" style="background:#4fc36a"></div><div><b>Sweet Peppers</b><span>Vitamin C</span></div></div>
+  <div class="chip"><div class="dot" style="background:#ffd23d"></div><div><b>Citrus Dressing</b><span>Immunity</span></div></div>
+</div>
+
+<!-- ===== SLIDE 4: verdict ===== -->
+<div class="page" style="left:3320px">4 / 4</div>
+<div class="abs kick" style="left:3320px;top:110px">HEAD TO HEAD</div>
+<div class="abs green" style="left:3320px;top:160px;font-size:40px;font-weight:900;letter-spacing:3px">GREEN</div>
+<div class="abs rainbow" style="left:3320px;top:160px;width:920px;text-align:right;font-size:40px;font-weight:900;letter-spacing:3px">COLORFUL</div>
+<div class="row" style="top:250px"><div class="lab">CALORIES</div><div class="l">800</div><div class="r rainbow">670</div><div class="tr"><i class="a" style="width:48%"></i><i class="b" style="width:40%"></i></div></div>
+<div class="row" style="top:400px"><div class="lab">PRICE</div><div class="l">$16</div><div class="r rainbow">$18</div><div class="tr"><i class="a" style="width:43%"></i><i class="b" style="width:48%"></i></div></div>
+<div class="row" style="top:550px"><div class="lab">PROTEIN</div><div class="l">Steak</div><div class="r rainbow">Shrimp</div><div class="tr"><i class="a" style="width:48%"></i><i class="b" style="width:48%"></i></div></div>
+<div class="row" style="top:700px"><div class="lab">STAR NUTRIENT</div><div class="l">Iron + B12</div><div class="r rainbow">Vitamin C</div><div class="tr"><i class="a" style="width:48%"></i><i class="b" style="width:48%"></i></div></div>
+<div class="abs" style="left:3320px;top:900px;width:920px;text-align:center">
+  <div style="font-size:78px;font-weight:900;letter-spacing:-2px;line-height:1">TEAM <span class="green">GREEN</span></div>
+  <div style="font-size:40px;font-weight:600;color:rgba(255,255,255,.7);margin:8px 0">or</div>
+  <div style="font-size:78px;font-weight:900;letter-spacing:-2px;line-height:1">TEAM <span class="rainbow">COLOR?</span></div>
+  <div class="pill" style="margin-top:40px;background:#fff;color:#06202e">COMMENT YOUR PICK</div>
+</div>
+
+</div></body></html>
