@@ -40,7 +40,7 @@
 </style></head>
 <body><div id="stage"></div>
 <script>
-const GREEN={key:'goddess',team:'GREEN PLATE',name:'Green Goddess',cal:800,price:16,
+const GREEN={key:'goddess',angles:['goddess','goddess2','goddess3'],team:'GREEN PLATE',name:'Green Goddess',cal:800,price:16,
  blobs:['#2fae5a','#9bd34a','#127a5c'],tag:()=>'#5ed37a',ings:[
   ['Grilled Steak','#8a3b34','IRON + B12','Iron & B12 for energy and focus'],
   ['Quinoa','#5a2d2a','COMPLETE PROTEIN','All 9 essential amino acids'],
@@ -48,7 +48,7 @@ const GREEN={key:'goddess',team:'GREEN PLATE',name:'Green Goddess',cal:800,price
   ['Cucumbers','#d7f0c2','HYDRATION','About 95% water, light & refreshing'],
   ['Scallions & Herbs','#3fae3a','ANTIOXIDANTS','Vitamin K + antioxidants in every bite'],
   ['Pesto Vinaigrette','#4c8f2e','GOOD FATS','Olive oil + basil, great for your heart']]};
-const COLOR={key:'shrimp',team:'COLORFUL PLATE',name:'Quinoa Shrimp',cal:670,price:18,
+const COLOR={key:'shrimp',angles:['shrimp','shrimp2','shrimp3'],team:'COLORFUL PLATE',name:'Quinoa Shrimp',cal:670,price:18,
  blobs:['#ff6a3d','#9b6cff','#ffd23d','#4fc3ff','#e8487a'],tag:c=>c,ings:[
   ['Shrimp','#ff9466','LEAN PROTEIN','High protein, low calorie + selenium'],
   ['Quinoa','#c9a27c','PLANT POWER','Protein + iron & magnesium'],
@@ -86,8 +86,8 @@ const progress=document.createElement('div');progress.className='abs progress';p
 
 // ---- INTRO: split screen face-off
 const I={
-  topHalf:el('half','', 'top:0;background:linear-gradient(180deg,rgba(47,174,90,.55),rgba(18,122,92,.2))'),
-  botHalf:el('half','', 'top:960px;background:linear-gradient(90deg,rgba(255,106,61,.4),rgba(232,72,122,.35),rgba(155,108,255,.4),rgba(79,195,255,.35))'),
+  topHalf:el('half','', 'top:0;background:linear-gradient(180deg,rgba(18,90,50,.75),rgba(18,122,92,.55)),url(assets/goddess_wide.jpg) center/cover'),
+  botHalf:el('half','', 'top:960px;background:linear-gradient(90deg,rgba(255,106,61,.6),rgba(232,72,122,.55),rgba(155,108,255,.6),rgba(79,195,255,.55)),url(assets/shrimp_wide.jpg) center/cover'),
   gBowl:bowlEl('goddess',560,260,250),
   cBowl:bowlEl('shrimp',560,260,1110),
   gLab:el('big green','GREEN PLATE','font-size:104px;top:110px'),
@@ -99,7 +99,8 @@ const I={
 function makeRound(P,n){
   const R={P};
   R.ring=el('ring','', 'width:700px;height:700px;left:190px;top:320px');
-  R.bowl=bowlEl(P.key,620,230,360);
+  R.bowl=el('bowl',P.angles.map(k=>`<img src="assets/${k}.png">`).join(''),'width:620px;height:620px;left:230px;top:360px');
+  R.imgs=[...R.bowl.querySelectorAll('img')];
   R.kicker=el('kicker',`ROUND ${n} · ${P.team}`);
   R.kicker.className+= n===1?' green':' rainbow';
   R.kicker.style.width='920px';
@@ -174,6 +175,10 @@ function render(t){
     const exitX=-1100*outP, dir=R===R1?1:-1;
     const bp=eBack(lin(lt,0,1.0));
     set(R.bowl,{x:dir*700*(1-inP)+exitX,s:0.55+0.45*bp,r:-dir*120*(1-eOut(lin(lt,0,1.1)))+lt*6,o:lin(lt,0,0.3)});
+    // switch camera angles during the round
+    const sw1=lin(lt,3.8,4.3), sw2=lin(lt,7.4,7.9);
+    R.imgs[0].style.opacity=1-sw1; R.imgs[1].style.opacity=sw1*(1-sw2); R.imgs[2].style.opacity=sw2;
+    R.bowl.querySelectorAll('img')[0].style.opacity=1-sw1;
     set(R.ring,{x:exitX*0.8,s:0.9+0.1*inP,r:-lt*14,o:inP*(1-outP)*0.9});
     set(R.kicker,{x:-60*(1-eOut(lin(lt,0.2,0.7)))+exitX,o:lin(lt,0.2,0.6)});
     set(R.name,{y:60*(1-eOut(lin(lt,0.3,0.9))),x:exitX,o:lin(lt,0.3,0.7)});
