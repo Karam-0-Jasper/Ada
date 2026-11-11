@@ -1,0 +1,178 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Bowl Benefits</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1080px;height:1920px;overflow:hidden;background:#06202e;font-family:'Inter',sans-serif;color:#fff}
+  #stage{position:relative;width:1080px;height:1920px;overflow:hidden}
+  .abs{position:absolute;will-change:transform,opacity}
+  .blob{border-radius:50%;filter:blur(90px);opacity:.55}
+  .bowl{width:620px;height:620px;left:230px;top:360px;border-radius:50%;box-shadow:0 40px 90px rgba(0,0,0,.55)}
+  .bowl img{position:absolute;inset:0;width:100%;height:100%;border-radius:50%}
+  .ring{width:700px;height:700px;left:190px;top:320px;border-radius:50%;border:3px dashed rgba(255,255,255,.25)}
+  .kicker{left:80px;top:120px;font-size:30px;letter-spacing:8px;font-weight:600;color:#7fe0ff}
+  .name{left:80px;top:168px;font-size:92px;font-weight:800;line-height:1;letter-spacing:-2px;white-space:nowrap}
+  .meta{left:80px;top:282px;font-size:34px;font-weight:500;color:rgba(255,255,255,.75)}
+  .meta b{color:#fff;font-weight:700}
+  .card{left:80px;width:920px;height:132px;border-radius:28px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 30px;gap:26px;backdrop-filter:blur(6px)}
+  .dot{flex:0 0 64px;height:64px;border-radius:50%;box-shadow:0 0 0 6px rgba(255,255,255,.08)}
+  .ctext{flex:1;min-width:0}
+  .ing{font-size:40px;font-weight:800;letter-spacing:-.5px;display:flex;align-items:center;gap:16px}
+  .tag{font-size:20px;font-weight:700;letter-spacing:2px;padding:6px 14px;border-radius:99px;color:#06202e}
+  .ben{font-size:28px;font-weight:500;color:rgba(255,255,255,.82);margin-top:6px}
+  .real{left:600px;top:420px;font-size:26px;font-weight:700;letter-spacing:3px;background:#fff;color:#06202e;padding:14px 26px;border-radius:99px;box-shadow:0 12px 30px rgba(0,0,0,.4)}
+  .progress{left:80px;top:70px;height:8px;border-radius:9px;background:rgba(255,255,255,.15);width:920px;overflow:hidden}
+  .progress i{display:block;height:100%;background:#7fe0ff;border-radius:9px}
+  .big{left:0;width:1080px;text-align:center;font-weight:900;letter-spacing:-3px;line-height:.95}
+  .sub{left:0;width:1080px;text-align:center;font-size:36px;font-weight:500;color:rgba(255,255,255,.8)}
+  .mini{width:300px;height:300px;border-radius:50%;box-shadow:0 24px 50px rgba(0,0,0,.5)}
+  .mini img{width:100%;height:100%;border-radius:50%}
+</style></head>
+<body><div id="stage"></div>
+<script>
+const BOWLS=[
+ {key:'goddess',name:'Green Goddess',cal:800,price:16,accent:'#5ed37a',accent2:'#2fb7a3',ings:[
+  ['Grilled Steak','#8a3b34','IRON + B12','Iron & B12 for energy and focus'],
+  ['Quinoa','#5a2d2a','COMPLETE PROTEIN','All 9 essential amino acids'],
+  ['Avocado','#9bd34a','HEART HEALTHY','Good fats + more potassium than a banana'],
+  ['Cucumbers','#d7f0c2','HYDRATION','About 95% water, light & refreshing'],
+  ['Scallions & Herbs','#3fae3a','ANTIOXIDANTS','Vitamin K + antioxidants in every bite'],
+  ['Pesto Vinaigrette','#4c8f2e','GOOD FATS','Olive oil + basil, great for your heart']]},
+ {key:'shrimp',name:'Quinoa Shrimp',cal:670,price:18,accent:'#ff8f6b',accent2:'#ffd23d',ings:[
+  ['Shrimp','#ff9466','LEAN PROTEIN','High protein, low calorie + selenium'],
+  ['Quinoa','#5a2d2a','PLANT POWER','Protein + iron & magnesium'],
+  ['Avocado','#9bd34a','HEALTHY FATS','Helps absorb vitamins A, D, E & K'],
+  ['Carrots','#ff8a1e','VITAMIN A','Beta-carotene for skin & vision'],
+  ['Sweet Peppers','#3e8f3a','VITAMIN C','More vitamin C than an orange'],
+  ['Citrus Vinaigrette','#ffd23d','IMMUNITY','A bright hit of vitamin C, light on calories']]},
+];
+const FPS=30, INTRO=3.6, SCENE=11.5, OUTRO=4.2;
+const DURATION=INTRO+SCENE*BOWLS.length+OUTRO;
+window.DURATION=DURATION; window.FPS=FPS;
+
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const lin=(t,a,b)=>clamp((t-a)/(b-a));
+const eOut=x=>1-Math.pow(1-x,3);
+const eIn=x=>x*x*x;
+const eBack=x=>{const c=1.7;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+const eIO=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+
+const stage=document.getElementById('stage');
+function el(cls,html='',parent=stage){const d=document.createElement('div');d.className='abs '+cls;d.innerHTML=html;parent.appendChild(d);return d}
+function set(e,{x=0,y=0,s=1,r=0,o=1}){e.style.transform=`translate(${x}px,${y}px) scale(${s}) rotate(${r}deg)`;e.style.opacity=o}
+
+// background
+const blobA=el('blob'),blobB=el('blob'),blobC=el('blob');
+[[blobA,900],[blobB,800],[blobC,700]].forEach(([b,s])=>{b.style.width=b.style.height=s+'px'});
+const progress=el('progress','<i></i>');const pbar=progress.firstChild;
+
+// intro
+const intro={k:el('kicker','SIGNATURE BOWLS'),l1:el('big','WHAT\'S IN'),l2:el('big','YOUR BOWL?'),sub:el('sub','Real ingredients. Real benefits.'),minis:[]};
+intro.k.style.cssText+='left:0;width:1080px;text-align:center;top:520px';
+[intro.l1,intro.l2].forEach((e,i)=>{e.style.fontSize='150px';e.style.top=(580+i*150)+'px'});
+intro.sub.style.top='920px';
+BOWLS.forEach((b,i)=>{const m=el('mini',`<img src="assets/${b.key}.png">`);intro.minis.push(m)});
+
+// scenes
+const scenes=BOWLS.map((b,i)=>{
+  const s={b};
+  s.ring=el('ring');
+  s.bowl=el('bowl',`<img src="assets/${b.key}.png">`);
+  s.kicker=el('kicker',`BOWL 0${i+1} / 0${BOWLS.length}`);
+  s.name=el('name',b.name);
+  if(b.name.length>16) s.name.style.fontSize='80px';
+  s.meta=el('meta',`<b>${b.cal}</b> CAL &nbsp;·&nbsp; <b>$${b.price}</b>`);
+  s.cards=b.ings.map((g,j)=>{const c=el('card',`<div class="dot" style="background:${g[1]}"></div><div class="ctext"><div class="ing">${g[0]}<span class="tag" style="background:${b.accent}">${g[2]}</span></div><div class="ben">${g[3]}</div></div>`);c.style.top=(1020+j*140)+'px';return c});
+  return s;
+});
+
+// outro
+const outro={l1:el('big','EAT THE'),l2:el('big','RAINBOW.'),sub:el('sub','Green Goddess · Quinoa Shrimp'),minis:[]};
+outro.l1.style.cssText+='font-size:140px;top:470px';outro.l2.style.cssText+='font-size:140px;top:610px';
+outro.l2.style.background='linear-gradient(90deg,#f5b83d,#ff6a3d,#e8487a,#9b6cff,#4fc3ff,#5ed37a)';
+outro.l2.style.webkitBackgroundClip='text';outro.l2.style.color='transparent';
+outro.sub.style.top='1380px';
+const outroPos=[[170,960],[610,960]];
+BOWLS.forEach((b,i)=>{const m=el('mini',`<img src="assets/${b.key}.png">`);outro.minis.push(m)});
+
+function hide(e){e.style.opacity=0}
+function render(t){
+  // which section
+  const all=[intro.k,intro.l1,intro.l2,intro.sub,...intro.minis,outro.l1,outro.l2,outro.sub,...outro.minis];
+  all.forEach(hide);
+  scenes.forEach(s=>[s.ring,s.bowl,s.kicker,s.name,s.meta,...s.cards].forEach(hide));
+
+  // background colors follow the current bowl
+  let idx=Math.floor((t-INTRO)/SCENE);idx=clamp(idx,-1,BOWLS.length);
+  const cur=BOWLS[clamp(idx,0,BOWLS.length-1)];
+  const bgA=idx<0?'#1aa0d8':idx>=BOWLS.length?'#9b6cff':cur.accent;
+  const bgB=idx<0?'#5ed37a':idx>=BOWLS.length?'#ff6a3d':cur.accent2;
+  blobA.style.background=bgA;blobB.style.background=bgB;blobC.style.background='#1aa0d8';
+  set(blobA,{x:-300+Math.sin(t*.4)*120,y:200+Math.cos(t*.3)*140,o:.45});
+  set(blobB,{x:500+Math.cos(t*.35)*120,y:1100+Math.sin(t*.45)*140,o:.4});
+  set(blobC,{x:200+Math.sin(t*.25)*200,y:700+Math.cos(t*.2)*200,o:.25});
+  pbar.style.width=(clamp(t/DURATION)*100)+'%';
+
+  // ---------- INTRO ----------
+  if(t<INTRO+0.6){
+    const out=eIn(lin(t,INTRO-0.5,INTRO+0.1));
+    set(intro.k,{y:30*(1-eOut(lin(t,0.1,0.6)))-out*80,o:lin(t,0.1,0.5)*(1-out)});
+    set(intro.l1,{y:120*(1-eOut(lin(t,0.2,0.8)))-out*120,o:lin(t,0.2,0.6)*(1-out)});
+    set(intro.l2,{y:120*(1-eOut(lin(t,0.35,0.95)))-out*120,o:lin(t,0.35,0.75)*(1-out)});
+    set(intro.sub,{y:40*(1-eOut(lin(t,0.8,1.3)))-out*80,o:lin(t,0.8,1.2)*(1-out)});
+    intro.minis.forEach((m,i)=>{
+      const a=-Math.PI*0.95+i*(Math.PI*0.9/4) + t*0.25;
+      const cx=540+Math.cos(a+Math.PI)*0, R=520;
+      const px=i===0?170:610;
+      const py=1180+Math.sin(t*2+i)*14;
+      const p=eBack(lin(t,0.6+i*0.12,1.2+i*0.12));
+      m.style.left=px+'px';m.style.top=py+'px';
+      set(m,{s:1.0*p*(1-out*0.6),r:t*25+i*40,y:out*500,o:clamp(p)*(1-out)});
+    });
+  }
+
+  // ---------- SCENES ----------
+  scenes.forEach((s,i)=>{
+    const t0=INTRO+i*SCENE, lt=t-t0;
+    if(lt<-0.2||lt>SCENE+0.2) return;
+    const inP=eOut(lin(lt,0,0.9)), outP=eIn(lin(lt,SCENE-0.55,SCENE+0.05));
+    const exitX=-1100*outP;
+    // bowl
+    const bp=eBack(lin(lt,0,1.0));
+    set(s.bowl,{x:700*(1-eOut(lin(lt,0,0.9)))+exitX,s:0.55+0.45*bp,r:-120*(1-eOut(lin(lt,0,1.1)))+lt*6,o:lin(lt,0,0.3)});
+    set(s.ring,{x:exitX*0.8,s:0.9+0.1*inP+Math.sin(lt*2)*0.01,r:-lt*14,o:inP*(1-outP)*0.9});
+    // move bowl up/smaller when cards come in
+    const shrink=0;
+    const bs=(0.55+0.45*bp)*(1-0.12*shrink);
+    s.bowl.style.transform=`translate(${700*(1-eOut(lin(lt,0,0.9)))+exitX}px,${-40*shrink}px) scale(${bs}) rotate(${-120*(1-eOut(lin(lt,0,1.1)))+lt*6}deg)`;
+    s.ring.style.transform=`translate(${exitX*0.8}px,${-40*shrink}px) scale(${(0.9+0.1*inP)*(1-0.12*shrink)}) rotate(${-lt*14}deg)`;
+    // titles
+    set(s.kicker,{x:-60*(1-eOut(lin(lt,0.2,0.7)))+exitX,o:lin(lt,0.2,0.6)});
+    set(s.name,{y:60*(1-eOut(lin(lt,0.3,0.9))),x:exitX,o:lin(lt,0.3,0.7)});
+    set(s.meta,{y:40*(1-eOut(lin(lt,0.5,1.0))),x:exitX,o:lin(lt,0.5,0.9)});
+    // cards
+    s.cards.forEach((c,j)=>{
+      const a=1.6+j*1.05, p=eOut(lin(lt,a,a+0.6));
+      set(c,{x:-200*(1-p)+exitX*(1+j*0.06),o:clamp(p*1.3)});
+      c.querySelector('.dot').style.transform=`scale(${eBack(lin(lt,a+0.1,a+0.6))})`;
+    });
+  });
+
+  // ---------- OUTRO ----------
+  const ot=t-(INTRO+SCENE*BOWLS.length);
+  if(ot>-0.1){
+    set(outro.l1,{y:100*(1-eOut(lin(ot,0.1,0.7))),o:lin(ot,0.1,0.5)});
+    set(outro.l2,{y:100*(1-eOut(lin(ot,0.25,0.85))),o:lin(ot,0.25,0.65)});
+    set(outro.sub,{y:40*(1-eOut(lin(ot,1.4,1.9))),o:lin(ot,1.4,1.8)});
+    outro.minis.forEach((m,i)=>{
+      const [px,py]=outroPos[i];m.style.left=px+'px';m.style.top=(py+Math.sin(ot*2+i)*10)+'px';
+      const p=eBack(lin(ot,0.5+i*0.12,1.1+i*0.12));
+      set(m,{s:p,r:ot*20+i*30,o:clamp(p)});
+    });
+    const fade=lin(ot,OUTRO-0.4,OUTRO);
+    stage.style.opacity=1-fade;
+  } else stage.style.opacity=1;
+}
+window.render=render;
+// live preview when opened in a browser
+if(!/render=1/.test(location.search)){const st=performance.now();(function loop(){render(((performance.now()-st)/1000)%DURATION);requestAnimationFrame(loop)})()}
+</script></body></html>
