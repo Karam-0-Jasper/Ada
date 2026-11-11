@@ -1,0 +1,109 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Liberia Route</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{overflow:hidden;background:#e8eee0;font-family:'Inter',sans-serif}
+svg{display:block}
+.lbl{font-weight:800;fill:#0b1f3a}
+.sub{font-weight:600;fill:#4a5a6a}
+</style></head><body>
+<svg id="s" xmlns="http://www.w3.org/2000/svg"></svg>
+<script>
+const q=new URLSearchParams(location.search);
+const W=+q.get('w')||1920,H=+q.get('h')||1080, V=H>W;
+const DURATION=9, FPS=30; window.DURATION=DURATION; window.FPS=FPS;
+const RED='#bf0a30', BLUE='#002868';
+const s=document.getElementById('s');s.setAttribute('width',W);s.setAttribute('height',H);s.setAttribute('viewBox',`0 0 ${W} ${H}`);
+const NS='http://www.w3.org/2000/svg';
+const mk=(tag,attrs,parent=s)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);parent.append(e);return e};
+// deterministic random
+let seed=7;const rnd=()=>(seed=(seed*9301+49297)%233280)/233280;
+
+// --- map background: city blocks, parks, side streets
+mk('rect',{x:0,y:0,width:W,height:H,fill:'#e8eee0'});
+const bg=mk('g',{});
+for(let i=0;i<70;i++){const w=60+rnd()*160,h=50+rnd()*120;mk('rect',{x:rnd()*W,y:rnd()*H,width:w,height:h,rx:14,fill:rnd()<.25?'#cfe3bf':'#f4f6ef'},bg)}
+for(let i=0;i<9;i++){const y=rnd()*H;mk('path',{d:`M -20 ${y} Q ${W/2} ${y+(rnd()-.5)*300} ${W+20} ${y+(rnd()-.5)*200}`,stroke:'#fff',fill:'none','stroke-width':14,opacity:.9},bg)}
+for(let i=0;i<7;i++){const x=rnd()*W;mk('path',{d:`M ${x} -20 Q ${x+(rnd()-.5)*300} ${H/2} ${x+(rnd()-.5)*200} ${H+20}`,stroke:'#fff',fill:'none','stroke-width':14,opacity:.9},bg)}
+// trees
+for(let i=0;i<55;i++){const x=rnd()*W,y=rnd()*H,r=10+rnd()*14;mk('circle',{cx:x,cy:y,r:r,fill:rnd()<.5?'#7fb069':'#5e9a4f',opacity:.9},bg)}
+
+// --- main route
+const D=V?`M 260 1600 C 260 1350, 760 1380, 800 1120 S 300 840, 330 680 S 760 520, 800 470`
+         :`M 230 790 C 520 820, 560 520, 880 560 S 1300 860, 1680 420`;
+mk('path',{d:D,stroke:'#c9d1c0',fill:'none','stroke-width':58,'stroke-linecap':'round'});
+mk('path',{d:D,stroke:'#ffffff',fill:'none','stroke-width':46,'stroke-linecap':'round'});
+const route=mk('path',{d:D,stroke:RED,fill:'none','stroke-width':16,'stroke-linecap':'round'});
+const dash=mk('path',{d:D,stroke:'#b9c3ae',fill:'none','stroke-width':4,'stroke-dasharray':'18 22'});
+const LEN=route.getTotalLength();route.setAttribute('stroke-dasharray',LEN);
+const A=route.getPointAtLength(0),B=route.getPointAtLength(LEN);
+
+// --- pins
+function pin(p,name,color,above){
+  const g=mk('g',{});
+  const inner=mk('g',{},g);
+  mk('ellipse',{cx:0,cy:0,rx:22,ry:8,fill:'rgba(0,0,0,.18)'},g).parentNode.insertBefore(g.lastChild,inner);
+  mk('path',{d:'M0 0 C -12 -26 -36 -46 -36 -74 A 36 36 0 1 1 36 -74 C 36 -46 12 -26 0 0 Z',fill:color},inner);
+  mk('circle',{cx:0,cy:-74,r:15,fill:'#fff'},inner);
+  const tag=mk('g',{},g);
+  const ty=above?-150:56;
+  const t=mk('text',{x:0,y:ty,'text-anchor':'middle','font-size':40,class:'lbl'},tag);t.textContent=name;
+  const bb={w:name.length*24+60};
+  const r=mk('rect',{x:-bb.w/2,y:ty-46,width:bb.w,height:64,rx:32,fill:'#fff',stroke:'rgba(0,0,0,.08)'},tag);tag.insertBefore(r,t);
+  g.setAttribute('transform',`translate(${p.x},${p.y})`);
+  return {g,inner,tag};
+}
+const P1=pin(A,'Thinker Village',BLUE,!V), P2=pin(B,'Congo Town',RED,true);
+
+// --- car (top-down, facing +x)
+const car=mk('g',{});
+const body=mk('g',{},car);
+mk('rect',{x:-50,y:-27,width:100,height:54,rx:16,fill:'rgba(0,0,0,.18)',transform:'translate(4,6)'},body);
+[[-30,-29],[22,-29],[-30,21],[22,21]].forEach(([x,y])=>mk('rect',{x,y,width:16,height:8,rx:3,fill:'#1b1b1b'},body));
+mk('rect',{x:-50,y:-25,width:100,height:50,rx:16,fill:RED},body);
+mk('rect',{x:-22,y:-19,width:44,height:38,rx:9,fill:'#8fb8e8'},body);
+mk('rect',{x:-16,y:-16,width:30,height:32,rx:7,fill:'#e14a63'},body);
+mk('rect',{x:40,y:-20,width:8,height:10,rx:3,fill:'#fff6b0'},body);
+mk('rect',{x:40,y:10,width:8,height:10,rx:3,fill:'#fff6b0'},body);
+// small white star on roof (Liberia)
+mk('path',{d:'M0,-9 L2.6,-3 9,-3 3.8,1 5.6,8 0,4 -5.6,8 -3.8,1 -9,-3 -2.6,-3 Z',fill:'#fff'},body);
+
+// --- title card
+const title=mk('g',{});
+const tx=V?W/2:120, ty=V?150:120, anc=V?'middle':'start';
+const t1=mk('text',{x:tx,y:ty,'text-anchor':anc,'font-size':V?64:62,class:'lbl'},title);
+t1.innerHTML=`Thinker Village <tspan fill="${RED}">→</tspan> Congo Town`;
+const t2=mk('text',{x:tx,y:ty+56,'text-anchor':anc,'font-size':34,class:'sub'},title);t2.textContent='Monrovia, Liberia';
+// flag stripe
+const stripe=mk('g',{});
+for(let i=0;i<11;i++)mk('rect',{x:0,y:H-22+i*2,width:W,height:2,fill:i%2?'#fff':RED},stripe);
+mk('rect',{x:0,y:H-22,width:W,height:22,fill:'none'},stripe);
+// arrival badge
+const badge=mk('g',{});
+mk('rect',{x:-120,y:-40,width:240,height:80,rx:40,fill:BLUE},badge);
+const bt=mk('text',{x:0,y:13,'text-anchor':'middle','font-size':36,'font-weight':800,fill:'#fff'},badge);bt.textContent='Arrived ✓';
+
+const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v)), lin=(t,a,b)=>clamp((t-a)/(b-a));
+const eOut=x=>1-Math.pow(1-x,3), eIO=x=>x<.5?4*x**3:1-Math.pow(-2*x+2,3)/2;
+const eBack=x=>{const c=1.7;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+function drop(P,t0,t){const p=eBack(lin(t,t0,t0+.6));P.inner.setAttribute('transform',`translate(0,${-120*(1-eOut(lin(t,t0,t0+.45)))}) scale(${clamp(p,0,2)})`);P.g.style.opacity=lin(t,t0,t0+.15);P.tag.style.opacity=lin(t,t0+.3,t0+.6)}
+function render(t){
+  title.style.opacity=lin(t,0,.6);title.setAttribute('transform',`translate(0,${-20*(1-eOut(lin(t,0,.6)))})`);
+  drop(P1,.3,t);drop(P2,.6,t);
+  const STOP=LEN-95, p=eIO(lin(t,1.6,7.4)), L=p*STOP;
+  route.setAttribute('stroke-dashoffset',LEN-(t>7.4?L+95*eOut(lin(t,7.4,7.8)):L));
+  const pt=route.getPointAtLength(L), pt2=route.getPointAtLength(Math.min(LEN,L+2)), pt0=route.getPointAtLength(Math.max(0,L-2));
+  const ang=Math.atan2(pt2.y-pt0.y,pt2.x-pt0.x)*180/Math.PI;
+  const appear=eBack(lin(t,1.1,1.6));
+  car.setAttribute('transform',`translate(${pt.x},${pt.y}) rotate(${ang}) scale(${1.35*clamp(appear,0,2)})`);
+  car.style.opacity=lin(t,1.1,1.25);
+  // arrival
+  const a=eBack(lin(t,7.5,8.0));
+  const bxy=V?[B.x-60,B.y+120]:[B.x-250,B.y-74];
+  badge.setAttribute('transform',`translate(${bxy[0]},${bxy[1]}) scale(${clamp(a,0,2)})`);badge.style.opacity=lin(t,7.5,7.6);
+  const bounce=t>7.4&&t<8.1?Math.sin((t-7.4)/.7*Math.PI)*-26:0;
+  P2.inner.setAttribute('transform',`translate(0,${bounce})`);
+}
+window.render=render;
+if(q.get('render')!=='1'){const st=performance.now();(function loop(){render(((performance.now()-st)/1000)%(DURATION+1));requestAnimationFrame(loop)})()}
+</script></body></html>
